@@ -1,0 +1,20 @@
+<div class="container">
+  <header class="header">
+    <button class="btn" (click)="goHome()">Accueil</button>
+    <h2>Pilotage par scénario (démo)</h2>
+  </header>
+
+  <div class="card">
+    <h3>Donut chart (données fictives)</h3>
+    <div class="donut" [style.background]="gradient">
+      <div class="hole"></div>
+    </div>
+
+    <ul class="legend">
+      <li *ngFor="let s of slices">
+        <span class="dot" [style.background]="s.color"></span>
+        {{ s.label }} — {{ s.value }}%
+      </li>
+    </ul>
+  </div>
+</div>

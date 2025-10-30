@@ -1,0 +1,21 @@
+<div class="container">
+  <header class="header">
+    <button class="btn" (click)="goHome()">Accueil</button>
+    <h2>Trajectoire carbone (démo)</h2>
+  </header>
+
+  <div class="card">
+    <h3>Line chart (données fictives)</h3>
+    <svg [attr.width]="width" [attr.height]="height">
+      <line [attr.x1]="pad" [attr.y1]="height - pad" [attr.x2]="width - pad" [attr.y2]="height - pad" stroke="#ccc"></line>
+      <line [attr.x1]="pad" [attr.y1]="pad" [attr.x2]="pad" [attr.y2]="height - pad" stroke="#ccc"></line>
+
+      <polyline [attr.points]="polyline" fill="none" stroke="#329dd5" stroke-width="3"></polyline>
+      <ng-container *ngFor="let v of values; let i = index">
+        <circle [attr.cx]="x(i)" [attr.cy]="y(v)" r="4" fill="#329dd5"></circle>
+        <text [attr.x]="x(i)" [attr.y]="height - pad + 16" text-anchor="middle" font-size="12">{{ years[i] }}</text>
+        <text [attr.x]="x(i)" [attr.y]="y(v) - 8" text-anchor="middle" font-size="11">{{ v }}</text>
+      </ng-container>
+    </svg>
+  </div>
+</div>

@@ -43,6 +43,10 @@ import {
 } from './components/saisie-donnees-page/general/general-saisie-donnees-page.component';
 import { SyntheseEgesComponent } from './components/affichage-graphiques/synthese/synthese-eges-page.component';
 
+import { OutilSuiviPageComponent } from './components/affichage-graphiques/outil-suivi/outil-suivi-page.component';
+import { TrajectoireCarbonePageComponent } from './components/affichage-graphiques/trajectoire-carbone/trajectoire-carbone-page.component';
+import { PilotageScenarioPageComponent } from './components/affichage-graphiques/pilotage/pilotage-scenario-page.component';
+
 export const routes: Routes = [
   {
     path: '',
@@ -153,11 +157,10 @@ export const routes: Routes = [
     component: SyntheseEgesComponent,
     canActivate: [authGuard]
   },
-  {
-    path: 'synthese-eges',
-    component: SyntheseEgesComponent,
-    canActivate: [authGuard]
-  },
+  // DEV PUBLIC ROUTES (no auth, use fake data)
+  { path: 'outil-de-suivi', component: OutilSuiviPageComponent },
+  { path: 'trajectoire-carbone', component: TrajectoireCarbonePageComponent },
+  { path: 'pilotage-scenario', component: PilotageScenarioPageComponent },
   {
     path: '**',
     redirectTo: 'login',

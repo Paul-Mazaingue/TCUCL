@@ -1,0 +1,25 @@
+<div class="container">
+  <header class="header">
+    <button class="btn" (click)="goHome()">Accueil</button>
+    <h2>Outil de suivi (démo)</h2>
+  </header>
+
+  <div class="card">
+    <h3>Bar chart (données fictives)</h3>
+    <svg [attr.width]="520" [attr.height]="240">
+      <ng-container *ngFor="let v of data; let i = index">
+        <rect
+          [attr.x]="i * 80 + 40"
+          [attr.y]="200 - (v / max) * 160"
+          [attr.width]="50"
+          [attr.height]="(v / max) * 160"
+          fill="#329dd5"
+          rx="6" ry="6"
+        ></rect>
+        <text [attr.x]="i * 80 + 65" y="220" text-anchor="middle" font-size="12">{{ labels[i] }}</text>
+        <text [attr.x]="i * 80 + 65" [attr.y]="190 - (v / max) * 160" text-anchor="middle" font-size="11">{{ v }}</text>
+      </ng-container>
+      <line x1="20" y1="200" x2="500" y2="200" stroke="#ccc"></line>
+    </svg>
+  </div>
+</div>

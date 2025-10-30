@@ -6,6 +6,12 @@
     <h1>{{ PageTitle }}</h1>
   </div>
 
+  <div class="header-actions">
+    <button class="button primary-button" (click)="goToOutilSuivi()">Outil de suivi</button>
+    <button class="button primary-button" (click)="goToTrajectoireCarbone()">Trajectoire carbone</button>
+    <button class="button primary-button" (click)="goToPilotageScenario()">Pilotage par scénario</button>
+  </div>
+
   @if (isLoggedIn()) {
     <div class="account-info">
       <div class="info">
@@ -29,4 +35,6 @@
       </div>
     </div>
   }
+
+  
 </header>

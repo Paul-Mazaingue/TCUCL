@@ -165,11 +165,21 @@ export class HeaderSaisieDonneesComponent implements OnInit, AfterViewInit {
     this.router.navigate([`/trajectoire`]);
   }
 
-
-  private tabToRoute = ONGLET_ROUTES;
-
   goToSynthese() {
     this.router.navigate(['/synthese-eges']);
   }
+
+  // NEW: direct access to dev/demo pages
+  goToOutilSuivi() {
+    this.router.navigate(['/outil-de-suivi']);
+  }
+  goToTrajectoireCarbone() {
+    this.router.navigate(['/trajectoire-carbone']);
+  }
+  goToPilotageScenario() {
+    this.router.navigate(['/pilotage-scenario']);
+  }
+
+  private tabToRoute = ONGLET_ROUTES;
 
 }

@@ -29,6 +29,8 @@ export class HeaderComponent {
 
   dropdownOpen = false;
 
+  
+
   toggleDropdown(): void {
     this.dropdownOpen = !this.dropdownOpen;
   }
@@ -54,5 +56,16 @@ export class HeaderComponent {
 
   goToParams() {
     this.router.navigate(['/params']);
+  }
+
+  // Accès direct aux pages démo (publiques)
+  goToOutilSuivi() {
+    this.router.navigate(['/outil-de-suivi']);
+  }
+  goToTrajectoireCarbone() {
+    this.router.navigate(['/trajectoire-carbone']);
+  }
+  goToPilotageScenario() {
+    this.router.navigate(['/pilotage-scenario']);
   }
 }
