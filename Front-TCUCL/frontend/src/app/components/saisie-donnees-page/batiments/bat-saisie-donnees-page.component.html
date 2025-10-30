@@ -1,0 +1,266 @@
+<div class="main-container">
+  <!-- Section 1 : Parc immobilier -->
+  <div class="page-title">
+    <h2>Parc immobilier</h2>
+    <span class="help-icon" title="Merci de renseigner TOUS vos bâtiments qu'ils aient ou non moins de 50 ans, le calcul ne se fera que ceux qui ont moins de 50 ans soit par rapport à leur date de construction, soit leur date de dernière rénovation. Ainsi, seront calculées les émissions de G.E.S des bâtiments ayant été construits il y a moins de 50 ans et ceux ayant été construits il y a plus de 50 ans mais ayant fait l'objet d'une rénovation complète (ou d'un ensemble de rénovations conséquentes) il y a moins de 50 ans, dans ce cas les émissions associées seront moindres car il n'a pas fallu reconstruire une structure complète (qui pèse pour près de 50% des émissions d'un bâtiment). Ensuite, si vous avez réalisé une ACV du bâtiment, merci de renseigner la valeur réelle et la surface en m² sinon, merci de renseigner, le type de bâtiment, la structure et la surface en m².
+Vous pouvez ajouter / supprimer des bâtiments.
+Les bâtiments qui ont été renseignées les années précédentes sont encore présents dans la liste et le calcul s'ils sont encore en cours d'amortissement, il n'y a pas besoin de les saisir à nouveau.">
+        <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="black"></circle>
+          <rect x="11" y="10" width="2" height="6" fill="white"></rect>
+          <circle cx="12" cy="8" r="1" fill="white"></circle>
+        </svg>
+    </span>
+  </div>
+  <details>
+    <summary><strong>Saisir un nouveau bâtiment</strong></summary>
+
+    <label>Nom / Adresse :
+      <input type="text" [(ngModel)]="nouveauBatiment.nom_ou_adresse"/>
+    </label>
+
+    <label>Date de construction :
+      <input type="date" [(ngModel)]="nouveauBatiment.dateConstruction"/>
+    </label>
+
+    <label>Date de la dernière rénovation complète :
+      <input type="date" [(ngModel)]="nouveauBatiment.dateDerniereGrosseRenovation"/>
+    </label>
+
+    <label>Avez-vous une ACV de ce bâtiment ?
+      <select [(ngModel)]="nouveauBatiment.acvBatimentRealisee">
+        <option [ngValue]="true">Oui</option>
+        <option [ngValue]="false">Non</option>
+      </select>
+    </label>
+
+    <label *ngIf="nouveauBatiment.acvBatimentRealisee">Émissions de GES réelles (tCO2e/an) :
+      <input type="number" [(ngModel)]="nouveauBatiment.emissionsGesReellesTCO2"/>
+    </label>
+
+    <label>Type de bâtiment :
+      <select [(ngModel)]="nouveauBatiment.typeBatiment">
+        <option *ngFor="let type of batimentTypesLibelles" [ngValue]="type.value">
+          {{ type.label }}
+        </option>
+      </select>
+    </label>
+
+    <label>Surface (m²) :
+      <input type="number" [(ngModel)]="nouveauBatiment.surfaceEnM2"/>
+    </label>
+
+    <label>Type de structure :
+      <select [(ngModel)]="nouveauBatiment.typeStructure">
+        <option *ngFor="let structure of structureTypesLibelles" [ngValue]="structure.value">
+          {{ structure.label }}
+        </option>
+      </select>
+    </label>
+
+    <button (click)="ajouterBatiment()">Ajouter ce bâtiment</button>
+  </details>
+
+  <div *ngIf="batimentOnglet.batiments.length > 0">
+    <h3>Liste des bâtiments saisis</h3>
+    <table class="data-table">
+      <thead>
+      <tr>
+        <th>Nom / Adresse</th>
+        <th>Date construction</th>
+        <th>Dernière rénovation</th>
+        <th>ACV</th>
+        <th>Émissions GES</th>
+        <th>Type</th>
+        <th>Surface (m²)</th>
+        <th>Structure</th>
+        <th>Action</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let bat of batimentOnglet.batiments; let i = index">
+        <td>{{ bat.nom_ou_adresse }}</td>
+        <td>{{ bat.dateConstruction }}</td>
+        <td>{{ bat.dateDerniereGrosseRenovation }}</td>
+        <td>{{ bat.acvBatimentRealisee ? 'oui' : 'non' }}</td>
+        <td>{{ bat.emissionsGesReellesTCO2 }}</td>
+        <td>{{ getLibelleTypeBatiment(bat.typeBatiment) }}</td>
+        <td>{{ bat.surfaceEnM2 }}</td>
+        <td>{{ getLibelleTypeStructure(bat.typeStructure) }}</td>
+        <td>
+          <button (click)="supprimerBatiment(i)">🗑️</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+  <hr/>
+
+  <!-- Section 2 : Entretien et rénovations -->
+  <h2>Entretien et rénovations</h2>
+  <span class="help-icon" title="Merci de renseigner les petites rénovations qui ne concernent qu'un lot : par exemple si vous avez refait toutes les peintures et sols des 2 premiers étages ou si vous avez refait toutes les façades et menuiseries d'une façade… Merci donc de renseigner le type de travaux, l'année des travaux et la durée d'amortissement comptable choisie. Ensuite, si vous avez réalisé une analyse en cycle de vie, vous pouvez renseigner la donnée en Tonnes de CO2 sinon, renseigner le type de bâtiment, la surface concernée par les travaux et la durée d'amortissement. Attention, la surface concernée est celle impactée par les travaux. Par exemple, si vous installez une nouvelle centrale de traitement d'air dans un local de 30m² mais qui traitera l'air de 300m² de bâtiment, la valeur correspondante est 300m².
+Merci de ne renseigner que vos travaux de l'année, l'outil réintègre automatiquement les travaux précédents qui sont encore en cours d'amortissement.">
+        <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="black"></circle>
+          <rect x="11" y="10" width="2" height="6" fill="white"></rect>
+          <circle cx="12" cy="8" r="1" fill="white"></circle>
+        </svg>
+    </span>
+  <details>
+    <summary><strong>Saisir une rénovation ponctuelle</strong></summary>
+
+    <label>Nom du bâtiment :
+      <input type="text" [(ngModel)]="nouvelleReno.nom_adresse"/>
+    </label>
+
+    <label>Type de travaux :
+      <select [(ngModel)]="nouvelleReno.typeTravaux">
+        <option *ngFor="let travaux of travauxTypesLibelles" [ngValue]="travaux.value">
+          {{ travaux.label }}
+        </option>
+      </select>
+    </label>
+
+    <label>Date des travaux :
+      <input type="date" [(ngModel)]="nouvelleReno.dateTravaux"/>
+    </label>
+
+    <label>Type de bâtiment :
+      <select [(ngModel)]="nouvelleReno.typeBatiment">
+        <option *ngFor="let type of batimentTypesLibelles" [ngValue]="type.value">
+          {{ type.label }}
+        </option>
+      </select>
+    </label>
+
+    <label>Surface (m²) :
+      <input type="number" [(ngModel)]="nouvelleReno.surfaceConcernee"/>
+    </label>
+
+    <label>Durée amortissement (année) :
+      <input type="number" [(ngModel)]="nouvelleReno.dureeAmortissement"/>
+    </label>
+
+    <button (click)="ajouterEntretien()">Ajouter cette rénovation</button>
+  </details>
+
+  <div *ngIf="batimentOnglet.entretiens.length > 0">
+    <h3>Liste des entretiens et rénovations saisis</h3>
+    <table class="data-table">
+      <thead>
+      <tr>
+        <th>Nom / Adresse</th>
+        <th>Type de travaux</th>
+        <th>Date des travaux</th>
+        <th>Type de bâtiment</th>
+        <th>Surface (m²)</th>
+        <th>Durée amortissement</th>
+        <th>Action</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let reno of batimentOnglet.entretiens; let i = index">
+        <td>{{ reno.nom_adresse }}</td>
+        <td>{{ getLibelleTypeTravaux(reno.typeTravaux) }}</td>
+        <td>{{ reno.dateTravaux }}</td>
+        <td>{{ getLibelleTypeBatiment(reno.typeBatiment) }}</td>
+        <td>{{ reno.surfaceConcernee }}</td>
+        <td>{{ reno.dureeAmortissement }}</td>
+        <td>
+          <button (click)="supprimerRenovation(i)">🗑️</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+  <hr/>
+
+  <!-- Section 3 : Mobilier -->
+  <h2>Mobilier</h2>
+  <span class="help-icon" title="Merci de renseigner le nombre de chaque type d'équipements en cours d'amortissement comptable, la durée d'amortissement et idéalement le poids moyen pour les armoires, lits et tables (les données ADEME sont basées sur des armoires de plusieurs centaines de kilos par exemple, ce qui peut biaiser le calcul).
+    Si vous connaisez l'impact carbone du produit en question, vous pouvez l'indiquer pour plus de précisions.">
+        <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="black"></circle>
+          <rect x="11" y="10" width="2" height="6" fill="white"></rect>
+          <circle cx="12" cy="8" r="1" fill="white"></circle>
+        </svg>
+    </span>
+  <details>
+    <summary><strong>Saisir du mobilier</strong></summary>
+
+    <label>Type de mobilier :
+      <select [(ngModel)]="nouveauMobilier.mobilier">
+        <option *ngFor="let type of mobilierTypesLibelles" [ngValue]="type.value">
+          {{ type.label }}
+        </option>
+      </select>
+    </label>
+
+    <label>Nombre :
+      <input type="number" [(ngModel)]="nouveauMobilier.quantite"/>
+    </label>
+
+    <label>Poids (kg) :
+      <input type="number" [(ngModel)]="nouveauMobilier.poidsDuProduit"/>
+    </label>
+
+    <label>Durée amortissement (année) :
+      <input type="number" [(ngModel)]="nouveauMobilier.dureeAmortissement"/>
+    </label>
+
+    <button (click)="ajouterMobilier()">Ajouter ce mobilier</button>
+  </details>
+
+  <div class="mobilier-table" *ngIf="batimentOnglet.mobiliers.length > 0">
+    <h3>Liste du mobilier saisi</h3>
+    <table class="data-table">
+      <thead>
+      <tr>
+        <th>Mobilier</th>
+        <th>Quantité</th>
+        <th>Poids (kg)</th>
+        <th>Durée amortissement</th>
+        <th>Action</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let mobilier of batimentOnglet.mobiliers; let i = index">
+        <td>{{ getLibelleTypeMobilier(mobilier.mobilier) }}</td>
+        <td>{{ mobilier.quantite }}</td>
+        <td>{{ mobilier.poidsDuProduit }}</td>
+        <td>{{ mobilier.dureeAmortissement }}</td>
+        <td>
+          <button (click)="supprimerMobilier(i)">🗑️</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+  <hr/>
+  <div class="bottom-panel">
+    <h2>Résultats des émissions GES</h2>
+    <table class="data-table">
+      <thead>
+      <tr>
+        <th>Poste</th>
+        <th>Total (Tonnes CO2e)</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>Bâtiment (existant ou neuf construit)</td>
+        <td>{{ totalPosteBatiment }}</td>
+      </tr>
+      <tr>
+        <td>Entretien courant</td>
+        <td>{{ totalPosteEntretien }}</td>
+      </tr>
+      <tr>
+        <td>Mobilier électroménager</td>
+        <td>{{ totalPosteMobilier }}</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+  <app-save-footer [path]="ONGLET_KEYS.Batiments" (estTermineChange)="onEstTermineChange($event)"></app-save-footer>
+</div>

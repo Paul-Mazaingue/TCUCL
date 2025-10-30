@@ -1,0 +1,138 @@
+<div class="main-container">
+  <div class="panels-wrapper">
+    <div class="left-panel">
+    <div class="page-title">
+      <h2>Autres immobilisations</h2>
+      <span class="help-icon" title="Lorem ipsum">
+        <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="black"></circle>
+          <rect x="11" y="10" width="2" height="6" fill="white"></rect>
+          <circle cx="12" cy="8" r="1" fill="white"></circle>
+        </svg>
+      </span>
+    </div>
+    <div>
+      <h3>Panneaux photovoltaïques</h3>
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>Élément</th>
+          <th>Puissance totale</th>
+          <th>Durée de vie</th>
+          <th>Émissions GES connues ?</th>
+          <th>Émissions de GES réelles (tCO2e/an)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td>Installation complète</td>
+          <td></td>
+          <td></td>
+          <td>
+            <select [(ngModel)]="items.pvInstallationGESConnu" (change)="onGesConnuChange('pvInstallationGESConnu','pvInstallationGESReel')">
+              <option [value]="true">Oui</option>
+              <option [value]="false">Non</option>
+            </select>
+          </td>
+          <td><input type="number" [(ngModel)]="items.pvInstallationGESReel" (blur)="updateData()"
+                     [disabled]="items.pvInstallationGESConnu === false || items.pvInstallationGESConnu === 'false'"/></td>
+        </tr>
+        <tr>
+          <td>Panneaux</td>
+          <td><input type="number" [(ngModel)]="items.pvPanneauxPuissance" (blur)="updateData()"/></td>
+          <td><input type="number" [(ngModel)]="items.pvPanneauxDuree" (blur)="updateData()"/></td>
+          <td>
+            <select [(ngModel)]="items.pvPanneauxGESConnu" (change)="onGesConnuChange('pvPanneauxGESConnu','pvPanneauxGESReel')">
+              <option [value]="true">Oui</option>
+              <option [value]="false">Non</option>
+            </select>
+          </td>
+          <td><input type="number" [(ngModel)]="items.pvPanneauxGESReel" (blur)="updateData()"
+                     [disabled]="items.pvPanneauxGESConnu === false || items.pvPanneauxGESConnu === 'false'"/></td>
+        </tr>
+        <tr>
+          <td>Onduleurs</td>
+          <td><input type="number" [(ngModel)]="items.pvOnduleursPuissance" (blur)="updateData()"/></td>
+          <td><input type="number" [(ngModel)]="items.pvOnduleursDuree" (blur)="updateData()"/></td>
+          <td>
+            <select [(ngModel)]="items.pvOnduleursGESConnu" (change)="onGesConnuChange('pvOnduleursGESConnu','pvOnduleursGESReel')">
+              <option [value]="true">Oui</option>
+              <option [value]="false">Non</option>
+            </select>
+          </td>
+          <td><input type="number" [(ngModel)]="items.pvOnduleursGESReel" (blur)="updateData()"
+                     [disabled]="items.pvOnduleursGESConnu === false || items.pvOnduleursGESConnu === 'false'"/></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <hr/>
+
+    <h3>Machines électriques</h3>
+    <div class="machine-section">
+
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>Type</th>
+          <th>Nombre</th>
+          <th>Poids (en kg)</th>
+          <th>Amortissement</th>
+          <th>GES connu</th>
+          <th>GES réel</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr *ngFor="let machine of items.machines; let i = index">
+          <td>{{ machine.nom }}</td>
+          <td>
+            <input type="number" [(ngModel)]="machine.nombre" (blur)="updateData()"/>
+          </td>
+          <td>
+            <input type="number" [(ngModel)]="machine.poids" (blur)="updateData()"/>
+          </td>
+          <td>
+            <input type="number" [(ngModel)]="machine.amortissement" (blur)="updateData()"/>
+          </td>
+          <td>
+            <select [(ngModel)]="machine.gesConnu" (change)="onMachineGesConnuChange(machine)">
+              <option [value]="true">Oui</option>
+              <option [value]="false">Non</option>
+            </select>
+          </td>
+          <td>
+            <input type="number" [(ngModel)]="machine.gesReel" (blur)="updateData()"
+                   [disabled]="machine.gesConnu === false || machine.gesConnu === 'false'"/>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </div>
+  <div *ngIf="resultats" class="bottom-panel">
+    <h2>Résultats des émissions GES</h2>
+    <table class="data-table">
+      <thead>
+      <tr>
+        <th>Poste</th>
+        <th>Valeur (tCO2e/an)</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td>Total poste bâtiment</td>
+        <td>{{ resultats.totalPosteBatiment !== 'NaN' ? resultats.totalPosteBatiment : '0' }}</td>
+      </tr>
+      <tr>
+        <td>Total poste photovoltaïque</td>
+        <td>{{ resultats.totalPostePhotovoltaique !== 'NaN' ? resultats.totalPostePhotovoltaique : '0' }}</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <app-save-footer [path]="ONGLET_KEYS.AutreImmob"></app-save-footer>
+</div>
+

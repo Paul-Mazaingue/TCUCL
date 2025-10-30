@@ -1,0 +1,71 @@
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Node / Frontend (Angular) ---
+# ignore node modules anywhere in repo
+**/node_modules/
+# Angular build / caches
+**/dist/
+**/out-tsc/
+**/.angular/
+**/.angular/cache
+**/.sass-cache
+npm-debug.log*
+yarn-error.log
+pnpm-lock.yaml
+
+# --- Java / Backend (Maven/Gradle) ---
+**/target/
+**/build/
+**/out/
+**/*.class
+**/*.jar
+**/*.war
+**/*.ear
+
+# Maven wrapper - keep wrapper jar if you want it tracked, ignore other build artifacts
+!.mvn/wrapper/maven-wrapper.jar
+
+# --- IDEs / Editors ---
+.idea/
+*.iml
+.vscode/
+*.code-workspace
+.project
+.classpath
+.settings/
+.history/
+
+# --- Environment / local settings ---
+.env
+.env.*.local
+local.properties
+
+# --- Logs / reports / temp ---
+logs/
+*.log
+*.log.*
+/tmp/
+temp/
+coverage/
+coverage-report/
+test-results/
+*.tmp
+
+# --- Miscellaneous generated files ---
+/libpeerconnection.log
+connect.lock
+typings/
+.sass-cache/
+
+# --- Docker / CI ---
+docker-compose.override.yml
+docker-compose.*.yml
+
+# --- Keep important lock files tracked (do not ignore) ---
+# package-lock.json, yarn.lock should remain tracked for reproducible installs.
+
+# --- Safety: ignore any OS-specific hidden temp files ---
+*~ 
+# End of file
