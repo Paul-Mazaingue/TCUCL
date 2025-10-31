@@ -1,0 +1,58 @@
+.scenario-card {
+  padding: 30px 20px;
+  border-radius: 12px;
+  border: 1px solid #eaedf1;
+  max-width: 500px;
+  width: 100%;
+  height: 200px;
+
+  .header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+
+    .header {
+      .title {
+        font-size: 15px;
+        font-weight: 400;
+        margin-bottom: 5px;
+      }
+      .sub-title {
+        font-size: 13px;
+        font-weight: 300;
+      }
+    }
+  }
+  hr{
+    border: 1px solid #eaedf1;
+    margin-bottom: 5px;
+  }
+
+  .metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; 
+  font-weight: 400;
+
+  span{
+    font-size: 13px;
+  }
+  p{
+    font-size: 14px;
+  }
+}
+
+.metric .material-symbols-outlined {
+  font-size: 1.4rem;
+  color: #329dd5;
+}
+}

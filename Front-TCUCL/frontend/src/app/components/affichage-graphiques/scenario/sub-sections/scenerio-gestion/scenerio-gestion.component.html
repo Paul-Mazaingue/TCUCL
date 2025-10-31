@@ -1,0 +1,80 @@
+<div class="gestion-section">
+  <div class="header-section">
+    <div class="header">
+      <h4>Gestion des scénarios</h4>
+      <p>Creez et comparez differentes strategies de reduction</p>
+    </div>
+    <div class="buttons">
+      <button class="btn-primary" (click)="addScenario()">
+        <span class="material-symbols-outlined"> add </span>Nouveau scenario
+      </button>
+      <button class="btn-tertiary">Comparer</button>
+    </div>
+  </div>
+  <div class="card-section">
+    <!-- Scenario cards list -->
+
+    <div class="scenario-grid">
+      <div class="scenario-list">
+        <app-scenario-card
+          *ngFor="let scenario of scenarios"
+          [scenario]="scenario"
+          (duplicate)="duplicateScenario($event)"
+          (click)="selectScenario(scenario)"
+          (delete)="deleteScenario($event)"
+        ></app-scenario-card>
+      </div>
+
+      <div class="scenario-details" *ngIf="selectedScenario">
+        <div class="details-grid">
+          <div class="detail">
+            <span>Émissions totales</span>
+            <div>
+              <h4>{{ selectedScenario.totalEmission }}</h4>
+              <p>tCO₂e</p>
+            </div>
+          </div>
+
+          <div class="detail">
+            <span>Écart avec cible</span>
+            <div>
+              <h4>{{ selectedScenario.ecartCible }}</h4>
+              <p>tCO₂e à réduire</p>
+            </div>
+          </div>
+
+          <div class="detail">
+            <span>Réduction estimée</span>
+            <div>
+              <h4>{{ selectedScenario.reductionEstimee }}</h4>
+              <p>vs référence (4875 tCO₂e)</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form to add new scenario -->
+        <div class="scenario-form">
+          <input
+            placeholder="Scenario de reference"
+            [(ngModel)]="newScenario.name"
+          />
+          <input
+            placeholder="Description"
+            [(ngModel)]="newScenario.description"
+          />
+          <select [(ngModel)]="newScenario.name">
+            <option value="Scenario de reference" selected>
+              Scenario de reference
+            </option>
+            <option value="Scenario reduction energetique">
+              Scenario reduction energetique
+            </option>
+            <option value="Scenario mobilité durable">
+              Scenario mobilité durable
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

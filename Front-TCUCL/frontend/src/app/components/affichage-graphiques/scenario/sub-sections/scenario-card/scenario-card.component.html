@@ -1,0 +1,25 @@
+<div class="scenario-card">
+  <div class="header-section">
+    <div class="header">
+      <h5 class="title">{{ scenario.name }}</h5>
+      <p class="sub-title">{{ scenario.description }}</p>
+    </div>
+    <div class="icon-section">
+      <img src="/assets/copy.png" alt="Duplicate" (click)="onDuplicate()" />
+      <img src="/assets/delete.png" alt="Delete" (click)="onDelete()" />
+    </div>
+  </div>
+
+  <hr />
+
+  <div class="metrics">
+    <div class="metric">
+      <span>Émissions totales</span>
+      <p>{{ scenario.totalEmission }}</p>
+    </div>
+    <div class="metric">
+      <span>Réduction</span>
+      <p>{{ scenario.reductionEstimee }} %</p>
+    </div>
+  </div>
+</div>

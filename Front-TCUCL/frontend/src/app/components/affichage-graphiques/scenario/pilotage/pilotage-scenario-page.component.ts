@@ -1,18 +1,21 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { ScenerioGestionComponent } from "../sub-sections/scenerio-gestion/scenerio-gestion.component";
+import { RecommendationsComponent } from "../sub-sections/recommendations/recommendations.component";
 
 type Slice = { label: string; value: number; color: string };
 
 @Component({
   selector: 'app-pilotage-scenario',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ScenerioGestionComponent, RecommendationsComponent],
   templateUrl: './pilotage-scenario-page.component.html',
   styleUrls: ['./pilotage-scenario-page.component.scss']
 })
 export class PilotageScenarioPageComponent {
   constructor(private router: Router) {}
+  count=3;
 
   slices: Slice[] = [
     { label: 'Sobriété', value: 35, color: '#329dd5' },
