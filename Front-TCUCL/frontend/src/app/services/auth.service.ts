@@ -18,19 +18,24 @@ export class AuthService {
   login(email: string, password: string): Observable<boolean> {
     const loginData = { email: email, mdp: password };
 
-    return this.http.post<any>(ApiEndpoints.auth.connexion(), loginData).pipe(
-      tap(response => {
-        localStorage.setItem('auth_token', response.jeton);
-        this.userInfo.set(response.user);
-        this.isAuthenticated.set(true);
-      }),
-      map(() => true),
-      catchError(error => {
-        console.error('Erreur login', error);
-        this.isAuthenticated.set(false);
-        return of(false);
-      })
-    );
+    return this.http
+      .post<{ jeton: string; user: { firstName: string; lastName: string; email: string } }>(
+        ApiEndpoints.auth.connexion(),
+        loginData
+      )
+      .pipe(
+        tap(response => {
+          localStorage.setItem('auth_token', response.jeton);
+          this.userInfo.set(response.user);
+          this.isAuthenticated.set(true);
+        }),
+        map(() => true),
+        catchError(error => {
+          console.error('Erreur login', error);
+          this.isAuthenticated.set(false);
+          return of(false);
+        })
+      );
   }
 
   logout(): void {
