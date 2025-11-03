@@ -1,4 +1,4 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./outil-suivi-page.component.scss']
 })
 export class OutilSuiviPageComponent {
-  constructor(private router: Router) {}
+  constructor(private router: Router, private cdr: ChangeDetectorRef) {}
 
   // =============================================================
   // Navigation
@@ -38,6 +38,28 @@ export class OutilSuiviPageComponent {
   // TODO BACKEND: Remplacer la logique d'établissement par un chargement dynamique depuis le serveur
   etablissements = ['Campus Lyon', 'Campus Paris', 'Campus Lille'];
   selectedEtablissement = this.etablissements[0];
+  
+  // Méthode appelée quand l'établissement change
+  onEtablissementChange() {
+    // TODO BACKEND: Recharger toutes les données pour le nouvel établissement
+    // Exemples d'appels API à faire :
+    // - this.loadEmissionsUsager(this.selectedEtablissement);
+    //   .subscribe(data => { this.years = data.years; this.objectif = data.objectif; this.realise = data.realise; });
+    // - this.loadEmissionsGlobales(this.selectedEtablissement);
+    //   .subscribe(data => { this.globalTotals = data.totals; });
+    // - this.loadPostesData(this.selectedEtablissement);
+    //   .subscribe(data => { this.postesObjectifParAn = data.objectifParAn; this.postesRealiseParAn = data.realiseParAn; });
+    // - this.loadIndicateursData(this.selectedEtablissement);
+    //   .subscribe(data => { this.indicateursParAn = data.indicateursParAn; });
+    
+    // Après chaque chargement, appeler this.cdr.detectChanges() pour forcer la mise à jour
+    
+    // Pour l'instant, on recharge toutes les données fictives pour le nouvel établissement
+    this.loadMockData();
+    
+    // Forcer la détection de changements pour tous les graphiques
+    this.cdr.detectChanges();
+  }
 
   // =============================================================
   // Survol & Tooltip (graphique 1)
@@ -285,6 +307,8 @@ export class OutilSuiviPageComponent {
     // Fermer les menus de sélection
     if (this.compareMenuOpen) this.closeCompareMenu();
     if (this.comp4PostesMenuOpen) this.closeComp4PostesMenu();
+    if (this.indicateursYearsMenuOpen) this.closeIndicateursYearsMenu();
+    if (this.indicateursKeysMenuOpen) this.closeIndicateursKeysMenu();
     // Fermer les menus de téléchargement
     this.closeMenus();
   }
@@ -302,6 +326,11 @@ export class OutilSuiviPageComponent {
   private colorPalette = ['#329dd5', '#f39c12', '#8e44ad', '#16a085', '#e74c3c', '#3498db', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22'];
   getYearColor(year: number): string {
     const idx = this.compareYears.indexOf(year);
+    return idx >= 0 ? this.colorPalette[idx % this.colorPalette.length] : '#999';
+  }
+  // Couleur pour les années dans le menu des indicateurs
+  getIndicateurYearColor(year: number): string {
+    const idx = this.indicateursSelectedYears.indexOf(year);
     return idx >= 0 ? this.colorPalette[idx % this.colorPalette.length] : '#999';
   }
 
@@ -394,6 +423,182 @@ export class OutilSuiviPageComponent {
   }
 
   // =============================================================
+  // Graphique 5 (Suivi des indicateurs) - Données & Layout
+  // =============================================================
+  // TODO BACKEND: Remplacer les données d'indicateurs par des données API
+  // - Endpoint: GET /indicateurs?annee={year}&etablissement={id}
+  // - Réponse: { categories: Array<{nom: string, indicateurs: Array<{nom: string, valeur: number|null, unite: string}>}> }
+  
+  // Catégories d'indicateurs avec leurs sous-indicateurs
+  indicateursCategories: Array<{
+    nom: string;
+    indicateurs: Array<{ nom: string; unite: string; key: string }>;
+  }> = [
+    {
+      nom: 'ENERGIE ET BATIMENTS',
+      indicateurs: [
+        { nom: 'Consommation d\'énergie', unite: 'MWh', key: 'conso_energie' },
+        { nom: 'dont chauffage', unite: 'MWh', key: 'chauffage' },
+        { nom: 'dont électricité', unite: 'MWh', key: 'electricite' },
+        { nom: 'Intensité carbone de l\'énergie', unite: 'gCO2e/kWh', key: 'intensite_carbone_energie' }
+      ]
+    },
+    {
+      nom: 'DEPLACEMENTS DOMICILE TRAVAIL',
+      indicateurs: [
+        { nom: 'Distance totale réalisée salarié', unite: 'km', key: 'distance_salarie' },
+        { nom: 'Part modale voiture', unite: '', key: 'part_modale_voiture_salarie' },
+        { nom: 'Part modale voiture électrique', unite: '', key: 'part_modale_ve_salarie' },
+        { nom: 'Part modale modes doux', unite: '', key: 'part_modale_doux_salarie' },
+        { nom: 'Distance totale réalisée étudiants', unite: 'km', key: 'distance_etudiants' },
+        { nom: 'Part modale voiture', unite: '', key: 'part_modale_voiture_etudiants' },
+        { nom: 'Part modale voiture électrique', unite: '', key: 'part_modale_ve_etudiants' },
+        { nom: 'Part modale modes doux', unite: '', key: 'part_modale_doux_etudiants' },
+        { nom: 'Intensité carbone des trajets', unite: 'gCO2e/km', key: 'intensite_carbone_trajets' }
+      ]
+    },
+    {
+      nom: 'DEPLACEMENTS INTERNATIONAUX',
+      indicateurs: [
+        { nom: 'Distance totale', unite: 'km', key: 'distance_internationale' },
+        { nom: 'Intensité carbone des trajets', unite: 'gCO2e/km', key: 'intensite_carbone_international' }
+      ]
+    },
+    {
+      nom: 'IMMOBILISATIONS',
+      indicateurs: [
+        { nom: 'Nombre mobilier', unite: 'equipements', key: 'nb_mobilier' },
+        { nom: 'Nombre d\'équipements numériques', unite: 'equipements', key: 'nb_numerique' }
+      ]
+    },
+    {
+      nom: 'DECHETS',
+      indicateurs: [
+        { nom: 'Quantité de déchets', unite: 'tonnes', key: 'quantite_dechets' }
+      ]
+    }
+  ];
+  
+  // Valeurs des indicateurs par année (structure: Record<année, Record<key_indicateur, valeur>>)
+  indicateursParAn: Record<number, Record<string, number | null>> = {};
+  
+  // Années sélectionnées pour le graphique 5
+  indicateursSelectedYears: number[] = [this.years[0], this.years[this.years.length - 1]];
+  indicateursYearsMenuOpen = false;
+  toggleIndicateursYearsMenu() { this.indicateursYearsMenuOpen = !this.indicateursYearsMenuOpen; }
+  closeIndicateursYearsMenu() { this.indicateursYearsMenuOpen = false; }
+  isIndicateurYearSelected(year: number): boolean { return this.indicateursSelectedYears.includes(year); }
+  toggleIndicateurYear(year: number) {
+    const idx = this.indicateursSelectedYears.indexOf(year);
+    if (idx >= 0) {
+      this.indicateursSelectedYears.splice(idx, 1);
+    } else {
+      this.indicateursSelectedYears.push(year);
+      this.indicateursSelectedYears.sort((a, b) => a - b);
+    }
+  }
+  
+  // Indicateurs sélectionnés (par catégorie uniquement)
+  indicateursSelectedCategories: string[] = []; // vide => tous, sinon liste des catégories sélectionnées
+  indicateursKeysMenuOpen = false;
+  toggleIndicateursKeysMenu() { this.indicateursKeysMenuOpen = !this.indicateursKeysMenuOpen; }
+  closeIndicateursKeysMenu() { this.indicateursKeysMenuOpen = false; }
+  getAllIndicateurKeys(): string[] {
+    const keys: string[] = [];
+    this.indicateursCategories.forEach(cat => {
+      cat.indicateurs.forEach(ind => keys.push(ind.key));
+    });
+    return keys;
+  }
+  isCategorySelected(categorieNom: string): boolean {
+    return this.indicateursSelectedCategories.length === 0 || this.indicateursSelectedCategories.includes(categorieNom);
+  }
+  toggleCategory(categorieNom: string) {
+    const idx = this.indicateursSelectedCategories.indexOf(categorieNom);
+    if (idx >= 0) {
+      this.indicateursSelectedCategories.splice(idx, 1);
+    } else {
+      this.indicateursSelectedCategories.push(categorieNom);
+    }
+  }
+  isIndicateurKeySelected(key: string): boolean {
+    // Si toutes les catégories sont sélectionnées (liste vide) ou si la catégorie de cette key est sélectionnée
+    if (this.indicateursSelectedCategories.length === 0) return true;
+    const categorie = this.indicateursCategories.find(cat => cat.indicateurs.some(ind => ind.key === key));
+    return categorie ? this.isCategorySelected(categorie.nom) : false;
+  }
+  selectAllIndicateurs() { 
+    this.indicateursSelectedCategories = [];
+  }
+  getVisibleIndicateurs(): Array<{ categorie: string; indicateur: { nom: string; unite: string; key: string } }> {
+    const visible: Array<{ categorie: string; indicateur: { nom: string; unite: string; key: string } }> = [];
+    this.indicateursCategories.forEach(cat => {
+      cat.indicateurs.forEach(ind => {
+        if (this.isIndicateurKeySelected(ind.key)) {
+          visible.push({ categorie: cat.nom, indicateur: ind });
+        }
+      });
+    });
+    return visible;
+  }
+  getSelectedIndicateursCount(): number {
+    if (this.indicateursSelectedCategories.length === 0) return this.getAllIndicateurKeys().length;
+    let count = 0;
+    this.indicateursCategories.forEach(cat => {
+      if (this.isCategorySelected(cat.nom)) {
+        count += cat.indicateurs.length;
+      }
+    });
+    return count;
+  }
+  
+  // Calcul du pourcentage de variation pour un indicateur
+  getIndicateurDiffPct(year: number, key: string): string {
+    if (this.indicateursSelectedYears.length < 2 || this.indicateursSelectedYears[0] === year) return '-';
+    const refYear = this.indicateursSelectedYears[0];
+    const ref = this.indicateursParAn[refYear]?.[key];
+    const current = this.indicateursParAn[year]?.[key];
+    if (!isFinite(ref as number) || !isFinite(current as number) || ref === null || current === null || ref === 0) return '-';
+    const pct = Math.round((((current as number) - (ref as number)) / (ref as number)) * 100);
+    if (pct > 0) return `+${pct}%`; if (pct < 0) return `${pct}%`; return '0%';
+  }
+  
+  getIndicateurDiffColor(year: number, key: string): string {
+    const val = this.getIndicateurDiffPct(year, key);
+    if (val === '-' || val === '0%') return '#999';
+    return val.startsWith('+') ? '#e74c3c' : '#27ae60';
+  }
+  
+  // Graphique des indicateurs - Layout & helpers
+  getIndicateursChartHeight(): number {
+    const visible = this.getVisibleIndicateurs();
+    return Math.max(300, visible.length * 28 + 80);
+  }
+  getIndicateursChartMax(): number {
+    let max = 0;
+    this.getVisibleIndicateurs().forEach(item => {
+      this.indicateursSelectedYears.forEach(y => {
+        const val = this.indicateursParAn[y]?.[item.indicateur.key];
+        if (typeof val === 'number' && isFinite(val) && val > max) max = val;
+      });
+    });
+    return max || 1;
+  }
+  getIndicateurBarWidth(value: number): number {
+    const maxV = this.getIndicateursChartMax();
+    if (!maxV || value <= 0 || typeof value !== 'number') return 0;
+    const maxBarWidth = 180; // Largeur max d'une barre
+    return Math.min((value / maxV) * maxBarWidth, maxBarWidth);
+  }
+  getIndicateurBarX(yearIdx: number): number {
+    return 180 + yearIdx * 200;
+  }
+  getIndicateurValue(year: number, key: string): number {
+    const val = this.indicateursParAn[year]?.[key];
+    return (typeof val === 'number' && isFinite(val)) ? val : 0;
+  }
+
+  // =============================================================
   // Graphique global (tonnes CO2) - Données, échelle & tooltip
   // =============================================================
   // TODO BACKEND: Remplacer globalTotals par une série API de totaux annuels en tCO2
@@ -438,6 +643,11 @@ export class OutilSuiviPageComponent {
   // =============================================================
   // TODO BACKEND: Remplacer par un chargement initial (resolver ou ngOnInit avec service HTTP)
   ngOnInit(): void {
+    this.loadMockData();
+  }
+
+  // Méthode privée pour charger toutes les données fictives (appelée au init et au changement d'établissement)
+  private loadMockData() {
     // Graphique 2 scénarios (démo): profils contrastés par année
     const scenarios: Record<number, { obj: number[]; rea: number[] }> = {
       2018: { obj: [5, 140, 220, 260, 70, 30, 10, 8, 40], rea: [6, 180, 260, 320, 95, 42, 12, 12, 55] },
@@ -446,6 +656,11 @@ export class OutilSuiviPageComponent {
       2025: { obj: [3, 60, 90, 120, 60, 30, 10, 50, 40],  rea: [4, 55, 85, 130, 65, 38, 12, 90, 42] },
       2030: { obj: [2, 70, 130, 0, 70, 25, 8, 7, 5],     rea: [3, 65, 110, 0, 60, 22, 6, 10, 3] },
     };
+
+    // Réinitialiser les données
+    this.postesObjectifParAn = {};
+    this.postesRealiseParAn = {};
+    this.indicateursParAn = {};
 
     for (const y of this.years) {
       const s = scenarios[y];
@@ -457,21 +672,80 @@ export class OutilSuiviPageComponent {
 
     // Diff sécurisée (texte) pour Graphique 1
     this.diff = this.years.map((_, i) => this.getYearDiffText(i));
+
+    // Initialisation des données d'indicateurs (basées sur l'exemple de l'image)
+    // TODO BACKEND: Remplacer par des données API
+    const baseData = {
+      conso_energie: 3600,
+      chauffage: 1500,
+      electricite: 2100,
+      intensite_carbone_energie: 177.02,
+      distance_salarie: 2694930,
+      part_modale_voiture_salarie: 1,
+      part_modale_ve_salarie: 0,
+      part_modale_doux_salarie: 0,
+      distance_etudiants: 21288650,
+      part_modale_voiture_etudiants: 0,
+      part_modale_ve_etudiants: null,
+      part_modale_doux_etudiants: 1,
+      intensite_carbone_trajets: 91,
+      distance_internationale: 563211,
+      intensite_carbone_international: 145,
+      nb_mobilier: null,
+      nb_numerique: 4041,
+      quantite_dechets: 164
+    };
+
+    // Générer des données fictives pour toutes les années avec évolution progressive
+    this.years.forEach((y, idx) => {
+      const progress = idx / (this.years.length - 1); // 0 à 1
+      const reduction = 1 - (progress * 0.7); // Réduction de 0 à 70%
+      
+      this.indicateursParAn[y] = {
+        conso_energie: Math.round(baseData.conso_energie * reduction),
+        chauffage: Math.round(baseData.chauffage * reduction),
+        electricite: Math.round(baseData.electricite * reduction),
+        intensite_carbone_energie: baseData.intensite_carbone_energie ? baseData.intensite_carbone_energie * (1 - progress * 0.3) : null,
+        distance_salarie: Math.round(baseData.distance_salarie * reduction),
+        part_modale_voiture_salarie: baseData.part_modale_voiture_salarie ? Math.max(0, baseData.part_modale_voiture_salarie - progress * 0.3) : null,
+        part_modale_ve_salarie: baseData.part_modale_ve_salarie !== null ? Math.min(1, baseData.part_modale_ve_salarie + progress * 0.4) : null,
+        part_modale_doux_salarie: baseData.part_modale_doux_salarie ? Math.min(1, baseData.part_modale_doux_salarie + progress * 0.3) : null,
+        distance_etudiants: Math.round(baseData.distance_etudiants * reduction),
+        part_modale_voiture_etudiants: baseData.part_modale_voiture_etudiants !== null ? baseData.part_modale_voiture_etudiants : null,
+        part_modale_ve_etudiants: baseData.part_modale_ve_etudiants !== null ? progress * 0.2 : null,
+        part_modale_doux_etudiants: baseData.part_modale_doux_etudiants ? Math.min(1, baseData.part_modale_doux_etudiants + progress * 0.2) : null,
+        intensite_carbone_trajets: baseData.intensite_carbone_trajets ? baseData.intensite_carbone_trajets * (1 - progress * 0.4) : null,
+        distance_internationale: Math.round(baseData.distance_internationale * reduction),
+        intensite_carbone_international: baseData.intensite_carbone_international ? baseData.intensite_carbone_international * (1 - progress * 0.25) : null,
+        nb_mobilier: baseData.nb_mobilier !== null ? Math.round(baseData.nb_mobilier! + idx * 50) : null,
+        nb_numerique: Math.round(baseData.nb_numerique * (1 + progress * 0.5)),
+        quantite_dechets: Math.round(baseData.quantite_dechets * reduction)
+      };
+      
+      // S'assurer que toutes les clés existent
+      this.getAllIndicateurKeys().forEach(key => {
+        if (!(key in this.indicateursParAn[y])) {
+          this.indicateursParAn[y][key] = null;
+        }
+      });
+    });
   }
 
   // =============================================================
   // Actions de carte: menu download (PDF/CSV)
   // =============================================================
-  cardMenuOpen: { [key: string]: boolean } = { g1: false, g2: false, g3: false, g4: false };
-  toggleMenu(key: 'g1' | 'g2' | 'g3' | 'g4') {
+  cardMenuOpen: { [key: string]: boolean } = { g1: false, g2: false, g3: false, g4: false, g5: false };
+  toggleMenu(key: 'g1' | 'g2' | 'g3' | 'g4' | 'g5') {
     this.cardMenuOpen[key] = !this.cardMenuOpen[key];
     // Fermer les menus de sélection (années et postes) quand on ouvre le menu télécharger
     if (this.cardMenuOpen[key]) {
       if (this.compareMenuOpen) this.closeCompareMenu();
       if (this.comp4PostesMenuOpen) this.closeComp4PostesMenu();
+      if (this.indicateursYearsMenuOpen) this.closeIndicateursYearsMenu();
+      if (this.indicateursKeysMenuOpen) this.closeIndicateursKeysMenu();
     }
   }
-  closeMenus() { this.cardMenuOpen = { g1: false, g2: false, g3: false, g4: false }; }
+  closeMenus() { this.cardMenuOpen = { g1: false, g2: false, g3: false, g4: false, g5: false }; }
 
   private downloadBlob(content: Blob, filename: string) {
     const url = URL.createObjectURL(content);
@@ -520,7 +794,7 @@ export class OutilSuiviPageComponent {
     });
     return canvas.toDataURL('image/png');
   }
-  async downloadPdfFor(key: 'g1' | 'g2' | 'g3' | 'g4', svgRef: Element | null) {
+  async downloadPdfFor(key: 'g1' | 'g2' | 'g3' | 'g4' | 'g5', svgRef: Element | null) {
     if (!svgRef) return;
     try {
       const dataUrl = await this.elementToPngDataUrl(svgRef);
@@ -549,7 +823,7 @@ export class OutilSuiviPageComponent {
       this.closeMenus();
     }
   }
-  downloadCsvFor(key: 'g1' | 'g2' | 'g3' | 'g4') {
+  downloadCsvFor(key: 'g1' | 'g2' | 'g3' | 'g4' | 'g5') {
     let csv = '';
     if (key === 'g1') {
       csv += 'Annee;Objectif;Realise;Diff%\n';
@@ -582,6 +856,24 @@ export class OutilSuiviPageComponent {
         const vals = this.compareYears.map(y => (this.postesRealiseParAn[y]?.[i] ?? ''));
         const d = this.compareYears.length > 1 ? this.comp4DiffPct(this.compareYears[this.compareYears.length - 1], i) : '-';
         csv += `${p};${vals.join(';')};${d}\n`;
+      });
+    } else if (key === 'g5') {
+      // En-tête avec années sélectionnées
+      csv += `Categorie;Indicateur;Unite;${this.indicateursSelectedYears.map(y => y.toString()).join(';')};Diff%\n`;
+      const visible = this.getVisibleIndicateurs();
+      let lastCategorie = '';
+      visible.forEach(item => {
+        if (item.categorie !== lastCategorie) {
+          lastCategorie = item.categorie;
+        }
+        const vals = this.indicateursSelectedYears.map(y => {
+          const val = this.indicateursParAn[y]?.[item.indicateur.key];
+          return val !== null && val !== undefined ? val : '-';
+        });
+        const d = this.indicateursSelectedYears.length > 1 
+          ? this.getIndicateurDiffPct(this.indicateursSelectedYears[this.indicateursSelectedYears.length - 1], item.indicateur.key)
+          : '-';
+        csv += `${item.categorie};${item.indicateur.nom};${item.indicateur.unite};${vals.join(';')};${d}\n`;
       });
     }
     this.downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `export_${key}.csv`);
