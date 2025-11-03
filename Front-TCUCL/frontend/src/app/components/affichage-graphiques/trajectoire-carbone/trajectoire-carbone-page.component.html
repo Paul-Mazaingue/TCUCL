@@ -1,45 +1,68 @@
 <div class="page">
-
-  <!-- Barre d’actions en haut -->
+ 
   <section class="top-actions">
     <div class="top-actions__group">
       <button class="btn" (click)="exportCSV()">📄 CSV</button>
       <button class="btn btn-primary" (click)="exportPDF()">📘 PDF</button>
       <button class="btn btn-secondary" (click)="goHome()">← Retour</button>
     </div>
-
+  </section>
+ 
+  <header class="hero">
+    <div class="hero__left">
+      <h1 class="hero__title">Trajectoire carbone pour l’internationale</h1>
+      <p class="hero__subtitle">Construction et suivi de la trajectoire de réduction des émissions</p>
+    </div>
+ 
+    <div class="hero__right">
+      <span class="badge badge--soft">Enjeu 1,5°C et 2°C</span>
+      <span class="badge badge--primary">Objectif Net Zéro 2030</span>
+    </div>
+  </header>
+ 
+  <section class="filters-and-badge">
+    <div class="filters">
+      <div class="filter-card">
+        <label>Année de référence</label>
+        <select class="select" [(ngModel)]="startYear" (ngModelChange)="onStartYearSelect($event)">
+          <option *ngFor="let y of allowedYears" [ngValue]="y" [disabled]="y > endYear">{{ y }}</option>
+        </select>
+      </div>
+ 
+      <div class="filter-card">
+        <label>Année objectif</label>
+        <select class="select" [(ngModel)]="endYear" (ngModelChange)="onEndYearSelect($event)">
+          <option *ngFor="let y of allowedYears" [ngValue]="y" [disabled]="y < startYear">{{ y }}</option>
+        </select>
+      </div>
+ 
+      <div class="filter-card filter-card--slider">
+        <div class="filter-card__head">
+          <label>Baisse globale souhaitée</label>
+          <span class="percent-chip">{{ reduction }}%</span>
+        </div>
+        <input type="range" min="0" max="100" step="1" [(ngModel)]="reduction" (input)="onReductionInput($event)" />
+      </div>
+    </div>
+ 
     <aside class="wish-card">
-      <div class="wish-card__title">Baisse globale entre {{ startYear }} et {{ endYear }}</div>
-      <div class="wish-card__value">{{ overallDropBetweenPct | number:'1.0-0' }}%</div>
+      <div class="wish-card__title">
+        Baisse globale attendue entre {{ startYear }} et {{ endYear }}
+      </div>
+      <div class="wish-card__value">
+        {{ overallDropBetweenPct | number:'1.0-0' }}%
+      </div>
+      <div class="wish-card__hint">kgCO₂e/usagers</div>
     </aside>
   </section>
-
-  <!-- Filtres -->
-  <section class="filters">
-    <div class="filter-card">
-      <label>Année de référence</label>
-      <select class="select" [(ngModel)]="startYear" (ngModelChange)="onStartYearSelect($event)">
-        <option *ngFor="let y of allowedYears" [ngValue]="y" [disabled]="y > endYear">{{ y }}</option>
-      </select>
-    </div>
-
-    <div class="filter-card">
-      <label>Année objectif</label>
-      <select class="select" [(ngModel)]="endYear" (ngModelChange)="onEndYearSelect($event)">
-        <option *ngFor="let y of allowedYears" [ngValue]="y" [disabled]="y < startYear">{{ y }}</option>
-      </select>
-    </div>
-
-    <div class="filter-card filter-card--slider">
-      <div class="filter-card__head">
-        <label>Baisse globale souhaitée</label>
-        <span class="percent-chip">{{ reduction }}%</span>
-      </div>
-      <input type="range" min="0" max="100" step="1" [(ngModel)]="reduction" (input)="onReductionInput($event)" />
+ 
+  <section class="panel">
+    <h2 class="panel__title">Graphique de trajectoire</h2>
+    <div class="chart-wrap">
+      <canvas id="trajectory-chart"></canvas>
     </div>
   </section>
-
-  <!-- Tableau -->
+ 
   <section class="panel">
     <h2 class="panel__title">Tableau des valeurs</h2>
     <div class="table-container">
@@ -63,57 +86,5 @@
       </table>
     </div>
   </section>
-
-  <!-- ⚙️ Bouton paramètres avancés entre tableau et graphique -->
-  <div class="advanced-toggle">
-    <button class="btn btn-advanced" (click)="toggleAdvancedMode()">
-      {{ showAdvanced ? 'Masquer les paramètres avancés' : 'Paramètres avancés' }}
-    </button>
-  </div>
-
-  <!-- Panneau avancé -->
-  <section *ngIf="showAdvanced" class="panel advanced-panel">
-    <div class="advanced-header">
-      <h2 class="panel__title">Personnalisation des trajectoires par poste</h2>
-
-      <div class="advanced-stats">
-        <label class="lock-toggle">
-          <input type="checkbox" [(ngModel)]="lockGlobal" (change)="saveSettingsPublic()" />
-          🔒 Verrouiller l’objectif global ({{ reduction }}%)
-        </label>
-
-        <div class="weighted-info">
-          <span class="tag">Réduction pondérée actuelle :</span>
-          <strong>{{ weightedCurrentPct | number:'1.0-2' }}%</strong>
-          <span class="tag">Écart vs objectif :</span>
-          <strong [class.bad]="weightedGapPct>0" [class.good]="weightedGapPct<=0">
-            {{ weightedGapPct | number:'1.0-2' }} pts
-          </strong>
-        </div>
-
-        <button class="btn btn-secondary" (click)="resetPostes()">↺ Réinitialiser les postes</button>
-      </div>
-    </div>
-
-    <div class="advanced-grid">
-      <div class="poste-card" *ngFor="let p of postes">
-        <div class="poste-card__head">
-          <span class="poste-name">{{ p.nom }}</span>
-          <span class="poste-badge">{{ p.reductionBasePct | number:'1.0-0' }}%</span>
-        </div>
-        <input type="range" min="0" max="100"
-               [(ngModel)]="p.reductionBasePct"
-               (input)="onPosteReductionChange(p.id)" />
-      </div>
-    </div>
-  </section>
-
-  <!-- Graphique -->
-  <section class="panel">
-    <h2 class="panel__title">Graphique de trajectoire</h2>
-    <div class="chart-wrap">
-      <canvas id="trajectory-chart"></canvas>
-    </div>
-  </section>
-
+ 
 </div>
