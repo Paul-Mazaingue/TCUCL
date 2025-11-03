@@ -1,21 +1,90 @@
-<div class="container">
-  <header class="header">
-    <button class="btn" (click)="goHome()">Accueil</button>
-    <h2>Trajectoire carbone (démo)</h2>
+<div class="page">
+ 
+  <section class="top-actions">
+    <div class="top-actions__group">
+      <button class="btn" (click)="exportCSV()">📄 CSV</button>
+      <button class="btn btn-primary" (click)="exportPDF()">📘 PDF</button>
+      <button class="btn btn-secondary" (click)="goHome()">← Retour</button>
+    </div>
+  </section>
+ 
+  <header class="hero">
+    <div class="hero__left">
+      <h1 class="hero__title">Trajectoire carbone pour l’internationale</h1>
+      <p class="hero__subtitle">Construction et suivi de la trajectoire de réduction des émissions</p>
+    </div>
+ 
+    <div class="hero__right">
+      <span class="badge badge--soft">Enjeu 1,5°C et 2°C</span>
+      <span class="badge badge--primary">Objectif Net Zéro 2030</span>
+    </div>
   </header>
-
-  <div class="card">
-    <h3>Line chart (données fictives)</h3>
-    <svg [attr.width]="width" [attr.height]="height">
-      <line [attr.x1]="pad" [attr.y1]="height - pad" [attr.x2]="width - pad" [attr.y2]="height - pad" stroke="#ccc"></line>
-      <line [attr.x1]="pad" [attr.y1]="pad" [attr.x2]="pad" [attr.y2]="height - pad" stroke="#ccc"></line>
-
-      <polyline [attr.points]="polyline" fill="none" stroke="#329dd5" stroke-width="3"></polyline>
-      <ng-container *ngFor="let v of values; let i = index">
-        <circle [attr.cx]="x(i)" [attr.cy]="y(v)" r="4" fill="#329dd5"></circle>
-        <text [attr.x]="x(i)" [attr.y]="height - pad + 16" text-anchor="middle" font-size="12">{{ years[i] }}</text>
-        <text [attr.x]="x(i)" [attr.y]="y(v) - 8" text-anchor="middle" font-size="11">{{ v }}</text>
-      </ng-container>
-    </svg>
-  </div>
+ 
+  <section class="filters-and-badge">
+    <div class="filters">
+      <div class="filter-card">
+        <label>Année de référence</label>
+        <select class="select" [(ngModel)]="startYear" (ngModelChange)="onStartYearSelect($event)">
+          <option *ngFor="let y of allowedYears" [ngValue]="y" [disabled]="y > endYear">{{ y }}</option>
+        </select>
+      </div>
+ 
+      <div class="filter-card">
+        <label>Année objectif</label>
+        <select class="select" [(ngModel)]="endYear" (ngModelChange)="onEndYearSelect($event)">
+          <option *ngFor="let y of allowedYears" [ngValue]="y" [disabled]="y < startYear">{{ y }}</option>
+        </select>
+      </div>
+ 
+      <div class="filter-card filter-card--slider">
+        <div class="filter-card__head">
+          <label>Baisse globale souhaitée</label>
+          <span class="percent-chip">{{ reduction }}%</span>
+        </div>
+        <input type="range" min="0" max="100" step="1" [(ngModel)]="reduction" (input)="onReductionInput($event)" />
+      </div>
+    </div>
+ 
+    <aside class="wish-card">
+      <div class="wish-card__title">
+        Baisse globale attendue entre {{ startYear }} et {{ endYear }}
+      </div>
+      <div class="wish-card__value">
+        {{ overallDropBetweenPct | number:'1.0-0' }}%
+      </div>
+      <div class="wish-card__hint">kgCO₂e/usagers</div>
+    </aside>
+  </section>
+ 
+  <section class="panel">
+    <h2 class="panel__title">Graphique de trajectoire</h2>
+    <div class="chart-wrap">
+      <canvas id="trajectory-chart"></canvas>
+    </div>
+  </section>
+ 
+  <section class="panel">
+    <h2 class="panel__title">Tableau des valeurs</h2>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th class="sticky">Poste</th>
+            <th *ngFor="let y of years">{{ y }}</th>
+            <th>Baisse entre {{ startYear }} et {{ endYear }}</th>
+            <th>Baisse annuelle requise</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of tableRows">
+            <td class="sticky">{{ row.label }}</td>
+            <td *ngFor="let v of row.values" class="num">{{ v }}</td>
+            <td class="num">{{ row.dropBetweenPct }}%</td>
+            <td class="num">{{ row.annualRequiredPct }}%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+ 
 </div>
