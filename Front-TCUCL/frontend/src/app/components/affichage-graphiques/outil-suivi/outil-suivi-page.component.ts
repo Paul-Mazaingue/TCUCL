@@ -148,10 +148,10 @@ export class OutilSuiviPageComponent {
 
   selectedYearForPostes: number = this.years[0];
 
-  // Mise à l'échelle verticale (ancienne version des barres verticales)
-  postesBarWidth = 14; // largeur d'une barre individuelle (objectif ou réalisé)
-  postesGroupGap = 10; // espace entre les 2 barres d'un même poste (rapproché)
-  postesItemSpacing = 90; // espace entre postes (ajusté pour tenir sans scroll)
+  // Mise à l'échelle verticale
+  postesBarWidth = 14; // largeur d'une barre individuelle
+  postesGroupGap = 10; // espace entre les 2 barres d'un même poste
+  postesItemSpacing = 90; // espace entre postes
   postesMargin = 60;
   get postesSvgWidth(): number { return this.postesMargin * 2 + (this.postes.length - 1) * this.postesItemSpacing; }
   getPostX(index: number): number { return this.postesMargin + index * this.postesItemSpacing; }
@@ -165,13 +165,13 @@ export class OutilSuiviPageComponent {
 
   // ===== Graphique 2 (barres horizontales) =====
   // Mise en page: labels à gauche, barres horizontales duo (objectif bleu / réalisé orange)
-  postesLeftLabelWidth = 180; // aligné
+  postesLeftLabelWidth = 180;
   postesTopMargin = 24;
   postesBottomMargin = 24;
-  postesRowHeight = 46; // aligné
+  postesRowHeight = 46;
   postesBarHeight = 12;
-  postesBarsGap = 6; // aligné
-  postesRightMargin = 90; // aligné
+  postesBarsGap = 6;
+  postesRightMargin = 90;
   get postesHChartWidth(): number { return Math.min(920, this.postesLeftLabelWidth + 660 + this.postesRightMargin); }
   get postesHChartHeight(): number { return this.postesTopMargin + this.postesBottomMargin + this.postes.length * this.postesRowHeight; }
   get postesUsableWidth(): number { return this.postesHChartWidth - this.postesLeftLabelWidth - this.postesRightMargin; }
@@ -196,37 +196,119 @@ export class OutilSuiviPageComponent {
   getValueLabelX(value: number, year: number): number { const end = this.getBarEndX(value, year) + 6; return Math.min(end, this.postesHChartWidth - 8); }
 
   // =============================================================
-  // Graphique 3 (Réalisé A vs B par poste) - Layout & helpers
+  // Graphique 4 (Comparaison Réalisés multiples années par poste) - Layout & helpers
   // =============================================================
   // TODO BACKEND: Réutiliser les mêmes postes et valeurs réalisées pour différentes années (déjà prévu via postesRealiseParAn)
-  compareYearA: number = this.years[0];
-  compareYearB: number = this.years[this.years.length - 1];
-  compLeftLabelWidth = 180; compTopMargin = 24; compBottomMargin = 24; compRowHeight = 46; compBarHeight = 12; compBarsGap = 6; compRightMargin = 90;
-  get compChartWidth(): number { return Math.min(920, this.compLeftLabelWidth + 660 + this.compRightMargin); }
-  get compChartHeight(): number { return this.compTopMargin + this.compBottomMargin + this.postes.length * this.compRowHeight; }
-  get compUsableWidth(): number { return this.compChartWidth - this.compLeftLabelWidth - this.compRightMargin; }
-  compBarX(): number { return this.compLeftLabelWidth; }
-  compGroupY(i: number): number { return this.compTopMargin + i * this.compRowHeight + this.compRowHeight / 2; }
-  compBarAY(i: number): number { return this.compGroupY(i) - (this.compBarsGap / 2) - this.compBarHeight; }
-  compBarBY(i: number): number { return this.compGroupY(i) + (this.compBarsGap / 2); }
-  getCompMax(a: number, b: number): number {
-    const ra = this.postesRealiseParAn[a] ?? []; const rb = this.postesRealiseParAn[b] ?? [];
-    const merged = [...ra, ...rb].filter(v => typeof v === 'number' && isFinite(v));
-    return merged.length ? Math.max(...merged) : 1;
+  compareYears: number[] = [this.years[0], this.years[this.years.length - 1]]; // Par défaut première et dernière
+  // Mode de calcul des pourcentages: vs moyenne des années sélectionnées ou vs première année
+  comp4PercentMode: 'vs_mean' | 'vs_first' = 'vs_mean';
+  compareMenuOpen = false;
+  toggleCompareMenu() { this.compareMenuOpen = !this.compareMenuOpen; }
+  closeCompareMenu() { this.compareMenuOpen = false; }
+  // Fermer le menu si clic en dehors (appelé depuis le template)
+  onDocumentClick() { if (this.compareMenuOpen) this.closeCompareMenu(); }
+  toggleCompareYear(year: number) {
+    const idx = this.compareYears.indexOf(year);
+    if (idx >= 0) {
+      if (this.compareYears.length > 1) this.compareYears.splice(idx, 1);
+    } else {
+      this.compareYears.push(year);
+      this.compareYears.sort((a, b) => a - b);
+    }
   }
-  compWidthFor(value: number, a: number, b: number): number { const maxV = this.getCompMax(a, b) || 1; const w = value > 0 ? (value / maxV) * this.compUsableWidth : 0; return Math.max(0, Math.min(this.compUsableWidth, w)); }
-  compValueX(value: number, a: number, b: number): number { return Math.min(this.compBarX() + this.compWidthFor(value, a, b) + 6, this.compChartWidth - 8); }
-  compDiffPctText(yearA: number, yearB: number, index: number): string {
-    const ra = this.postesRealiseParAn[yearA]?.[index]; const rb = this.postesRealiseParAn[yearB]?.[index];
-    if (!isFinite(ra as number) || !isFinite(rb as number) || !ra) return '-';
-    const pct = Math.round((((rb as number) - (ra as number)) / (ra as number)) * 100);
+  isYearSelected(year: number): boolean { return this.compareYears.includes(year); }
+  // Palette de couleurs pour différencier les années
+  private colorPalette = ['#329dd5', '#f39c12', '#8e44ad', '#16a085', '#e74c3c', '#3498db', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22'];
+  getYearColor(year: number): string {
+    const idx = this.compareYears.indexOf(year);
+    return idx >= 0 ? this.colorPalette[idx % this.colorPalette.length] : '#999';
+  }
+
+  // Graphique 4: barres groupées empilées verticalement
+  comp4LeftLabelWidth = 200;
+  comp4TopMargin = 30;
+  comp4BottomMargin = 30;
+  comp4BarHeight = 16; // Hauteur d'une barre individuelle
+  comp4YearGap = 8; // Espace entre les années dans un même poste
+  comp4PosteGap = 12; // Espace entre les postes
+  comp4RightMargin = 80;
+  
+  get comp4ChartWidth(): number { return Math.min(1000, this.comp4LeftLabelWidth + 700 + this.comp4RightMargin); }
+  get comp4UsableWidth(): number { return this.comp4ChartWidth - this.comp4LeftLabelWidth - this.comp4RightMargin; }
+  get comp4BarStartX(): number { return this.comp4LeftLabelWidth; }
+  
+  // Hauteur d'un poste = (nombre années * (hauteur barre + gap)) - gap final
+  get comp4PosteHeight(): number {
+    if (this.compareYears.length === 0) return 20;
+    return this.compareYears.length * (this.comp4BarHeight + this.comp4YearGap) - this.comp4YearGap;
+  }
+  
+  get comp4ChartHeight(): number {
+    return this.comp4TopMargin + this.comp4BottomMargin + 
+           (this.postes.length * (this.comp4PosteHeight + this.comp4PosteGap)) - this.comp4PosteGap;
+  }
+  
+  // Y de départ d'un poste
+  comp4PosteY(posteIndex: number): number {
+    return this.comp4TopMargin + posteIndex * (this.comp4PosteHeight + this.comp4PosteGap);
+  }
+  
+  // Y d'une barre spécifique dans un poste
+  comp4BarY(posteIndex: number, yearIndex: number): number {
+    return this.comp4PosteY(posteIndex) + yearIndex * (this.comp4BarHeight + this.comp4YearGap);
+  }
+  
+  // Largeur max sur toutes les années sélectionnées
+  getComp4Max(): number {
+    const all: number[] = [];
+    this.compareYears.forEach(y => {
+      const vals = this.postesRealiseParAn[y] ?? [];
+      vals.forEach(v => { if (typeof v === 'number' && isFinite(v) && v > 0) all.push(v); });
+    });
+    return all.length ? Math.max(...all) : 1;
+  }
+  
+  comp4BarWidth(value: number): number {
+    const maxV = this.getComp4Max();
+    if (!maxV || value <= 0) return 0;
+    const w = (value / maxV) * this.comp4UsableWidth;
+    return Math.min(w, this.comp4UsableWidth);
+  }
+  
+  comp4ValueX(value: number): number {
+    const end = this.comp4BarStartX + this.comp4BarWidth(value) + 8;
+    return Math.min(end, this.comp4ChartWidth - 10);
+  }
+  
+  // Moyenne des valeurs réalisées sur les années sélectionnées (poste donné)
+  private comp4Mean(posteIndex: number): number | null {
+    const values: number[] = this.compareYears
+      .map(y => this.postesRealiseParAn[y]?.[posteIndex])
+      .filter(v => typeof v === 'number' && isFinite(v as number)) as number[];
+    if (!values.length) return null;
+    return values.reduce((a, b) => a + b, 0) / values.length;
+  }
+  // Pourcentage selon le mode sélectionné
+  comp4DiffPct(year: number, posteIndex: number): string {
+    const current = this.postesRealiseParAn[year]?.[posteIndex];
+    if (!isFinite(current as number)) return '-';
+    let ref: number | null = null;
+    if (this.comp4PercentMode === 'vs_first') {
+      if (this.compareYears.length < 2 || this.compareYears[0] === year) return '-';
+      ref = this.postesRealiseParAn[this.compareYears[0]]?.[posteIndex] as number;
+    } else {
+      // vs_mean: moyenne des années sélectionnées (incluant l'année courante)
+      ref = this.comp4Mean(posteIndex);
+    }
+    if (!isFinite(ref as number) || !ref || ref === 0) return '-';
+    const pct = Math.round((((current as number) - (ref as number)) / (ref as number)) * 100);
     if (pct > 0) return `+${pct}%`; if (pct < 0) return `${pct}%`; return '0%';
   }
-  compDiffColor(yearA: number, yearB: number, index: number): string {
-    const ra = this.postesRealiseParAn[yearA]?.[index]; const rb = this.postesRealiseParAn[yearB]?.[index];
-    if (!isFinite(ra as number) || !isFinite(rb as number) || !ra) return '#999';
-    const diff = (rb as number) - (ra as number);
-    return diff > 0 ? '#e74c3c' : (diff < 0 ? '#27ae60' : '#999');
+  
+  comp4DiffColor(year: number, posteIndex: number): string {
+    const val = this.comp4DiffPct(year, posteIndex);
+    if (val === '-' || val === '0%') return '#999';
+    return val.startsWith('+') ? '#e74c3c' : '#27ae60';
   }
 
   // =============================================================
@@ -241,7 +323,7 @@ export class OutilSuiviPageComponent {
   firstChartHeight = 300;
   // ===== Graphique global (tonnes CO2) =====
   // TODO BACKEND: remplacer par les totaux globaux (tonnes) par année
-  globalTotals = [12.0, 11.5, 10.9, 14, 10.3, 9.7, 9.2, 9.8, 17, 7.9, 15];
+  globalTotals = [12.0, 11.5, 10.9, 11.8, 10.3, 9.7, 9.2, 9.8, 8.4, 7.9, 7.2];
   get globalRef(): number { return this.globalTotals[0] ?? 0; }
   isValidGlobal(n: number): boolean { return typeof n === 'number' && isFinite(n) && n >= 0; }
   getGlobalNumbers(): number[] { return this.globalTotals.filter(v => this.isValidGlobal(v)); }
@@ -406,14 +488,11 @@ export class OutilSuiviPageComponent {
         csv += `${p};${oi};${ri};${d}\n`;
       });
     } else if (key === 'g4') {
-      csv += `Poste;Realise_${this.compareYearA};Realise_${this.compareYearB};Diff_vs_A%\n`;
-      const a = this.postesRealiseParAn[this.compareYearA] ?? [];
-      const b = this.postesRealiseParAn[this.compareYearB] ?? [];
+      csv += `Poste;${this.compareYears.map(y => `Realise_${y}`).join(';')};Diff_vs_premiere%\n`;
       this.postes.forEach((p, i) => {
-        const ai = a[i] ?? '';
-        const bi = b[i] ?? '';
-        const d = this.compDiffPctText(this.compareYearA, this.compareYearB, i);
-        csv += `${p};${ai};${bi};${d}\n`;
+        const vals = this.compareYears.map(y => (this.postesRealiseParAn[y]?.[i] ?? ''));
+        const d = this.compareYears.length > 1 ? this.comp4DiffPct(this.compareYears[this.compareYears.length - 1], i) : '-';
+        csv += `${p};${vals.join(';')};${d}\n`;
       });
     }
     this.downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `export_${key}.csv`);

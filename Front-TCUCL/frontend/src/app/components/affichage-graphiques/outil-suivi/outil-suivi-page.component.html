@@ -1,414 +1,460 @@
-<!-- outil-suivi-page.component.html -->
-<div class="container">
-  <header class="header">
-    <button class="back-btn" (click)="goHome()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M15 18l-6-6 6-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Retour
-    </button>
-    <h2 class="page-title">Suivi des évolutions du bilan carbone</h2>
-  </header>
-
-  <div class="filters">
-    <label for="etablissement">Établissement :</label>
-    <select id="etablissement" [(ngModel)]="selectedEtablissement">
-      <option *ngFor="let e of etablissements" [value]="e">{{ e }}</option>
-    </select>
-  </div>
-
-  <!-- ============================ -->
-  <!-- Graphique 1: Évolution usager -->
-  <!-- TODO BACKEND: lister les années et séries via API -->
-  <!-- ============================ -->
-  <div class="card">
-    <div class="card-actions">
-      <button class="icon-btn" (click)="toggleMenu('g1')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14" stroke="#24292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Télécharger
-      </button>
-      <div class="dropdown" *ngIf="cardMenuOpen['g1']">
-        <button (click)="downloadPdfFor('g1', svgG1)">Télécharger le graphique (PDF)</button>
-        <button (click)="downloadCsvFor('g1')">Télécharger les données (CSV)</button>
-      </div>
-    </div>
-    <h3>Évolution des émissions (kgCO₂e/usager)</h3>
-
-    <div class="chart-scroll">
-      <div class="chart-center">
-        <svg #svgG1 [attr.width]="svgWidth" [attr.height]="firstChartHeight">
-      <ng-container *ngFor="let year of years; let i = index">
-            <g (mouseenter)="onEnterBar(i)" (mouseleave)="onLeaveBar()" (mousemove)="onMoveBar($event, i)">
-              <!-- Partie grise : objectif (si réalisé absent) ou min(obj,rea) -->
-        <rect
-                *ngIf="getYearObj(i) !== null || getYearRea(i) !== null"
-                [attr.x]="getX(i)"
-                [attr.y]="getY(baseValue(i))"
-                [attr.width]="barWidth"
-                [attr.height]="getHeight(baseValue(i))"
-          fill="#999"
-                [ngClass]="{ 'bar-animated': true, 'bar-highlight': hoverBar === i }"
-        ></rect>
-
-              <!-- Partie rouge : dépassement au-dessus de l'objectif (si les deux existent) -->
-        <rect
-                *ngIf="greater(i)"
-                [attr.x]="getX(i)"
-                [attr.y]="getY(getYearRea(i)!)"
-                [attr.width]="barWidth"
-                [attr.height]="getHeight(getYearRea(i)! - getYearObj(i)!)"
-          fill="#e74c3c"
-                [ngClass]="{ 'bar-animated': true, 'bar-highlight': hoverBar === i }"
-        ></rect>
-
-              <!-- Partie verte : émissions plus faibles que l'objectif (si les deux existent) -->
-        <rect
-                *ngIf="less(i)"
-                [attr.x]="getX(i)"
-                [attr.y]="getY(getYearObj(i)!)"
-                [attr.width]="barWidth"
-                [attr.height]="getHeight(getYearObj(i)! - getYearRea(i)!)"
-          fill="#27ae60"
-                [ngClass]="{ 'bar-animated': true, 'bar-highlight': hoverBar === i }"
-        ></rect>
-
-        <!-- Année -->
-        <text
-                [attr.x]="getX(i) + barWidth/2"
-          y="275"
-          text-anchor="middle"
-          font-size="11"
-        >
-          {{ year }}
-        </text>
-
-              <!-- Indicateurs référence/cible -->
-              <text *ngIf="i === 0"
-                [attr.x]="getX(i) + barWidth/2"
-                y="298"
-                text-anchor="middle"
-                font-size="10"
-                fill="#888"
-                font-style="italic"
-              >Année de référence</text>
-              <text *ngIf="i === years.length - 1"
-                [attr.x]="getX(i) + barWidth/2"
-                y="298"
-                text-anchor="middle"
-                font-size="10"
-                fill="#888"
-                font-style="italic"
-              >Année cible</text>
-
-              <!-- Valeur affichée: réalisé si dispo, sinon objectif; toujours au-dessus du segment le plus haut -->
-        <text
-                *ngIf="yearLabelValue(i) !== null && yearTop(i) !== null"
-                [attr.x]="getX(i) + barWidth/2"
-                [attr.y]="getY(yearTop(i)!) - 6"
-          text-anchor="middle"
-          font-size="10"
-        >
-                {{ yearLabelValue(i) }}
-        </text>
-
-              <!-- Différence (sécurisée) -->
-        <text
-                [attr.x]="getX(i) + barWidth/2"
-                y="288"
-                text-anchor="middle"
-                font-size="10"
-                [attr.fill]="greater(i) ? '#e74c3c' : (less(i) ? '#27ae60' : '#999')"
-        >
-                {{ getYearDiffText(i) }}
-        </text>
-            </g>
-      </ng-container>
-
-      <!-- Axe -->
-          <line [attr.x1]="margin" y1="250" [attr.x2]="svgWidth - margin" y2="250" stroke="#ccc"></line>
+  <!-- outil-suivi-page.component.html -->
+  <div class="container">
+    <header class="header">
+      <button class="back-btn" (click)="goHome()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================ -->
-  <!-- Graphique 2: Global tCO2 -->
-  <!-- TODO BACKEND: récupérer les totaux globaux tCO2 par année -->
-  <!-- ============================ -->
-  <div class="card" style="margin-top:12px;">
-    <div class="card-actions">
-      <button class="icon-btn" (click)="toggleMenu('g2')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14" stroke="#24292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Télécharger
+        Retour
       </button>
-      <div class="dropdown" *ngIf="cardMenuOpen['g2']">
-        <button (click)="downloadPdfFor('g2', svgG2)">Télécharger le graphique (PDF)</button>
-        <button (click)="downloadCsvFor('g2')">Télécharger les données (CSV)</button>
-      </div>
-    </div>
-    <h3>Évolution des émissions globales (tCO₂)</h3>
-    <div class="chart-scroll">
-      <div class="chart-center">
-        <svg #svgG2 [attr.width]="svgWidth" [attr.height]="firstChartHeight">
-          <ng-container *ngFor="let year of years; let i = index">
-            <g (mouseenter)="onEnterGlobal(i)" (mouseleave)="onLeaveGlobal()" (mousemove)="onMoveGlobal($event, i)">
-              <!-- Barre simple -->
-              <rect
-                [attr.x]="getX(i)"
-                [attr.y]="getGlobalY(globalTotals[i])"
-                [attr.width]="barWidth"
-                [attr.height]="getGlobalHeight(globalTotals[i])"
-                fill="#329dd5"
-                [ngClass]="{ 'bar-animated': true, 'bar-highlight': hoverGlobalIndex === i }"
-              ></rect>
+      <h2 class="page-title">Suivi des évolutions du bilan carbone</h2>
+    </header>
 
-              <!-- Année -->
-              <text
-                [attr.x]="getX(i) + barWidth/2"
-                y="275"
-                text-anchor="middle"
-                font-size="11"
-              >
-                {{ year }}
-              </text>
-
-              <!-- Indicateurs référence/cible dynamiques -->
-              <text *ngIf="i === 0"
-                [attr.x]="getX(i) + barWidth/2"
-                y="298"
-                text-anchor="middle"
-                font-size="10"
-                fill="#888"
-                font-style="italic"
-              >Année de référence</text>
-              <text *ngIf="i === years.length - 1"
-                [attr.x]="getX(i) + barWidth/2"
-                y="298"
-                text-anchor="middle"
-                font-size="10"
-                fill="#888"
-                font-style="italic"
-              >Année cible</text>
-
-              <!-- Pourcentage vs référence -->
-              <text
-                [attr.x]="getX(i) + barWidth/2"
-                y="288"
-                text-anchor="middle"
-                font-size="10"
-                [attr.fill]="getGlobalDiffColor(i)"
-              >
-                {{ getGlobalDiffPct(i) }}
-              </text>
-
-              <!-- Valeur au-dessus de la barre (tCO2) -->
-              <text
-                [attr.x]="getX(i) + barWidth/2"
-                [attr.y]="getGlobalY(globalTotals[i]) - 6"
-                text-anchor="middle"
-                font-size="10"
-              >
-                {{ isValidGlobal(globalTotals[i]) ? globalTotals[i] : '-' }}
-              </text>
-            </g>
-          </ng-container>
-
-          <!-- Ligne horizontale au niveau de l'année de référence (base) -->
-          <line [attr.x1]="margin" [attr.y1]="getGlobalY(globalRef)" [attr.x2]="svgWidth - margin" [attr.y2]="getGlobalY(globalRef)" stroke="#999" stroke-dasharray="4 4"></line>
-
-          <!-- Axe -->
-          <line [attr.x1]="margin" y1="250" [attr.x2]="svgWidth - margin" y2="250" stroke="#ccc"></line>
-        </svg>
-      </div>
-    </div>
-  </div>
-
-  <!-- Séparateur stylé entre blocs -->
-  <div class="charts-separator"><span class="label">Synthèse / Détails</span></div>
-
-  <div class="card" style="margin-top:16px;">
-    <div class="card-actions">
-      <button class="icon-btn" (click)="toggleMenu('g3')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14" stroke="#24292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Télécharger
-      </button>
-      <div class="dropdown" *ngIf="cardMenuOpen['g3']">
-        <button (click)="downloadPdfFor('g3', svgG3)">Télécharger le graphique (PDF)</button>
-        <button (click)="downloadCsvFor('g3')">Télécharger les données (CSV)</button>
-      </div>
-    </div>
-    <h3>Suivi des émissions par poste (kgCO₂e/usager)</h3>
-
-    <div class="filters" style="margin-bottom:8px;">
-      <label for="anneePostes">Année :</label>
-      <select id="anneePostes" [(ngModel)]="selectedYearForPostes">
-        <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+    <div class="filters">
+      <label for="etablissement">Établissement :</label>
+      <select id="etablissement" [(ngModel)]="selectedEtablissement">
+        <option *ngFor="let e of etablissements" [value]="e">{{ e }}</option>
       </select>
     </div>
 
-    <div class="legend">
-      <span class="legend-item"><span class="legend-color objectif"></span>Objectif (Année {{ selectedYearForPostes }})</span>
-      <span class="legend-item"><span class="legend-color realise"></span>Réalisé (Année {{ selectedYearForPostes }})</span>
-    </div>
+    <!-- ============================ -->
+    <!-- Graphique 1: Évolution usager -->
+    <!-- TODO BACKEND: lister les années et séries via API -->
+    <!-- ============================ -->
+    <div class="card">
+      <div class="card-actions">
+        <button class="icon-btn" (click)="toggleMenu('g1')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14" stroke="#24292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Télécharger
+        </button>
+        <div class="dropdown" *ngIf="cardMenuOpen['g1']">
+          <button (click)="downloadPdfFor('g1', svgG1)">Télécharger le graphique (PDF)</button>
+          <button (click)="downloadCsvFor('g1')">Télécharger les données (CSV)</button>
+        </div>
+      </div>
+  <h3>Évolution des émissions (kgCO₂e/usager)</h3>
+  <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
 
-    <div class="chart-center">
-      <svg #svgG3 [attr.width]="postesHChartWidth" [attr.height]="postesHChartHeight">
-        <!-- Grille légère -->
-        <g>
-          <ng-container *ngFor="let tick of [0,0.25,0.5,0.75,1]; let ti = index">
-            <line [attr.x1]="postesLeftLabelWidth + tick * postesUsableWidth" y1="0"
-                  [attr.x2]="postesLeftLabelWidth + tick * postesUsableWidth" [attr.y2]="postesHChartHeight"
-                  stroke="#eee" stroke-dasharray="2 3" />
-          </ng-container>
-        </g>
-
-        <!-- Lignes par poste -->
-        <ng-container *ngFor="let poste of postes; let i = index">
-          <!-- Séparateur entre lignes (sauf avant la première) -->
-          <line *ngIf="i > 0"
-                [attr.x1]="0"
-                [attr.y1]="getPostGroupY(i) - (postesRowHeight/2)"
-                [attr.x2]="postesHChartWidth"
-                [attr.y2]="getPostGroupY(i) - (postesRowHeight/2)"
-                stroke="#eee" stroke-width="1" />
-
-          <!-- Label à gauche -->
-          <text [attr.x]="postesLeftLabelWidth - 8" [attr.y]="getPostGroupY(i) + 4" text-anchor="end" font-size="12">{{ poste }}</text>
-
-          <!-- Barre Objectif (au-dessus) -->
+      <div class="chart-scroll">
+        <!-- Légende -->
+        <div class="legend" style="margin: 4px 0 8px;">
+          <span class="legend-item"><span class="legend-color" style="background:#999"></span>Base (objectif / min)</span>
+          <span class="legend-item"><span class="legend-color" style="background:#e74c3c"></span>Dépassement (> objectif)</span>
+          <span class="legend-item"><span class="legend-color" style="background:#27ae60"></span>Inférieur à l'objectif</span>
+        </div>
+        <div class="chart-center">
+          <svg #svgG1 [attr.width]="svgWidth" [attr.height]="firstChartHeight">
+        <ng-container *ngFor="let year of years; let i = index">
+              <g (mouseenter)="onEnterBar(i)" (mouseleave)="onLeaveBar()" (mousemove)="onMoveBar($event, i)">
+                <!-- Partie grise : objectif (si réalisé absent) ou min(obj,rea) -->
           <rect
-            [attr.x]="getPostBarX()"
-            [attr.y]="getPostObjBarY(i)"
-            [attr.width]="getPostBarWidth(postesObjectifParAn[selectedYearForPostes][i] || 0, selectedYearForPostes)"
-            [attr.height]="postesBarHeight"
-            fill="#329dd5"
-            class="bar-animated"
+                  *ngIf="getYearObj(i) !== null || getYearRea(i) !== null"
+                  [attr.x]="getX(i)"
+                  [attr.y]="getY(baseValue(i))"
+                  [attr.width]="barWidth"
+                  [attr.height]="getHeight(baseValue(i))"
+            fill="#999"
+                  [ngClass]="{ 'bar-animated': true, 'bar-highlight': hoverBar === i }"
           ></rect>
 
-          <!-- Barre Réalisé (en-dessous) -->
+                <!-- Partie rouge : dépassement au-dessus de l'objectif (si les deux existent) -->
           <rect
-            [attr.x]="getPostBarX()"
-            [attr.y]="getPostReaBarY(i)"
-            [attr.width]="getPostBarWidth(postesRealiseParAn[selectedYearForPostes][i] || 0, selectedYearForPostes)"
-            [attr.height]="postesBarHeight"
-            fill="#f39c12"
-            class="bar-animated"
+                  *ngIf="greater(i)"
+                  [attr.x]="getX(i)"
+                  [attr.y]="getY(getYearRea(i)!)"
+                  [attr.width]="barWidth"
+                  [attr.height]="getHeight(getYearRea(i)! - getYearObj(i)!)"
+            fill="#e74c3c"
+                  [ngClass]="{ 'bar-animated': true, 'bar-highlight': hoverBar === i }"
           ></rect>
 
-          <!-- Valeurs au bout des barres (capées) -->
+                <!-- Partie verte : émissions plus faibles que l'objectif (si les deux existent) -->
+          <rect
+                  *ngIf="less(i)"
+                  [attr.x]="getX(i)"
+                  [attr.y]="getY(getYearObj(i)!)"
+                  [attr.width]="barWidth"
+                  [attr.height]="getHeight(getYearObj(i)! - getYearRea(i)!)"
+            fill="#27ae60"
+                  [ngClass]="{ 'bar-animated': true, 'bar-highlight': hoverBar === i }"
+          ></rect>
+
+          <!-- Année -->
           <text
-            [attr.x]="getValueLabelX(postesObjectifParAn[selectedYearForPostes][i] || 0, selectedYearForPostes)"
-            [attr.y]="getPostObjBarY(i) + postesBarHeight - 2"
-            font-size="11" fill="#329dd5">
-            {{ (postesObjectifParAn[selectedYearForPostes][i] > 0 ? postesObjectifParAn[selectedYearForPostes][i] : '-') }}
-          </text>
-          <text
-            [attr.x]="getValueLabelX(postesRealiseParAn[selectedYearForPostes][i] || 0, selectedYearForPostes)"
-            [attr.y]="getPostReaBarY(i) + postesBarHeight - 2"
-            font-size="11" fill="#f39c12">
-            {{ (postesRealiseParAn[selectedYearForPostes][i] > 0 ? postesRealiseParAn[selectedYearForPostes][i] : '-') }}
+                  [attr.x]="getX(i) + barWidth/2"
+            y="275"
+            text-anchor="middle"
+            font-size="11"
+          >
+            {{ year }}
           </text>
 
-          <!-- Différence à droite (dans la marge droite) -->
+                <!-- Indicateurs référence/cible -->
+                <text *ngIf="i === 0"
+                  [attr.x]="getX(i) + barWidth/2"
+                  y="298"
+                  text-anchor="middle"
+                  font-size="10"
+                  fill="#888"
+                  font-style="italic"
+                >Année de référence</text>
+                <text *ngIf="i === years.length - 1"
+                  [attr.x]="getX(i) + barWidth/2"
+                  y="298"
+                  text-anchor="middle"
+                  font-size="10"
+                  fill="#888"
+                  font-style="italic"
+                >Année cible</text>
+
+                <!-- Valeur affichée: réalisé si dispo, sinon objectif; toujours au-dessus du segment le plus haut -->
           <text
-            [attr.x]="postesHChartWidth - 8"
-            [attr.y]="getPostGroupY(i) + 4"
-            text-anchor="end"
-            font-size="12"
-            [attr.fill]="getPostDiffColor(postesObjectifParAn[selectedYearForPostes][i], postesRealiseParAn[selectedYearForPostes][i])">
-            {{ getPostDiffPct(postesObjectifParAn[selectedYearForPostes][i], postesRealiseParAn[selectedYearForPostes][i]) }}
+                  *ngIf="yearLabelValue(i) !== null && yearTop(i) !== null"
+                  [attr.x]="getX(i) + barWidth/2"
+                  [attr.y]="getY(yearTop(i)!) - 6"
+            text-anchor="middle"
+            font-size="10"
+          >
+                  {{ yearLabelValue(i) }}
           </text>
+
+                <!-- Différence (sécurisée) -->
+          <text
+                  [attr.x]="getX(i) + barWidth/2"
+                  y="288"
+                  text-anchor="middle"
+                  font-size="10"
+                  [attr.fill]="greater(i) ? '#e74c3c' : (less(i) ? '#27ae60' : '#999')"
+          >
+                  {{ getYearDiffText(i) }}
+          </text>
+              </g>
         </ng-container>
-      </svg>
-    </div>
-  </div>
 
-  <div class="card" style="margin-top:16px;">
-    <div class="card-actions">
-      <button class="icon-btn" (click)="toggleMenu('g4')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14" stroke="#24292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Télécharger
-      </button>
-      <div class="dropdown" *ngIf="cardMenuOpen['g4']">
-        <button (click)="downloadPdfFor('g4', svgG4)">Télécharger le graphique (PDF)</button>
-        <button (click)="downloadCsvFor('g4')">Télécharger les données (CSV)</button>
+        <!-- Axe -->
+            <line [attr.x1]="margin" y1="250" [attr.x2]="svgWidth - margin" y2="250" stroke="#ccc"></line>
+          </svg>
+        </div>
       </div>
     </div>
+
+    <!-- ============================ -->
+    <!-- Graphique 2: Global tCO2 -->
+    <!-- TODO BACKEND: récupérer les totaux globaux tCO2 par année -->
+    <!-- ============================ -->
+    <div class="card" style="margin-top:12px;">
+      <div class="card-actions">
+        <button class="icon-btn" (click)="toggleMenu('g2')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14" stroke="#24292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Télécharger
+        </button>
+        <div class="dropdown" *ngIf="cardMenuOpen['g2']">
+          <button (click)="downloadPdfFor('g2', svgG2)">Télécharger le graphique (PDF)</button>
+          <button (click)="downloadCsvFor('g2')">Télécharger les données (CSV)</button>
+        </div>
+      </div>
+  <h3>Évolution des émissions globales (tCO₂)</h3>
+  <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+      <div class="chart-scroll">
+        <!-- Légende -->
+        <div class="legend" style="margin: 4px 0 8px;">
+          <span class="legend-item"><span class="legend-color" style="background:#329dd5"></span>Émissions annuelles (tCO₂)</span>
+          <span class="legend-item"><span class="legend-color" style="background:#999"></span>Ligne de référence (année de ref.)</span>
+        </div>
+        <div class="chart-center">
+          <svg #svgG2 [attr.width]="svgWidth" [attr.height]="firstChartHeight">
+            <ng-container *ngFor="let year of years; let i = index">
+              <g (mouseenter)="onEnterGlobal(i)" (mouseleave)="onLeaveGlobal()" (mousemove)="onMoveGlobal($event, i)">
+                <!-- Barre simple -->
+                <rect
+                  [attr.x]="getX(i)"
+                  [attr.y]="getGlobalY(globalTotals[i])"
+                  [attr.width]="barWidth"
+                  [attr.height]="getGlobalHeight(globalTotals[i])"
+                  fill="#329dd5"
+                  [ngClass]="{ 'bar-animated': true, 'bar-highlight': hoverGlobalIndex === i }"
+                ></rect>
+
+                <!-- Année -->
+                <text
+                  [attr.x]="getX(i) + barWidth/2"
+                  y="275"
+                  text-anchor="middle"
+                  font-size="11"
+                >
+                  {{ year }}
+                </text>
+
+                <!-- Indicateurs référence/cible dynamiques -->
+                <text *ngIf="i === 0"
+                  [attr.x]="getX(i) + barWidth/2"
+                  y="298"
+                  text-anchor="middle"
+                  font-size="10"
+                  fill="#888"
+                  font-style="italic"
+                >Année de référence</text>
+                <text *ngIf="i === years.length - 1"
+                  [attr.x]="getX(i) + barWidth/2"
+                  y="298"
+                  text-anchor="middle"
+                  font-size="10"
+                  fill="#888"
+                  font-style="italic"
+                >Année cible</text>
+
+                <!-- Pourcentage vs référence -->
+                <text
+                  [attr.x]="getX(i) + barWidth/2"
+                  y="288"
+                  text-anchor="middle"
+                  font-size="10"
+                  [attr.fill]="getGlobalDiffColor(i)"
+                >
+                  {{ getGlobalDiffPct(i) }}
+                </text>
+
+                <!-- Valeur au-dessus de la barre (tCO2) -->
+                <text
+                  [attr.x]="getX(i) + barWidth/2"
+                  [attr.y]="getGlobalY(globalTotals[i]) - 6"
+                  text-anchor="middle"
+                  font-size="10"
+                >
+                  {{ isValidGlobal(globalTotals[i]) ? globalTotals[i] : '-' }}
+                </text>
+              </g>
+            </ng-container>
+
+            <!-- Ligne horizontale au niveau de l'année de référence (base) -->
+            <line [attr.x1]="margin" [attr.y1]="getGlobalY(globalRef)" [attr.x2]="svgWidth - margin" [attr.y2]="getGlobalY(globalRef)" stroke="#999" stroke-dasharray="4 4"></line>
+
+            <!-- Axe -->
+            <line [attr.x1]="margin" y1="250" [attr.x2]="svgWidth - margin" y2="250" stroke="#ccc"></line>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Séparateur stylé entre blocs -->
+    <div class="charts-separator"><span class="label">Synthèse / Détails</span></div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-actions">
+        <button class="icon-btn" (click)="toggleMenu('g3')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14" stroke="#24292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Télécharger
+        </button>
+        <div class="dropdown" *ngIf="cardMenuOpen['g3']">
+          <button (click)="downloadPdfFor('g3', svgG3)">Télécharger le graphique (PDF)</button>
+          <button (click)="downloadCsvFor('g3')">Télécharger les données (CSV)</button>
+        </div>
+      </div>
+      <h3>Suivi des émissions par poste (kgCO₂e/usager)</h3>
+      <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+
+      <div class="filters" style="margin-bottom:8px;">
+        <label for="anneePostes">Année :</label>
+        <select id="anneePostes" [(ngModel)]="selectedYearForPostes">
+          <option *ngFor="let y of years" [value]="y">{{ y }}</option>
+        </select>
+      </div>
+
+      <div class="legend">
+        <span class="legend-item"><span class="legend-color objectif"></span>Objectif (Année {{ selectedYearForPostes }})</span>
+        <span class="legend-item"><span class="legend-color realise"></span>Réalisé (Année {{ selectedYearForPostes }})</span>
+      </div>
+
+      <div class="chart-center">
+        <svg #svgG3 [attr.width]="postesHChartWidth" [attr.height]="postesHChartHeight">
+          <!-- Grille légère -->
+          <g>
+            <ng-container *ngFor="let tick of [0,0.25,0.5,0.75,1]; let ti = index">
+              <line [attr.x1]="postesLeftLabelWidth + tick * postesUsableWidth" y1="0"
+                    [attr.x2]="postesLeftLabelWidth + tick * postesUsableWidth" [attr.y2]="postesHChartHeight"
+                    stroke="#eee" stroke-dasharray="2 3" />
+            </ng-container>
+          </g>
+
+          <!-- Lignes par poste -->
+          <ng-container *ngFor="let poste of postes; let i = index">
+            <!-- Séparateur entre lignes (sauf avant la première) -->
+            <line *ngIf="i > 0"
+                  [attr.x1]="0"
+                  [attr.y1]="getPostGroupY(i) - (postesRowHeight/2)"
+                  [attr.x2]="postesHChartWidth"
+                  [attr.y2]="getPostGroupY(i) - (postesRowHeight/2)"
+                  stroke="#eee" stroke-width="1" />
+
+            <!-- Label à gauche -->
+            <text [attr.x]="postesLeftLabelWidth - 8" [attr.y]="getPostGroupY(i) + 4" text-anchor="end" font-size="12">{{ poste }}</text>
+
+            <!-- Barre Objectif (au-dessus) -->
+            <rect
+              [attr.x]="getPostBarX()"
+              [attr.y]="getPostObjBarY(i)"
+              [attr.width]="getPostBarWidth(postesObjectifParAn[selectedYearForPostes][i] || 0, selectedYearForPostes)"
+              [attr.height]="postesBarHeight"
+              fill="#329dd5"
+              class="bar-animated"
+            ></rect>
+
+            <!-- Barre Réalisé (en-dessous) -->
+            <rect
+              [attr.x]="getPostBarX()"
+              [attr.y]="getPostReaBarY(i)"
+              [attr.width]="getPostBarWidth(postesRealiseParAn[selectedYearForPostes][i] || 0, selectedYearForPostes)"
+              [attr.height]="postesBarHeight"
+              fill="#f39c12"
+              class="bar-animated"
+            ></rect>
+
+            <!-- Valeurs au bout des barres (capées) -->
+            <text
+              [attr.x]="getValueLabelX(postesObjectifParAn[selectedYearForPostes][i] || 0, selectedYearForPostes)"
+              [attr.y]="getPostObjBarY(i) + postesBarHeight - 2"
+              font-size="11" fill="#329dd5">
+              {{ (postesObjectifParAn[selectedYearForPostes][i] > 0 ? postesObjectifParAn[selectedYearForPostes][i] : '-') }}
+            </text>
+            <text
+              [attr.x]="getValueLabelX(postesRealiseParAn[selectedYearForPostes][i] || 0, selectedYearForPostes)"
+              [attr.y]="getPostReaBarY(i) + postesBarHeight - 2"
+              font-size="11" fill="#f39c12">
+              {{ (postesRealiseParAn[selectedYearForPostes][i] > 0 ? postesRealiseParAn[selectedYearForPostes][i] : '-') }}
+            </text>
+
+            <!-- Différence à droite (dans la marge droite) -->
+            <text
+              [attr.x]="postesHChartWidth - 8"
+              [attr.y]="getPostGroupY(i) + 4"
+              text-anchor="end"
+              font-size="12"
+              [attr.fill]="getPostDiffColor(postesObjectifParAn[selectedYearForPostes][i], postesRealiseParAn[selectedYearForPostes][i])">
+              {{ getPostDiffPct(postesObjectifParAn[selectedYearForPostes][i], postesRealiseParAn[selectedYearForPostes][i]) }}
+            </text>
+          </ng-container>
+        </svg>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;" (click)="onDocumentClick()">
+      <div class="card-actions">
+        <button class="icon-btn" (click)="toggleMenu('g4')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14" stroke="#24292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Télécharger
+        </button>
+        <div class="dropdown" *ngIf="cardMenuOpen['g4']">
+          <button (click)="downloadPdfFor('g4', svgG4)">Télécharger le graphique (PDF)</button>
+          <button (click)="downloadCsvFor('g4')">Télécharger les données (CSV)</button>
+        </div>
+      </div>
     <h3>Suivi des indicateurs</h3>
+    <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
 
-    <div class="filters" style="margin-bottom:8px;">
-      <label for="anneeA">Année :</label>
-      <select id="anneeA" [(ngModel)]="compareYearA">
-        <option *ngFor="let y of years" [value]="y">{{ y }}</option>
-      </select>
-      <label for="anneeB">Année :</label>
-      <select id="anneeB" [(ngModel)]="compareYearB">
-        <option *ngFor="let y of years" [value]="y">{{ y }}</option>
-      </select>
-    </div>
+      <div class="filters" style="margin-bottom:8px; position: relative;" (click)="$event.stopPropagation()">
+        <label>Sélectionner les années à comparer :</label>
+        <button class="year-select-btn" (click)="toggleCompareMenu(); $event.stopPropagation()">
+          {{ compareYears.length }} année{{ compareYears.length > 1 ? 's' : '' }} sélectionnée{{ compareYears.length > 1 ? 's' : '' }}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 9l6 6 6-6" stroke="#24292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="year-select-dropdown" *ngIf="compareMenuOpen" (click)="$event.stopPropagation()">
+          <ng-container *ngFor="let y of years">
+            <label class="year-checkbox-label">
+              <input type="checkbox" [checked]="isYearSelected(y)" (change)="toggleCompareYear(y)" />
+              <span class="year-checkbox-indicator" [style.background-color]="getYearColor(y)"></span>
+              <span>Année {{ y }}</span>
+            </label>
+          </ng-container>
+        </div>
+      </div>
 
     <div class="legend">
-      <span class="legend-item"><span class="legend-color objectif" style="background:#8e44ad"></span>Année {{ compareYearA }}</span>
-      <span class="legend-item"><span class="legend-color realise" style="background:#16a085"></span>Année {{ compareYearB }}</span>
+      <span class="legend-item" *ngFor="let y of compareYears">
+        <span class="legend-color realise" [style.background-color]="getYearColor(y)"></span>
+        Année {{ y }}
+      </span>
+      <span style="margin-left:auto; display:inline-flex; align-items:center; gap:8px;">
+        <label for="pctMode" style="font-size:12px; color:#555;">Référence % :</label>
+        <select id="pctMode" [(ngModel)]="comp4PercentMode" style="padding:4px 6px; border:1px solid #d0d7de; border-radius:6px; font-size:12px;">
+          <option value="vs_mean">Moyenne (sélection)</option>
+          <option value="vs_first">Première année</option>
+        </select>
+      </span>
     </div>
 
-    <div class="chart-center">
-      <svg #svgG4 [attr.width]="compChartWidth" [attr.height]="compChartHeight">
-        <!-- Grille légère -->
-        <g>
-          <ng-container *ngFor="let tick of [0,0.25,0.5,0.75,1]">
-            <line [attr.x1]="compLeftLabelWidth + tick * compUsableWidth" y1="0"
-                  [attr.x2]="compLeftLabelWidth + tick * compUsableWidth" [attr.y2]="compChartHeight"
-                  stroke="#eee" stroke-dasharray="2 3" />
+      <div class="chart-scroll">
+        <svg #svgG4 [attr.width]="comp4ChartWidth" [attr.height]="comp4ChartHeight">
+          <!-- Grille verticale légère -->
+          <g>
+            <ng-container *ngFor="let tick of [0,0.25,0.5,0.75,1]">
+              <line [attr.x1]="comp4BarStartX + tick * comp4UsableWidth" y1="0"
+                    [attr.x2]="comp4BarStartX + tick * comp4UsableWidth" [attr.y2]="comp4ChartHeight"
+                    stroke="#f0f0f0" stroke-dasharray="2 2" />
+            </ng-container>
+          </g>
+
+          <ng-container *ngFor="let poste of postes; let posteIdx = index">
+            <!-- Séparateur entre postes -->
+            <line *ngIf="posteIdx > 0"
+                  [attr.x1]="0" [attr.y1]="comp4PosteY(posteIdx) - comp4PosteGap/2"
+                  [attr.x2]="comp4ChartWidth" [attr.y2]="comp4PosteY(posteIdx) - comp4PosteGap/2"
+                  stroke="#e8e8e8" stroke-width="1" />
+
+            <!-- Label du poste (au centre vertical du groupe) -->
+            <text [attr.x]="comp4LeftLabelWidth - 10"
+                  [attr.y]="comp4PosteY(posteIdx) + comp4PosteHeight/2 + 4"
+                  text-anchor="end" font-size="12" fill="#333">
+              {{ poste }}
+            </text>
+
+            <!-- Barres pour chaque année sélectionnée -->
+            <ng-container *ngFor="let year of compareYears; let yearIdx = index">
+              <!-- Barre -->
+              <rect [attr.x]="comp4BarStartX"
+                    [attr.y]="comp4BarY(posteIdx, yearIdx)"
+                    [attr.width]="comp4BarWidth(postesRealiseParAn[year][posteIdx] || 0)"
+                    [attr.height]="comp4BarHeight"
+                    [attr.fill]="getYearColor(year)"
+                    class="bar-animated"
+                    rx="2"></rect>
+              
+              <!-- Valeur au bout de la barre -->
+              <text [attr.x]="comp4ValueX(postesRealiseParAn[year][posteIdx] || 0)"
+                    [attr.y]="comp4BarY(posteIdx, yearIdx) + comp4BarHeight/2 + 4"
+                    font-size="11"
+                    [attr.fill]="getYearColor(year)"
+                    dominant-baseline="middle">
+                {{ (postesRealiseParAn[year][posteIdx] && postesRealiseParAn[year][posteIdx] > 0) ? postesRealiseParAn[year][posteIdx] : '-' }}
+              </text>
+            </ng-container>
+
+          <!-- Pourcentage de variation (selon le mode choisi) à droite -->
+            <text *ngIf="compareYears.length > 1"
+                  [attr.x]="comp4ChartWidth - 8"
+                  [attr.y]="comp4PosteY(posteIdx) + comp4PosteHeight/2 + 4"
+                  text-anchor="end"
+                  font-size="11"
+                [attr.fill]="comp4DiffColor(compareYears[compareYears.length - 1], posteIdx)">
+            {{ comp4DiffPct(compareYears[compareYears.length - 1], posteIdx) }}
+            </text>
           </ng-container>
-        </g>
+        </svg>
+      </div>
+    </div>
 
-        <ng-container *ngFor="let poste of postes; let i = index">
-          <!-- séparateur -->
-          <line *ngIf="i > 0" [attr.x1]="0" [attr.y1]="compGroupY(i) - (compRowHeight/2)"
-                [attr.x2]="compChartWidth" [attr.y2]="compGroupY(i) - (compRowHeight/2)" stroke="#eee" />
+    <!-- Tooltip HTML overlay pour le graphique 1 -->
+    <div *ngIf="hoverBar !== null" class="chart-tooltip" [ngStyle]="{ left: tooltipPageX + 'px', top: (tooltipPageY - 70) + 'px' }">
+      <div class="chart-tooltip__title">{{ getTooltipYear() }}</div>
+      <div class="chart-tooltip__row">Objectif&nbsp;: <strong>{{ getTooltipObjectif() }}</strong></div>
+      <div class="chart-tooltip__row">Réalisé&nbsp;: <strong>{{ getTooltipRealise() }}</strong></div>
+    </div>
 
-          <!-- label -->
-          <text [attr.x]="compLeftLabelWidth - 8" [attr.y]="compGroupY(i) + 4" text-anchor="end" font-size="12">{{ poste }}</text>
-
-          <!-- barre année A (violet) -->
-          <rect [attr.x]="compBarX()" [attr.y]="compBarAY(i)" [attr.width]="compWidthFor((postesRealiseParAn[compareYearA][i] || 0), compareYearA, compareYearB)"
-                [attr.height]="compBarHeight" fill="#8e44ad" class="bar-animated"></rect>
-          <!-- barre année B (vert) -->
-          <rect [attr.x]="compBarX()" [attr.y]="compBarBY(i)" [attr.width]="compWidthFor((postesRealiseParAn[compareYearB][i] || 0), compareYearA, compareYearB)"
-                [attr.height]="compBarHeight" fill="#16a085" class="bar-animated"></rect>
-
-          <!-- valeurs -->
-          <text [attr.x]="compValueX((postesRealiseParAn[compareYearA][i] || 0), compareYearA, compareYearB)"
-                [attr.y]="compBarAY(i) + compBarHeight - 2" font-size="11" fill="#8e44ad">
-            {{ (postesRealiseParAn[compareYearA][i] || '-') }}
-          </text>
-          <text [attr.x]="compValueX((postesRealiseParAn[compareYearB][i] || 0), compareYearA, compareYearB)"
-                [attr.y]="compBarBY(i) + compBarHeight - 2" font-size="11" fill="#16a085">
-            {{ (postesRealiseParAn[compareYearB][i] || '-') }}
-          </text>
-
-          <!-- delta en % à droite, coloré comme les autres graphiques -->
-          <text [attr.x]="compChartWidth - 8" [attr.y]="compGroupY(i) + 4" text-anchor="end" font-size="12"
-                [attr.fill]="compDiffColor(compareYearA, compareYearB, i)">
-            {{ compDiffPctText(compareYearA, compareYearB, i) }}
-          </text>
-        </ng-container>
-    </svg>
+    <!-- Tooltip HTML overlay pour graphique global -->
+    <div *ngIf="hoverGlobalIndex !== null" class="chart-tooltip" [ngStyle]="{ left: tooltipPageX + 'px', top: (tooltipPageY - 70) + 'px' }">
+      <div class="chart-tooltip__title">{{ getTooltipYearGlobal() }}</div>
+      <div class="chart-tooltip__row">Total (tCO₂)&nbsp;: <strong>{{ getTooltipGlobalTotal() }}</strong></div>
+      <div class="chart-tooltip__row">Écart vs réf&nbsp;: <strong>{{ getTooltipGlobalDiff() }}</strong></div>
     </div>
   </div>
-
-  <!-- Tooltip HTML overlay pour le graphique 1 -->
-  <div *ngIf="hoverBar !== null" class="chart-tooltip" [ngStyle]="{ left: tooltipPageX + 'px', top: (tooltipPageY - 70) + 'px' }">
-    <div class="chart-tooltip__title">{{ getTooltipYear() }}</div>
-    <div class="chart-tooltip__row">Objectif&nbsp;: <strong>{{ getTooltipObjectif() }}</strong></div>
-    <div class="chart-tooltip__row">Réalisé&nbsp;: <strong>{{ getTooltipRealise() }}</strong></div>
-  </div>
-
-  <!-- Tooltip HTML overlay pour graphique global -->
-  <div *ngIf="hoverGlobalIndex !== null" class="chart-tooltip" [ngStyle]="{ left: tooltipPageX + 'px', top: (tooltipPageY - 70) + 'px' }">
-    <div class="chart-tooltip__title">{{ getTooltipYearGlobal() }}</div>
-    <div class="chart-tooltip__row">Total (tCO₂)&nbsp;: <strong>{{ getTooltipGlobalTotal() }}</strong></div>
-    <div class="chart-tooltip__row">Écart vs réf&nbsp;: <strong>{{ getTooltipGlobalDiff() }}</strong></div>
-  </div>
-</div>
