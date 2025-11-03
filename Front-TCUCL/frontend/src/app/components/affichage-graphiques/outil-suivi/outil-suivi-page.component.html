@@ -10,12 +10,12 @@
       <h2 class="page-title">Suivi des évolutions du bilan carbone</h2>
   </header>
 
-  <div class="filters">
-    <label for="etablissement">Établissement :</label>
-    <select id="etablissement" [(ngModel)]="selectedEtablissement">
-      <option *ngFor="let e of etablissements" [value]="e">{{ e }}</option>
-    </select>
-  </div>
+    <div class="filters">
+      <label for="etablissement">Établissement :</label>
+      <select id="etablissement" [(ngModel)]="selectedEtablissement" (ngModelChange)="onEtablissementChange()">
+        <option *ngFor="let e of etablissements" [value]="e">{{ e }}</option>
+      </select>
+    </div>
 
     <!-- ============================ -->
     <!-- Graphique 1: Évolution usager -->
@@ -469,6 +469,119 @@
           </ng-container>
         </ng-container>
     </svg>
+      </div>
+    </div>
+
+    <!-- Séparateur stylé entre graphiques 4 et 5 -->
+    <div class="charts-separator" style="margin-top:24px;"><span class="label">Détails / Suivi</span></div>
+
+    <!-- ============================ -->
+    <!-- Graphique 5: Suivi des indicateurs -->
+    <!-- ============================ -->
+    <div class="card" style="margin-top:16px;">
+      <div class="card-actions">
+        <button class="icon-btn" (click)="toggleMenu('g5')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 21h14" stroke="#24292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Télécharger
+        </button>
+        <div class="dropdown" *ngIf="cardMenuOpen['g5']">
+          <button (click)="downloadPdfFor('g5', tableG5)">Télécharger le graphique (PDF)</button>
+          <button (click)="downloadCsvFor('g5')">Télécharger les données (CSV)</button>
+        </div>
+      </div>
+      <h3>Suivi des indicateurs</h3>
+      <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+
+      <div class="filters" style="margin-bottom:8px;">
+        <label>Sélectionner les années :</label>
+        <div style="position: relative; display: inline-block;">
+          <button class="year-select-btn" (click)="toggleIndicateursYearsMenu(); $event.stopPropagation()">
+            {{ indicateursSelectedYears.length }} année{{ indicateursSelectedYears.length > 1 ? 's' : '' }}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 9l6 6 6-6" stroke="#24292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="year-select-dropdown" *ngIf="indicateursYearsMenuOpen" (click)="$event.stopPropagation()">
+            <ng-container *ngFor="let y of years">
+              <label class="year-checkbox-label" [ngClass]="{ 'selected': isIndicateurYearSelected(y) }"
+                     [style.background-color]="isIndicateurYearSelected(y) ? '#e3f2fd' : 'transparent'"
+                     style="transition: background-color 0.2s;">
+                <input type="checkbox" [checked]="isIndicateurYearSelected(y)" (change)="toggleIndicateurYear(y)" />
+                <span class="year-checkbox-indicator" [style.background-color]="getIndicateurYearColor(y)"></span>
+                <span>Année {{ y }}</span>
+              </label>
+            </ng-container>
+          </div>
+        </div>
+
+        <label style="margin-left:12px;">Sélectionner les indicateurs :</label>
+        <div style="position: relative; display: inline-block;">
+          <button class="year-select-btn" (click)="toggleIndicateursKeysMenu(); $event.stopPropagation()">
+            {{ getSelectedIndicateursCount() }} indicateur{{ getSelectedIndicateursCount() > 1 ? 's' : '' }}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 9l6 6 6-6" stroke="#24292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="year-select-dropdown" *ngIf="indicateursKeysMenuOpen" (click)="$event.stopPropagation()" style="max-height:400px;">
+            <label class="year-checkbox-label" [ngClass]="{ 'selected': indicateursSelectedCategories.length === 0 }"
+                   [style.background-color]="indicateursSelectedCategories.length === 0 ? '#e3f2fd' : 'transparent'"
+                   style="transition: background-color 0.2s;">
+              <input type="checkbox" [checked]="indicateursSelectedCategories.length === 0" (change)="selectAllIndicateurs()" />
+              <span class="year-checkbox-indicator" style="background:#666"></span>
+              <span><strong>Tous les indicateurs</strong></span>
+            </label>
+            <ng-container *ngFor="let cat of indicateursCategories">
+              <label class="year-checkbox-label" [ngClass]="{ 'selected': isCategorySelected(cat.nom) }" 
+                     [style.background-color]="isCategorySelected(cat.nom) ? '#e3f2fd' : '#f8f9fa'"
+                     style="font-weight:600; margin-top:4px; transition: background-color 0.2s;">
+                <input type="checkbox" [checked]="isCategorySelected(cat.nom)" (change)="toggleCategory(cat.nom)" />
+                <span class="year-checkbox-indicator" [style.background-color]="getPosteColor(cat.nom)"></span>
+                <span><strong>{{ cat.nom }}</strong></span>
+              </label>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-scroll">
+        <table #tableG5 style="width:100%; border-collapse:collapse; font-size:13px;">
+          <thead>
+            <tr style="background:#f8f9fa; border-bottom:2px solid #dee2e6;">
+              <th style="padding:10px; text-align:left; border:1px solid #dee2e6;">Catégorie</th>
+              <th style="padding:10px; text-align:left; border:1px solid #dee2e6;">Indicateur</th>
+              <th style="padding:10px; text-align:center; border:1px solid #dee2e6;">Unité</th>
+              <th *ngFor="let y of indicateursSelectedYears" style="padding:10px; text-align:center; border:1px solid #dee2e6;">{{ y }}</th>
+              <th *ngIf="indicateursSelectedYears.length > 1" style="padding:10px; text-align:center; border:1px solid #dee2e6;">Diff %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let item of getVisibleIndicateurs(); let i = index">
+              <tr *ngIf="i === 0 || getVisibleIndicateurs()[i-1].categorie !== item.categorie" 
+                  style="background:#f8f9fa; font-weight:600;">
+                <td style="padding:8px; border:1px solid #dee2e6;" [attr.colspan]="indicateursSelectedYears.length + (indicateursSelectedYears.length > 1 ? 4 : 3)">
+                  {{ item.categorie }}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:8px; border:1px solid #dee2e6;"></td>
+                <td style="padding:8px; border:1px solid #dee2e6;">{{ item.indicateur.nom }}</td>
+                <td style="padding:8px; text-align:center; border:1px solid #dee2e6;">{{ item.indicateur.unite || '-' }}</td>
+                <td *ngFor="let y of indicateursSelectedYears" style="padding:8px; text-align:center; border:1px solid #dee2e6;">
+                  {{ (indicateursParAn[y] && indicateursParAn[y][item.indicateur.key] !== null && indicateursParAn[y][item.indicateur.key] !== undefined) 
+                      ? (typeof indicateursParAn[y][item.indicateur.key] === 'number' 
+                          ? (indicateursParAn[y][item.indicateur.key]!.toLocaleString('fr-FR')) 
+                          : indicateursParAn[y][item.indicateur.key])
+                      : '-' }}
+                </td>
+                <td *ngIf="indicateursSelectedYears.length > 1" 
+                    style="padding:8px; text-align:center; border:1px solid #dee2e6;"
+                    [style.color]="getIndicateurDiffColor(indicateursSelectedYears[indicateursSelectedYears.length - 1], item.indicateur.key)">
+                  {{ getIndicateurDiffPct(indicateursSelectedYears[indicateursSelectedYears.length - 1], item.indicateur.key) }}
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
       </div>
     </div>
 

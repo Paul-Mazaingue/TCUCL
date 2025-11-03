@@ -185,6 +185,34 @@
         width: 100%;
         overflow: visible;
     }
+
+    /* Empêcher l'effet zoom sur le tableau */
+    table {
+        transform: scale(1) !important;
+        transform-origin: top left !important;
+        zoom: 1 !important;
+        
+        td, th {
+            transform: scale(1) !important;
+            zoom: 1 !important;
+            
+            &:focus {
+                transform: scale(1) !important;
+                zoom: 1 !important;
+                outline: none;
+            }
+        }
+        
+        input, select, button {
+            transform: scale(1) !important;
+            zoom: 1 !important;
+            
+            &:focus {
+                transform: scale(1) !important;
+                zoom: 1 !important;
+            }
+        }
+    }
     
     /* =========================================================
         Légendes, séparateurs, grilles
