@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -142,6 +142,47 @@ export class OutilSuiviPageComponent {
   // ==========================
   // TODO BACKEND: charger dynamiquement la liste des postes et les valeurs par année depuis l'API
   postes = ['Emissions fugitives','Energie','Déplacements France','Déplacements internationaux','Bâtiments, mobilier et parkings','Numérique','Autres immobilisations','Achats et restauration','Déchets'];
+  
+  // Couleurs pour les postes dans le menu déroulant
+  private POSTES_COLORS: Record<string, string> = {
+    'energie': '#E69F00',                // orange
+    'autres-deplacements': '#56B4E9',   // sky blue
+    'numerique': '#009E73',             // bluish green
+    'batiments': '#F0E442',             // yellow
+    'mobilite-dom-tram': '#0072B2',     // blue
+    'dechets': '#D55E00',               // vermillion
+    'achats': '#CC79A7',                // reddish purple
+    'autres-immobilisations': '#000000',// black
+    'emissions-fugitives': '#999999'    // neutral gray
+  };
+  
+  // Retourne la couleur d'un poste basée sur son nom
+  getPosteColor(posteName: string): string {
+    // Normalisation du nom pour correspondre aux clés du mapping
+    const normalized = posteName.toLowerCase()
+      .replace(/é|è|ê/g, 'e')
+      .replace(/à|â/g, 'a')
+      .replace(/ç/g, 'c')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    
+    // Mapping des noms affichés vers les clés
+    const mapping: Record<string, string> = {
+      'emissions-fugitives': 'emissions-fugitives',
+      'energie': 'energie',
+      'deplacements-france': 'mobilite-dom-tram',
+      'deplacements-internationaux': 'autres-deplacements',
+      'batiments-mobilier-et-parkings': 'batiments',
+      'numerique': 'numerique',
+      'autres-immobilisations': 'autres-immobilisations',
+      'achats-et-restauration': 'achats',
+      'dechets': 'dechets'
+    };
+    
+    const key = mapping[normalized] || normalized;
+    return this.POSTES_COLORS[key] || '#ccc';
+  }
   // TODO BACKEND: remplacer ces données d'exemple par des valeurs par année
   postesObjectifParAn: Record<number, number[]> = {};
   postesRealiseParAn: Record<number, number[]> = {};
@@ -202,15 +243,55 @@ export class OutilSuiviPageComponent {
   compareYears: number[] = [this.years[0], this.years[this.years.length - 1]]; // Par défaut première et dernière
   // Mode de calcul des pourcentages: vs moyenne des années sélectionnées ou vs première année
   comp4PercentMode: 'vs_mean' | 'vs_first' = 'vs_mean';
+  // Sélection multi-postes (afficher 1, 2, tous, etc.)
+  comp4PostesMenuOpen = false;
+  selectedPosteIndexes: number[] = []; // vide => tous, sinon liste des index sélectionnés
+  toggleComp4PostesMenu() { this.comp4PostesMenuOpen = !this.comp4PostesMenuOpen; }
+  closeComp4PostesMenu() { this.comp4PostesMenuOpen = false; }
+  isPosteSelected(index: number): boolean {
+    return this.selectedPosteIndexes.length === 0 || this.selectedPosteIndexes.includes(index);
+  }
+  togglePoste(index: number) {
+    const pos = this.selectedPosteIndexes.indexOf(index);
+    if (pos >= 0) {
+      this.selectedPosteIndexes.splice(pos, 1);
+    } else {
+      this.selectedPosteIndexes.push(index);
+      this.selectedPosteIndexes.sort((a, b) => a - b);
+    }
+  }
+  selectAllPostes() {
+    this.selectedPosteIndexes = [];
+  }
+  get comp4VisiblePosteIndexes(): number[] {
+    if (this.selectedPosteIndexes.length === 0) return this.postes.map((_, i) => i);
+    return this.selectedPosteIndexes;
+  }
+  get comp4VisiblePostesCount(): number {
+    return this.comp4VisiblePosteIndexes.length;
+  }
   compareMenuOpen = false;
   toggleCompareMenu() { this.compareMenuOpen = !this.compareMenuOpen; }
   closeCompareMenu() { this.compareMenuOpen = false; }
-  // Fermer le menu si clic en dehors (appelé depuis le template)
-  onDocumentClick() { if (this.compareMenuOpen) this.closeCompareMenu(); }
+  // Fermer les menus si clic en dehors (écoute sur tout le document)
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    // Ne pas fermer si on clique dans les menus ou sur les boutons
+    if (target.closest('.year-select-dropdown') || target.closest('.year-select-btn') ||
+        target.closest('.dropdown') || target.closest('.icon-btn') || target.closest('.card-actions')) {
+      return;
+    }
+    // Fermer les menus de sélection
+    if (this.compareMenuOpen) this.closeCompareMenu();
+    if (this.comp4PostesMenuOpen) this.closeComp4PostesMenu();
+    // Fermer les menus de téléchargement
+    this.closeMenus();
+  }
   toggleCompareYear(year: number) {
     const idx = this.compareYears.indexOf(year);
     if (idx >= 0) {
-      if (this.compareYears.length > 1) this.compareYears.splice(idx, 1);
+      this.compareYears.splice(idx, 1);
     } else {
       this.compareYears.push(year);
       this.compareYears.sort((a, b) => a - b);
@@ -244,18 +325,19 @@ export class OutilSuiviPageComponent {
   }
   
   get comp4ChartHeight(): number {
+    const visibleCount = this.comp4VisiblePosteIndexes.length;
     return this.comp4TopMargin + this.comp4BottomMargin + 
-           (this.postes.length * (this.comp4PosteHeight + this.comp4PosteGap)) - this.comp4PosteGap;
+           (visibleCount * (this.comp4PosteHeight + this.comp4PosteGap)) - this.comp4PosteGap;
   }
   
-  // Y de départ d'un poste
-  comp4PosteY(posteIndex: number): number {
-    return this.comp4TopMargin + posteIndex * (this.comp4PosteHeight + this.comp4PosteGap);
+  // Y de départ d'un poste (utilise l'index visible, pas l'index original)
+  comp4PosteY(visibleIndex: number): number {
+    return this.comp4TopMargin + visibleIndex * (this.comp4PosteHeight + this.comp4PosteGap);
   }
   
   // Y d'une barre spécifique dans un poste
-  comp4BarY(posteIndex: number, yearIndex: number): number {
-    return this.comp4PosteY(posteIndex) + yearIndex * (this.comp4BarHeight + this.comp4YearGap);
+  comp4BarY(visibleIndex: number, yearIndex: number): number {
+    return this.comp4PosteY(visibleIndex) + yearIndex * (this.comp4BarHeight + this.comp4YearGap);
   }
   
   // Largeur max sur toutes les années sélectionnées
@@ -381,7 +463,14 @@ export class OutilSuiviPageComponent {
   // Actions de carte: menu download (PDF/CSV)
   // =============================================================
   cardMenuOpen: { [key: string]: boolean } = { g1: false, g2: false, g3: false, g4: false };
-  toggleMenu(key: 'g1' | 'g2' | 'g3' | 'g4') { this.cardMenuOpen[key] = !this.cardMenuOpen[key]; }
+  toggleMenu(key: 'g1' | 'g2' | 'g3' | 'g4') {
+    this.cardMenuOpen[key] = !this.cardMenuOpen[key];
+    // Fermer les menus de sélection (années et postes) quand on ouvre le menu télécharger
+    if (this.cardMenuOpen[key]) {
+      if (this.compareMenuOpen) this.closeCompareMenu();
+      if (this.comp4PostesMenuOpen) this.closeComp4PostesMenu();
+    }
+  }
   closeMenus() { this.cardMenuOpen = { g1: false, g2: false, g3: false, g4: false }; }
 
   private downloadBlob(content: Blob, filename: string) {
