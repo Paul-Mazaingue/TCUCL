@@ -232,6 +232,10 @@
     transition: background .12s;
   }
   .year-checkbox-label:hover { background: #f6f8fa; }
+  .year-checkbox-label.selected {
+    background: #e3f2fd;
+    font-weight: 500;
+  }
   .year-checkbox-label input[type="checkbox"] {
     display: none;
   }
