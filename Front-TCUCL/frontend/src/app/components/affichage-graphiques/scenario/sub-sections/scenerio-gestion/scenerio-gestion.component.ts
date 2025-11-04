@@ -1,15 +1,17 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ScenarioCardComponent } from '../scenario-card/scenario-card.component';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs';
 
 interface Scenario {
   id: number;
   name: string;
   description: string;
-  totalEmission: string; // e.g. '4875 tCO₂e'
-  ecartCible?: string; // e.g. '+2194 tCO₂e à réduire'
-  reductionEstimee: string; // e.g. '-0.0%'
+  totalEmission: string; 
+  ecartCible?: string; 
+  reductionEstimee: string; 
 }
 
 @Component({
@@ -20,15 +22,41 @@ interface Scenario {
   styleUrls: ['./scenerio-gestion.component.scss'],
 })
 export class ScenerioGestionComponent {
-  selectedScenario: Scenario = {
-    totalEmission: 'N/A',
-    ecartCible: 'N/A',
-    reductionEstimee: 'N/A',
-    id: 0,
-    name: '',
-    description: ''
-  };
-  
+
+  isComparing = false;
+@Output() scenarioCountChange = new EventEmitter<number>();
+
+constructor(private router: Router) {}
+
+ngOnInit() {
+  // Watch route changes
+  this.router.events.pipe(
+    filter(event => event instanceof NavigationEnd)
+  ).subscribe((event: any) => {
+    this.isComparing = event.urlAfterRedirects.includes('comparaison');
+  });
+
+  if (this.scenarios.length > 0) {
+    this.selectedScenario = this.scenarios[0];
+  }
+  this.scenarioCountChange.emit(this.scenarios.length);
+  this.scenarioCountChange.emit(this.scenarios.length);
+}
+
+toggleCompareMode() {
+  if (this.isComparing) {
+    // Go back to main page
+    this.router.navigate(['/']);
+  } else {
+    // Go to comparison page
+    this.router.navigate(['/comparaison']);
+  }
+}
+
+compareScenarios() {
+  this.router.navigate(['/comparaison']);
+}
+  selectedScenario: Scenario | null = null;
   selectScenario(scenario: Scenario) {
     this.selectedScenario = scenario;
   }  
@@ -95,6 +123,7 @@ export class ScenerioGestionComponent {
       } as Scenario);
 
       this.newScenario = {};
+      this.scenarioCountChange.emit(this.scenarios.length);
     }
   }
 
@@ -111,9 +140,11 @@ export class ScenerioGestionComponent {
       totalEmission: scenario.totalEmission,
       reductionEstimee: scenario.reductionEstimee,
     });
+    this.scenarioCountChange.emit(this.scenarios.length);
   }
 
   deleteScenario(id: number) {
     this.scenarios = this.scenarios.filter((s) => s.id !== id);
+    this.scenarioCountChange.emit(this.scenarios.length);
   }
 }

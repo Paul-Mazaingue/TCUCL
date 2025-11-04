@@ -6,6 +6,16 @@
   width: 100%;
   height: 200px;
 
+
+  &:hover {
+    background-color: #f8f9fa;
+  }
+
+  &.selected {
+    background-color: #e8fae0; 
+    box-shadow: 0 0 10px rgba(25, 118, 210, 0.1);
+  }
+
   .header-section {
     display: flex;
     justify-content: space-between;

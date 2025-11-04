@@ -6,10 +6,13 @@
     </div>
     <div class="buttons">
       <button class="btn-primary" (click)="addScenario()">
-        <span class="material-symbols-outlined"> add </span>Nouveau scenario
+        <img src="/assets/add.png" alt="">
+          Nouveau scenario
       </button>
-      <button class="btn-tertiary">Comparer</button>
-    </div>
+      <button class="btn-tertiary" (click)="toggleCompareMode()">
+        {{ isComparing ? 'Quitter comparaison' : 'Comparer' }}
+      </button>
+          </div>
   </div>
   <div class="card-section">
     <!-- Scenario cards list -->
@@ -17,11 +20,12 @@
     <div class="scenario-grid">
       <div class="scenario-list">
         <app-scenario-card
-          *ngFor="let scenario of scenarios"
-          [scenario]="scenario"
-          (duplicate)="duplicateScenario($event)"
-          (click)="selectScenario(scenario)"
-          (delete)="deleteScenario($event)"
+        *ngFor="let scenario of scenarios"
+        [scenario]="scenario"
+        (select)="selectScenario(scenario)"
+        [isSelected]="scenario.id === selectedScenario?.id"
+        (delete)="deleteScenario(scenario.id)"
+        (duplicate)="duplicateScenario(scenario)"
         ></app-scenario-card>
       </div>
 

@@ -1,13 +1,22 @@
-<div class="scenario-card">
-  <div class="header-section">
+<div class="scenario-card" (click)="onSelect()"
+[ngClass]="{ 'selected': isSelected }">
+  <!-- Display mode -->
+  <div class="header-section" *ngIf="!isEditing; else editMode">
     <div class="header">
       <h5 class="title">{{ scenario.name }}</h5>
       <p class="sub-title">{{ scenario.description }}</p>
     </div>
-    <div class="icon-section">
-      <img src="/assets/copy.png" alt="Duplicate" (click)="onDuplicate()" />
-      <img src="/assets/delete.png" alt="Delete" (click)="onDelete()" />
-    </div>
+    <div class="icon-section" [matMenuTriggerFor]="menu">
+        <img src="/assets/more_Vert.png" alt="">
+</div>
+
+      <mat-menu #menu="matMenu">
+        <img src="/assets/edit.png" alt="Edit" (click)="startEdit()" />
+        <img src="/assets/copy.png" alt="Duplicate" (click)="onDuplicate()" />
+        <img src="/assets/delete.png" alt="Delete" (click)="onDelete()" />
+      </mat-menu>
+     
+    
   </div>
 
   <hr />
@@ -19,7 +28,38 @@
     </div>
     <div class="metric">
       <span>Réduction</span>
-      <p>{{ scenario.reductionEstimee }} %</p>
+      <p>{{ scenario.reductionEstimee }}</p>
     </div>
   </div>
+
+  <!-- Edit mode -->
+  <ng-template #editMode>
+    <div class="edit-section">
+      <input
+        [(ngModel)]="editedScenario.name"
+        placeholder="Nom du scénario"
+        class="edit-input"
+      />
+      <textarea
+        [(ngModel)]="editedScenario.description"
+        placeholder="Description"
+        class="edit-textarea"
+      ></textarea>
+      <input
+        [(ngModel)]="editedScenario.totalEmission"
+        placeholder="Émissions totales"
+        class="edit-input"
+      />
+      <input
+        [(ngModel)]="editedScenario.reductionEstimee"
+        placeholder="Réduction estimée"
+        class="edit-input"
+      />
+
+      <div class="edit-actions">
+        <button class="save-btn" (click)="saveEdit()">Enregistrer</button>
+        <button class="cancel-btn" (click)="cancelEdit()">Annuler</button>
+      </div>
+    </div>
+  </ng-template>
 </div>

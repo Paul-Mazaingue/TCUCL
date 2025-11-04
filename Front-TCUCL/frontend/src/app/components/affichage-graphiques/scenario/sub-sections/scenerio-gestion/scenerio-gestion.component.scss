@@ -1,6 +1,7 @@
 .gestion-section {
   background-color: white;
   padding: 15px 20px;
+  font-family: 'Inter', sans-serif;
 
   .header-section {
     display: flex;
@@ -40,6 +41,19 @@
           background-color: #1c7027d8;
         }
       }
+      .btn-tertiary {
+        background-color: #f3f4f6;
+        color: #1f2937;
+        border: 1px solid #d1d5db;
+        transition: all 0.3s ease;
+      
+        &.active {
+          background-color: #d1fae5;
+          border-color: #10b981;
+          color: #065f46;
+        }
+      }
+      
     }
   }
 
@@ -89,8 +103,10 @@
   }
 
   .scenario-form {
+    background-color: #e8f5e9;
+    margin-top: 20px;
     border-radius: 12px;
-    padding-top: 20px;
+    padding: 20px;
     display: flex;
     flex-wrap: wrap;
     gap: 30px;

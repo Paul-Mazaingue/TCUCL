@@ -1,0 +1,61 @@
+<div class="emission-adjustment">
+  <h3>Ajustez les postes d’émission <span>(en % de la référence)</span></h3>
+
+  <div class="emission-grid">
+    <div class="emission-card" *ngFor="let item of emissionCategories">
+      <div class="card-header">
+        <div class="label">
+          <span class="dot" [ngStyle]="{ 'background-color': item.color }"></span>
+          <h4>{{ item.name }}</h4>
+        </div>
+        <span class="percent">{{ item.value }}%</span>
+      </div>
+
+      <div class="slider-wrapper">
+        <input
+          type="range"
+          min="0"
+          max="150"
+          step="1"
+          [(ngModel)]="item.value"
+          (input)="updateEmission(item)"
+        />
+      </div>
+
+      <div class="values">
+        <span>0%</span>
+        <div class="emission-values">
+          <p>{{ item.currentEmission }} tCO₂e</p>
+          <p
+            class="reduction"
+            [ngClass]="{ positive: item.reduction > 0, negative: item.reduction < 0 }"
+          >
+            {{ item.reduction > 0 ? '+' : '' }}{{ item.reduction }} tCO₂e
+          </p>
+        </div>
+        <span>150%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="charts-container">
+  <div class="chart-card">
+    <h4>Répartition des émissions</h4>
+    <p>Par poste d'activité (tCO₂e)</p>
+    <div class="chart-wrapper">
+      <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="'bar'"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h4>Vue radar des paramètres</h4>
+    <p>Niveau d’ajustement par poste (%)</p>
+    <div class="chart-wrapper">
+      <canvas baseChart [data]="radarChartData" [options]="radarChartOptions" [type]="'radar'"></canvas>
+    </div>
+    <div class="note">
+      100% = niveau de référence | &lt;100% = réduction | &gt;100% = augmentation
+    </div>
+  </div>
+</div>
