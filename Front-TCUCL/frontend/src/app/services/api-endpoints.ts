@@ -124,6 +124,11 @@ export const ApiEndpoints = {
 
   auth: {
     connexion: () => `${BASE_URL}/auth/connexion`
+  },
+  
+  Trajectoire: {
+    getByEntite: (entiteId: number) => `${BASE_URL}/trajectoire/${entiteId}`,
+    upsert: (entiteId: number) => `${BASE_URL}/trajectoire/${entiteId}`
   }
 }
   

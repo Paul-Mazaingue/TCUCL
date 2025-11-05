@@ -5,6 +5,10 @@ import { Router } from '@angular/router';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+import { TrajectoireService } from '../../../services/trajectoire.service';
+import { UserService } from '../../../services/user.service';
+import { Trajectoire } from '../../../models/trajectoire.model';
+
 interface PosteEmission {
   id: string;
   nom: string;
@@ -84,14 +88,47 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
   private chart: any = null;
   private ChartCtor: any = null;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private trajectoireSrv: TrajectoireService, private userService: UserService) {}
 
   // ===== Lifecycle =====
   ngOnInit(): void {
     this.allowedYears = Array.from({ length: this.MAX_YEAR - this.REF_YEAR + 1 }, (_, i) => this.REF_YEAR + i);
-    this.loadSettings();          // ⚙️ charge les réglages
-    this.rebuildYears();
-    this.generateTableRows();     // prépare les données avant le graphique
+    //this.loadSettings();          // ⚙️ charge les réglages
+    //this.rebuildYears();
+    //this.generateTableRows();     // prépare les données avant le graphique
+
+    const entiteId = Number(this.userService.entiteId());
+    if(entiteId) {
+      this.trajectoireSrv.get(entiteId).subscribe({
+        next: (dto: Trajectoire) => {
+          if (dto) {
+            // Remonter les valeurs serveur
+            this.startYear = dto.referenceYear ?? this.startYear;
+            this.endYear = dto.targetYear ?? this.endYear;
+            this.reduction = Math.round((dto.targetPercentage ?? this.reduction));
+            console.log('Trajectoire chargée depuis le serveur :', dto);
+          } else {
+            // Pas de trajectoire encore: tenter localStorage
+            this.loadSettings();
+          }
+          this.rebuildYears();
+          this.generateTableRows();
+        },
+        error: _ => {
+          // En cas d'erreur auth/serveur, fallback silencieux
+          this.loadSettings();
+          this.rebuildYears();
+          this.generateTableRows();
+        }
+      });
+    } else {
+      console.log('Trajectoire: entiteId non disponible.');
+      // Non connecté (routes publiques dev) -> fallback local
+      this.loadSettings();
+      this.rebuildYears();
+      this.generateTableRows();
+    }
+
   }
 
   async ngAfterViewInit(): Promise<void> {
@@ -149,6 +186,18 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
       }, {})
     };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch {}
+
+    // Sauvegarde back si connecté à une entité
+    const entiteId = Number(this.userService.entiteId());
+    if (entiteId) {
+      const dto: Trajectoire = {
+        entiteId,
+        referenceYear: this.startYear,
+        targetYear: this.endYear,
+        targetPercentage: this.reduction
+      };
+      this.trajectoireSrv.upsert(entiteId, dto).subscribe({ next: () => {}, error: () => {} });
+    }
   }
 
   // Public wrapper to ensure template can call a clearly public method in all build modes
