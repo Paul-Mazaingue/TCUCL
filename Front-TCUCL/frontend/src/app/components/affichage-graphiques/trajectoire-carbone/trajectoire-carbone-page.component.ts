@@ -496,29 +496,45 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
       labels: this.chart.data.labels,
       effReductions: Array.from(effReductions.entries())
     });
-    const datasets = this.postes.map(p => {
+
+    if (!this.chart.data.datasets || this.chart.data.datasets.length !== this.postes.length) {
+      this.chart.data.datasets = this.postes.map(p => {
+        const color = POSTES_COLORS[p.id] || '#777';
+        return {
+          label: p.nom,
+          data: [],
+          backgroundColor: this.hexToRgba(color, 0.85),
+          borderColor: color,
+          borderWidth: 1.5,
+          stack: 'emissions'
+        };
+      });
+    }
+
+    this.chart.data.datasets.forEach((ds: any, di: number) => {
+      const p = this.postes[di];
+      if (!p) {
+        ds.data = [];
+        return;
+      }
       const color = POSTES_COLORS[p.id] || '#777';
+      ds.label = p.nom;
+      ds.backgroundColor = this.hexToRgba(color, 0.85);
+      ds.borderColor = color;
+      ds.borderWidth = 1.5;
+      ds.stack = 'emissions';
+
       const targetPct = effReductions.get(p.id) ?? 0;
       const startVal  = p.emissionsReference;
       const endVal    = Math.round(p.emissionsReference * (1 - targetPct / 100));
       const n = Math.max(1, this.years.length - 1);
 
-      const data = this.years.map((_, i) => {
+      ds.data = this.years.map((_, i) => {
         const t = n > 0 ? i / n : 0;
         return Math.round(startVal + (endVal - startVal) * t);
       });
-
-      return {
-        label: p.nom,
-        data,
-        backgroundColor: this.hexToRgba(color, 0.85),
-        borderColor: color,
-        borderWidth: 1.5,
-        stack: 'emissions'
-      };
     });
 
-    this.chart.data.datasets = datasets;
     console.log('[Trajectoire] Datasets synchronisés:', this.chart.data.datasets);
     this.chart.update();
   }
