@@ -1,9 +1,10 @@
-import { Component, HostListener, ChangeDetectorRef } from '@angular/core';
+import { Component, HostListener, ChangeDetectorRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OutilSuiviService, OutilSuiviData } from '../../../services/outil-suivi.service';
 import { UserService } from '../../../services/user.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-outil-suivi',
@@ -12,12 +13,13 @@ import { UserService } from '../../../services/user.service';
   templateUrl: './outil-suivi-page.component.html',
   styleUrls: ['./outil-suivi-page.component.scss']
 })
-export class OutilSuiviPageComponent {
+export class OutilSuiviPageComponent implements OnInit {
   constructor(
     private router: Router,
     private cdr: ChangeDetectorRef,
     private outilSuiviSrv: OutilSuiviService,
-    private userService: UserService
+    private userService: UserService,
+    private authService: AuthService
   ) {}
 
   // =============================================================
@@ -645,6 +647,12 @@ export class OutilSuiviPageComponent {
   // =============================================================
   // TODO BACKEND: Remplacer par un chargement initial (resolver ou ngOnInit avec service HTTP)
   ngOnInit(): void {
+    const token = this.authService.getToken();
+    const entiteId = Number(this.userService.entiteId());
+    if (!token || !entiteId) {
+      this.router.navigate(['/login']);
+      return;
+    }
     this.loadAllFromService();
   }
 

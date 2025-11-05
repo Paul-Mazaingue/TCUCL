@@ -7,6 +7,7 @@ import autoTable from 'jspdf-autotable';
 
 import { TrajectoireService } from '../../../services/trajectoire.service';
 import { UserService } from '../../../services/user.service';
+import { AuthService } from '../../../services/auth.service';
 import { Trajectoire, TrajectoirePosteReglage } from '../../../models/trajectoire.model';
 
 interface PosteEmission {
@@ -79,14 +80,26 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
   private chart: any = null;
   private ChartCtor: any = null;
 
-  constructor(private router: Router, private trajectoireSrv: TrajectoireService, private userService: UserService) {}
+  constructor(
+    private router: Router,
+    private trajectoireSrv: TrajectoireService,
+    private userService: UserService,
+    private authService: AuthService
+  ) {}
 
   // ===== Lifecycle =====
   ngOnInit(): void {
     this.allowedYears = Array.from({ length: this.MAX_YEAR - this.REF_YEAR + 1 }, (_, i) => this.REF_YEAR + i);
   // Les données initiales proviennent du backend
 
-    const entiteId = Number(this.userService.entiteId());
+    const token = this.authService.getToken();
+    const entiteIdFromUser = Number(this.userService.entiteId());
+    if (!token || !entiteIdFromUser) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    const entiteId = entiteIdFromUser;
     if(entiteId) {
       this.trajectoireSrv.get(entiteId).subscribe({
         next: (dto: Trajectoire) => {
