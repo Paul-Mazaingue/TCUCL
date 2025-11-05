@@ -9,9 +9,18 @@ import {ApiEndpoints} from './api-endpoints';
   providedIn: 'root'
 })
 export class AuthService {
-
   isAuthenticated = signal(false);
-  userInfo = signal<{ firstName: string; lastName: string; email: string } | null>(null);
+  // Aligner le type sur le UtilisateurDto renvoyé par le backend
+  userInfo = signal<{
+    id: number;
+    nom: string;
+    prenom: string;
+    email: string;
+    estAdmin: boolean;
+    superAdmin: boolean;
+    entiteNom: string;
+    entiteId: number;
+  } | null>(null);
 
   constructor(private router: Router, private http: HttpClient) {}
 
@@ -19,7 +28,16 @@ export class AuthService {
     const loginData = { email: email, mdp: password };
 
     return this.http
-      .post<{ jeton: string; user: { firstName: string; lastName: string; email: string } }>(
+      .post<{ jeton: string; user: {
+        id: number;
+        nom: string;
+        prenom: string;
+        email: string;
+        estAdmin: boolean;
+        superAdmin: boolean;
+        entiteNom: string;
+        entiteId: number;
+      } }>(
         ApiEndpoints.auth.connexion(),
         loginData
       )

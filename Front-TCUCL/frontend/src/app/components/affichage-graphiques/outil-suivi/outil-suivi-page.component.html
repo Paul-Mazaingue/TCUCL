@@ -246,7 +246,7 @@
           Télécharger
         </button>
         <div class="dropdown" *ngIf="cardMenuOpen['g3']">
-          <button (click)="downloadPdfFor('g3', svgG3)">Télécharger le graphique (PDF)</button>
+          <button (click)="downloadPdfFor('g3', null)">Télécharger le graphique (PDF)</button>
           <button (click)="downloadCsvFor('g3')">Télécharger les données (CSV)</button>
         </div>
       </div>
@@ -266,7 +266,8 @@
       </div>
 
       <div class="chart-center">
-        <svg #svgG3 [attr.width]="postesHChartWidth" [attr.height]="postesHChartHeight">
+  <svg #svgG3 data-chart="g3" *ngIf="selectedYearForPostes !== null && postesObjectifParAn[selectedYearForPostes] && postesRealiseParAn[selectedYearForPostes]"
+             [attr.width]="postesHChartWidth" [attr.height]="postesHChartHeight">
           <!-- Grille légère -->
           <g>
             <ng-container *ngFor="let tick of [0,0.25,0.5,0.75,1]; let ti = index">

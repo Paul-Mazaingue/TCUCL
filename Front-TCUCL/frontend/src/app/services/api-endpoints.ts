@@ -130,5 +130,9 @@ export const ApiEndpoints = {
     getByEntite: (entiteId: number) => `${BASE_URL}/trajectoire/${entiteId}`,
     upsert: (entiteId: number) => `${BASE_URL}/trajectoire/${entiteId}`
   }
+  ,
+  OutilSuivi: {
+    getByEntite: (entiteId: number) => `${BASE_URL}/outil-suivi/${entiteId}`
+  }
 }
   

@@ -2,6 +2,8 @@ import { Component, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { OutilSuiviService, OutilSuiviData } from '../../../services/outil-suivi.service';
+import { UserService } from '../../../services/user.service';
 
 @Component({
   selector: 'app-outil-suivi',
@@ -11,7 +13,12 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./outil-suivi-page.component.scss']
 })
 export class OutilSuiviPageComponent {
-  constructor(private router: Router, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private router: Router,
+    private cdr: ChangeDetectorRef,
+    private outilSuiviSrv: OutilSuiviService,
+    private userService: UserService
+  ) {}
 
   // =============================================================
   // Navigation
@@ -28,12 +35,11 @@ export class OutilSuiviPageComponent {
   // - Réponse: { years: number[], objectif: number[], realise: (number|null)[] }
   // - Gérer des trous (réalisé manquant) côté front (déjà fait)
 
-  // === Graphique 1: années + objectifs/réalisés (gère données manquantes) ===
-  // TODO BACKEND: remplacer par données serveur, avec potentiels trous (années sans info)
-  years = [2018, 2019, 2020, 2021, 2022, 2023, 2025, 2027, 2030, 2032, 2035];
-  objectif = [800, 780, 740, NaN, 680, 640, 620, NaN, 560, 540, 500];
-  realise  = [820, 700, NaN, 720, 710, 590, NaN, 605, 540, NaN, 480];
-  diff = [] as string[]; // remplacé par texte sécurisé '-' si données manquantes
+  // === Graphique 1: années + objectifs/réalisés ===
+  years: number[] = [];
+  objectif: number[] = [];
+  realise: number[] = [];
+  diff: string[] = []; // calculé une fois les données chargées
 
   // TODO BACKEND: Remplacer la logique d'établissement par un chargement dynamique depuis le serveur
   etablissements = ['Campus Lyon', 'Campus Paris', 'Campus Lille'];
@@ -54,11 +60,8 @@ export class OutilSuiviPageComponent {
     
     // Après chaque chargement, appeler this.cdr.detectChanges() pour forcer la mise à jour
     
-    // Pour l'instant, on recharge toutes les données fictives pour le nouvel établissement
-    this.loadMockData();
-    
-    // Forcer la détection de changements pour tous les graphiques
-    this.cdr.detectChanges();
+  // Pour l'instant, on recharge via le service (mock interne)
+  this.loadAllFromService();
   }
 
   // =============================================================
@@ -82,8 +85,8 @@ export class OutilSuiviPageComponent {
   barWidth = 30;
   barSpacing = 60;
   margin = 60;
-  // TODO BACKEND: svgWidth doit s'adapter au nombre d'années retourné par le serveur
-  get svgWidth(): number { return this.margin * 2 + (this.years.length - 1) * this.barSpacing; }
+  // svgWidth s'adapte au nombre d'années (robuste si 0)
+  get svgWidth(): number { const span = Math.max(0, this.years.length - 1); return this.margin * 2 + span * this.barSpacing; }
   getX(index: number): number { return this.margin + index * this.barSpacing; }
 
   // =============================================================
@@ -162,8 +165,8 @@ export class OutilSuiviPageComponent {
   // ==========================
   // Graphique 2: comparaison par poste (objectif vs réalisé) pour une année
   // ==========================
-  // TODO BACKEND: charger dynamiquement la liste des postes et les valeurs par année depuis l'API
-  postes = ['Emissions fugitives','Energie','Déplacements France','Déplacements internationaux','Bâtiments, mobilier et parkings','Numérique','Autres immobilisations','Achats et restauration','Déchets'];
+  // Liste des postes (chargée via API)
+  postes: string[] = [];
   
   // Couleurs pour les postes dans le menu déroulant
   private POSTES_COLORS: Record<string, string> = {
@@ -209,7 +212,7 @@ export class OutilSuiviPageComponent {
   postesObjectifParAn: Record<number, number[]> = {};
   postesRealiseParAn: Record<number, number[]> = {};
 
-  selectedYearForPostes: number = this.years[0];
+  selectedYearForPostes: number | null = null;
 
   // Mise à l'échelle verticale
   postesBarWidth = 14; // largeur d'une barre individuelle
@@ -261,8 +264,8 @@ export class OutilSuiviPageComponent {
   // =============================================================
   // Graphique 4 (Comparaison Réalisés multiples années par poste) - Layout & helpers
   // =============================================================
-  // TODO BACKEND: Réutiliser les mêmes postes et valeurs réalisées pour différentes années (déjà prévu via postesRealiseParAn)
-  compareYears: number[] = [this.years[0], this.years[this.years.length - 1]]; // Par défaut première et dernière
+  // Années sélectionnées pour comparaisons (renseignées après chargement)
+  compareYears: number[] = [];
   // Mode de calcul des pourcentages: vs moyenne des années sélectionnées ou vs première année
   comp4PercentMode: 'vs_mean' | 'vs_first' = 'vs_mean';
   // Sélection multi-postes (afficher 1, 2, tous, etc.)
@@ -482,8 +485,8 @@ export class OutilSuiviPageComponent {
   // Valeurs des indicateurs par année (structure: Record<année, Record<key_indicateur, valeur>>)
   indicateursParAn: Record<number, Record<string, number | null>> = {};
   
-  // Années sélectionnées pour le graphique 5
-  indicateursSelectedYears: number[] = [this.years[0], this.years[this.years.length - 1]];
+  // Années sélectionnées pour le graphique 5 (définies après chargement)
+  indicateursSelectedYears: number[] = [];
   indicateursYearsMenuOpen = false;
   toggleIndicateursYearsMenu() { this.indicateursYearsMenuOpen = !this.indicateursYearsMenuOpen; }
   closeIndicateursYearsMenu() { this.indicateursYearsMenuOpen = false; }
@@ -609,8 +612,7 @@ export class OutilSuiviPageComponent {
   // Réduction hauteur premier graphique (visuel plus compact en haut à gauche)
   firstChartHeight = 300;
   // ===== Graphique global (tonnes CO2) =====
-  // TODO BACKEND: remplacer par les totaux globaux (tonnes) par année
-  globalTotals = [12.0, 11.5, 10.9, 11.8, 10.3, 9.7, 9.2, 9.8, 8.4, 7.9, 7.2];
+  globalTotals: number[] = [];
   get globalRef(): number { return this.globalTotals[0] ?? 0; }
   isValidGlobal(n: number): boolean { return typeof n === 'number' && isFinite(n) && n >= 0; }
   getGlobalNumbers(): number[] { return this.globalTotals.filter(v => this.isValidGlobal(v)); }
@@ -643,91 +645,69 @@ export class OutilSuiviPageComponent {
   // =============================================================
   // TODO BACKEND: Remplacer par un chargement initial (resolver ou ngOnInit avec service HTTP)
   ngOnInit(): void {
-    this.loadMockData();
+    this.loadAllFromService();
   }
 
-  // Méthode privée pour charger toutes les données fictives (appelée au init et au changement d'établissement)
-  private loadMockData() {
-    // Graphique 2 scénarios (démo): profils contrastés par année
-    const scenarios: Record<number, { obj: number[]; rea: number[] }> = {
-      2018: { obj: [5, 140, 220, 260, 70, 30, 10, 8, 40], rea: [6, 180, 260, 320, 95, 42, 12, 12, 55] },
-      2020: { obj: [8, 90, 120, 110, 160, 35, 15, 9, 120], rea: [7, 85, 100, 95, 200, 50, 18, 11, 140] },
-      2022: { obj: [0, 80, 150, 180, 80, 60, 0, 6, 70],  rea: [0, 70, 140, 210, 85, 120, 0, 9, 90] },
-      2025: { obj: [3, 60, 90, 120, 60, 30, 10, 50, 40],  rea: [4, 55, 85, 130, 65, 38, 12, 90, 42] },
-      2030: { obj: [2, 70, 130, 0, 70, 25, 8, 7, 5],     rea: [3, 65, 110, 0, 60, 22, 6, 10, 3] },
-    };
+  // (Supprimé) Ancien loader de mocks — les données proviennent désormais uniquement du service/API
 
-    // Réinitialiser les données
-    this.postesObjectifParAn = {};
-    this.postesRealiseParAn = {};
-    this.indicateursParAn = {};
-
-    for (const y of this.years) {
-      const s = scenarios[y];
-      const obj = s?.obj ?? [12.0, 95.0, 181.2, 234.4, 89.0, 41.0, 22.0, 5.5, 76.9];
-      const rea = s?.rea ?? [ 9.5, 113.2, 178.5, 315.2,108.7, 47.6, 18.0,11.8, 50.5];
-      this.postesObjectifParAn[y] = obj;
-      this.postesRealiseParAn[y]  = rea;
+  // Chargement centralisé depuis le service (mocks pour l'instant)
+  private loadAllFromService() {
+    // Récupère l'entiteId depuis le UserService (lié à l'utilisateur connecté)
+    const entiteId = Number(this.userService.entiteId());
+    if (!entiteId) {
+      console.warn('Outil-suivi: entiteId non disponible, requête API annulée.');
+      return;
     }
 
-    // Diff sécurisée (texte) pour Graphique 1
-    this.diff = this.years.map((_, i) => this.getYearDiffText(i));
+    this.outilSuiviSrv.loadAll(entiteId, this.selectedEtablissement).subscribe({
+      next: (data: OutilSuiviData) => {
+        // Graphique 1
+        this.years = data.years;
+        this.objectif = data.objectif as any; // contient potentiellement NaN
+        this.realise = data.realise as any;
+        // Diff text recalculée
+        this.diff = this.years.map((_, i) => this.getYearDiffText(i));
 
-    // Initialisation des données d'indicateurs (basées sur l'exemple de l'image)
-    // TODO BACKEND: Remplacer par des données API
-    const baseData = {
-      conso_energie: 3600,
-      chauffage: 1500,
-      electricite: 2100,
-      intensite_carbone_energie: 177.02,
-      distance_salarie: 2694930,
-      part_modale_voiture_salarie: 1,
-      part_modale_ve_salarie: 0,
-      part_modale_doux_salarie: 0,
-      distance_etudiants: 21288650,
-      part_modale_voiture_etudiants: 0,
-      part_modale_ve_etudiants: null,
-      part_modale_doux_etudiants: 1,
-      intensite_carbone_trajets: 91,
-      distance_internationale: 563211,
-      intensite_carbone_international: 145,
-      nb_mobilier: null,
-      nb_numerique: 4041,
-      quantite_dechets: 164
-    };
-
-    // Générer des données fictives pour toutes les années avec évolution progressive
-    this.years.forEach((y, idx) => {
-      const progress = idx / (this.years.length - 1); // 0 à 1
-      const reduction = 1 - (progress * 0.7); // Réduction de 0 à 70%
-      
-      this.indicateursParAn[y] = {
-        conso_energie: Math.round(baseData.conso_energie * reduction),
-        chauffage: Math.round(baseData.chauffage * reduction),
-        electricite: Math.round(baseData.electricite * reduction),
-        intensite_carbone_energie: baseData.intensite_carbone_energie ? baseData.intensite_carbone_energie * (1 - progress * 0.3) : null,
-        distance_salarie: Math.round(baseData.distance_salarie * reduction),
-        part_modale_voiture_salarie: baseData.part_modale_voiture_salarie ? Math.max(0, baseData.part_modale_voiture_salarie - progress * 0.3) : null,
-        part_modale_ve_salarie: baseData.part_modale_ve_salarie !== null ? Math.min(1, baseData.part_modale_ve_salarie + progress * 0.4) : null,
-        part_modale_doux_salarie: baseData.part_modale_doux_salarie ? Math.min(1, baseData.part_modale_doux_salarie + progress * 0.3) : null,
-        distance_etudiants: Math.round(baseData.distance_etudiants * reduction),
-        part_modale_voiture_etudiants: baseData.part_modale_voiture_etudiants !== null ? baseData.part_modale_voiture_etudiants : null,
-        part_modale_ve_etudiants: baseData.part_modale_ve_etudiants !== null ? progress * 0.2 : null,
-        part_modale_doux_etudiants: baseData.part_modale_doux_etudiants ? Math.min(1, baseData.part_modale_doux_etudiants + progress * 0.2) : null,
-        intensite_carbone_trajets: baseData.intensite_carbone_trajets ? baseData.intensite_carbone_trajets * (1 - progress * 0.4) : null,
-        distance_internationale: Math.round(baseData.distance_internationale * reduction),
-        intensite_carbone_international: baseData.intensite_carbone_international ? baseData.intensite_carbone_international * (1 - progress * 0.25) : null,
-        nb_mobilier: baseData.nb_mobilier !== null ? Math.round(baseData.nb_mobilier! + idx * 50) : null,
-        nb_numerique: Math.round(baseData.nb_numerique * (1 + progress * 0.5)),
-        quantite_dechets: Math.round(baseData.quantite_dechets * reduction)
-      };
-      
-      // S'assurer que toutes les clés existent
-      this.getAllIndicateurKeys().forEach(key => {
-        if (!(key in this.indicateursParAn[y])) {
-          this.indicateursParAn[y][key] = null;
+        // Graphique 2/4
+        this.postes = data.postes;
+        this.postesObjectifParAn = data.postesObjectifParAn;
+        this.postesRealiseParAn = data.postesRealiseParAn;
+        // S'assurer que l'année sélectionnée et les plages sont valides
+        if (this.years.length > 0) {
+          this.selectedYearForPostes = this.years[0];
+          this.compareYears = [this.years[0], this.years[this.years.length - 1]];
+          this.indicateursSelectedYears = [this.years[0], this.years[this.years.length - 1]];
+        } else {
+          this.selectedYearForPostes = null;
+          this.compareYears = [];
+          this.indicateursSelectedYears = [];
         }
-      });
+
+        // Graphique 5
+        this.indicateursParAn = data.indicateursParAn;
+
+        // Global
+        this.globalTotals = data.globalTotals;
+
+        // Détection de changements
+        this.cdr.detectChanges();
+      },
+      error: _ => {
+        // En cas d'erreur, on vide les données pour éviter tout affichage obsolète
+        this.years = [];
+        this.objectif = [];
+        this.realise = [];
+        this.diff = [];
+        this.postes = [];
+        this.postesObjectifParAn = {};
+        this.postesRealiseParAn = {};
+        this.indicateursParAn = {};
+        this.globalTotals = [];
+        this.selectedYearForPostes = null;
+        this.compareYears = [];
+        this.indicateursSelectedYears = [];
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -795,7 +775,11 @@ export class OutilSuiviPageComponent {
     return canvas.toDataURL('image/png');
   }
   async downloadPdfFor(key: 'g1' | 'g2' | 'g3' | 'g4' | 'g5', svgRef: Element | null) {
-    if (!svgRef) return;
+    if (!svgRef) {
+      // Fallback: chercher un élément portant l’attribut data-chart correspondant
+      svgRef = document.querySelector(`[data-chart="${key}"]`);
+      if (!svgRef) return;
+    }
     try {
       const dataUrl = await this.elementToPngDataUrl(svgRef);
       const jsPDFCtor = await this.loadJsPdf();
@@ -841,9 +825,10 @@ export class OutilSuiviPageComponent {
         csv += `${y};${t};${d}\n`;
       });
     } else if (key === 'g3') {
-      csv += `Poste;Objectif_${this.selectedYearForPostes};Realise_${this.selectedYearForPostes};Diff%\n`;
-      const o = this.postesObjectifParAn[this.selectedYearForPostes] ?? [];
-      const r = this.postesRealiseParAn[this.selectedYearForPostes] ?? [];
+      const yearSel = this.selectedYearForPostes ?? this.years[0];
+      csv += `Poste;Objectif_${yearSel ?? ''};Realise_${yearSel ?? ''};Diff%\n`;
+      const o = yearSel ? (this.postesObjectifParAn[yearSel] ?? []) : [];
+      const r = yearSel ? (this.postesRealiseParAn[yearSel] ?? []) : [];
       this.postes.forEach((p, i) => {
         const oi = o[i] ?? '';
         const ri = r[i] ?? '';

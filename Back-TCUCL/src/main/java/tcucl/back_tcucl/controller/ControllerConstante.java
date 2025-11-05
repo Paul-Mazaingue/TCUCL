@@ -17,6 +17,9 @@ public class ControllerConstante {
     //   TRAJECTOIRE
     public static final String REST_TRAJECTOIRE = "/trajectoire";
 
+    //   OUTIL SUIVI
+    public static final String REST_OUTIL_SUIVI = "/outil-suivi";
+
     //   ------------         AUTH          ------------
     public static final String REST_AUTH = "/auth";
     //Endpoints
