@@ -24,4 +24,11 @@ export class TrajectoireService {
   upsert(entiteId: number, payload: Trajectoire): Observable<Trajectoire> {
     return this.http.put<Trajectoire>(ApiEndpoints.Trajectoire.upsert(entiteId), payload, { headers: this.headers() });
   }
+
+  getPostesDefaults(entiteId: number): Observable<Array<{ id: string; nom: string; emissionsReference: number; reductionBasePct: number }>> {
+    return this.http.get<Array<{ id: string; nom: string; emissionsReference: number; reductionBasePct: number }>>(
+      ApiEndpoints.Trajectoire.getPostesDefaults(entiteId),
+      { headers: this.headers() }
+    );
+  }
 }

@@ -7,7 +7,7 @@ import autoTable from 'jspdf-autotable';
 
 import { TrajectoireService } from '../../../services/trajectoire.service';
 import { UserService } from '../../../services/user.service';
-import { Trajectoire } from '../../../models/trajectoire.model';
+import { Trajectoire, TrajectoirePosteReglage } from '../../../models/trajectoire.model';
 
 interface PosteEmission {
   id: string;
@@ -43,17 +43,7 @@ const POSTES_COLORS: Record<string, string> = {
   'emissions-fugitives': '#999999'
 };
 
-const POSTES_ADEME_DEFAULTS: PosteEmission[] = [
-  { id: 'energie',               nom: 'Énergie',                               emissionsReference: 1200, reductionBasePct: 30 },
-  { id: 'mobilite-dom-tram',     nom: 'Déplacements domicile-travail',         emissionsReference: 850,  reductionBasePct: 40 },
-  { id: 'autres-deplacements',   nom: 'Déplacements professionnels',           emissionsReference: 650,  reductionBasePct: 35 },
-  { id: 'batiments',             nom: 'Bâtiments et mobilier',                 emissionsReference: 500,  reductionBasePct: 25 },
-  { id: 'numerique',             nom: 'Numérique',                             emissionsReference: 280,  reductionBasePct: 45 },
-  { id: 'achats',                nom: 'Achats et restauration',                emissionsReference: 950,  reductionBasePct: 35 },
-  { id: 'dechets',               nom: 'Déchets',                               emissionsReference: 180,  reductionBasePct: 50 },
-  { id: 'autres-immobilisations',nom: 'Autres immobilisations',                emissionsReference: 220,  reductionBasePct: 20 },
-  { id: 'emissions-fugitives',   nom: 'Émissions fugitives',                   emissionsReference: 45,   reductionBasePct: 20 },
-];
+// Les valeurs par défaut des postes sont désormais fournies par le backend
 
 const STORAGE_KEY = 'trajectoire_carbone_settings_v1';
 
@@ -79,8 +69,9 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
   lockGlobal = false;         // 🔒 verrouiller la cible globale ?
 
   // Données
-  postes = POSTES_ADEME_DEFAULTS.map(p => ({ ...p }));
-  private defaultPostes = POSTES_ADEME_DEFAULTS.map(p => ({ ...p })); // pour réinitialiser
+  postes: PosteEmission[] = [];
+  private defaultPostes: PosteEmission[] = []; // pour réinitialiser
+  private persistedPosteReglages: TrajectoirePosteReglage[] | null = null;
   years: number[] = [];
   tableRows: TableRow[] = [];
 
@@ -93,9 +84,7 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
   // ===== Lifecycle =====
   ngOnInit(): void {
     this.allowedYears = Array.from({ length: this.MAX_YEAR - this.REF_YEAR + 1 }, (_, i) => this.REF_YEAR + i);
-    //this.loadSettings();          // ⚙️ charge les réglages
-    //this.rebuildYears();
-    //this.generateTableRows();     // prépare les données avant le graphique
+  // Les données initiales proviennent du backend
 
     const entiteId = Number(this.userService.entiteId());
     if(entiteId) {
@@ -106,25 +95,51 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
             this.startYear = dto.referenceYear ?? this.startYear;
             this.endYear = dto.targetYear ?? this.endYear;
             this.reduction = Math.round((dto.targetPercentage ?? this.reduction));
+            this.lockGlobal = dto.lockGlobal ?? this.lockGlobal;
+            this.persistedPosteReglages = dto.postesReglages ?? [];
             console.log('Trajectoire chargée depuis le serveur :', dto);
           } else {
-            // Pas de trajectoire encore: tenter localStorage
-            this.loadSettings();
+            // Pas de trajectoire encore: on garde les valeurs UI par défaut
+            this.persistedPosteReglages = [];
           }
           this.rebuildYears();
+          this.applyPersistedPosteReglages();
           this.generateTableRows();
+          this.ensureChart();
+          this.updateChartData(true);
+          this.chart?.update();
         },
         error: _ => {
-          // En cas d'erreur auth/serveur, fallback silencieux
-          this.loadSettings();
+          // En cas d'erreur auth/serveur, pas de fallback localStorage/mocks
           this.rebuildYears();
           this.generateTableRows();
+          this.ensureChart();
+          this.updateChartData(true);
+          this.chart?.update();
+        }
+      });
+
+      // Charger les postes par défaut depuis le backend
+      this.trajectoireSrv.getPostesDefaults(entiteId).subscribe({
+        next: (postes) => {
+          this.postes = postes.map(p => ({ ...p }));
+          this.defaultPostes = postes.map(p => ({ ...p }));
+          console.log('[Trajectoire] Postes chargés depuis API:', this.postes);
+          // Recalculer le tableau avec les postes désormais disponibles
+          this.applyPersistedPosteReglages();
+          this.generateTableRows();
+          // Mettre à jour le graphique maintenant que les postes sont chargés
+          this.ensureChart();
+          this.updateChartData(true);
+          this.chart?.update();
+        },
+        error: _ => {
+          // Pas de postes: rester sur vide, l'UI s'adapte
         }
       });
     } else {
       console.log('Trajectoire: entiteId non disponible.');
-      // Non connecté (routes publiques dev) -> fallback local
-      this.loadSettings();
+      // Non connecté (routes publiques dev) -> pas de fallback mock
       this.rebuildYears();
       this.generateTableRows();
     }
@@ -161,6 +176,24 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
   // ===== Utilitaires =====
   private clampPct(x: number): number { return Math.max(0, Math.min(100, x)); }
 
+  private applyPersistedPosteReglages(): void {
+    if (!this.persistedPosteReglages || this.persistedPosteReglages.length === 0) return;
+    if (!this.postes.length) return;
+    const map = new Map<string, number>();
+    this.persistedPosteReglages.forEach(r => {
+      if (r && typeof r.id === 'string' && r.id.length > 0 && typeof r.reductionBasePct === 'number') {
+        map.set(r.id, this.clampPct(r.reductionBasePct));
+      }
+    });
+    if (!map.size) return;
+    this.postes.forEach(p => {
+      const saved = map.get(p.id);
+      if (typeof saved === 'number') {
+        p.reductionBasePct = this.clampPct(saved);
+      }
+    });
+  }
+
   /** Moyenne pondérée ACTUELLE des réglages poste par poste (sans rescaling) en % */
   get weightedCurrentPct(): number {
     const totalRef = this.postes.reduce((s, p) => s + p.emissionsReference, 0);
@@ -194,9 +227,20 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
         entiteId,
         referenceYear: this.startYear,
         targetYear: this.endYear,
-        targetPercentage: this.reduction
+        targetPercentage: this.reduction,
+        lockGlobal: this.lockGlobal,
+        postesReglages: this.postes.map(p => ({
+          id: p.id,
+          reductionBasePct: this.clampPct(p.reductionBasePct)
+        }))
       };
-      this.trajectoireSrv.upsert(entiteId, dto).subscribe({ next: () => {}, error: () => {} });
+      this.trajectoireSrv.upsert(entiteId, dto).subscribe({
+        next: (saved) => {
+          this.lockGlobal = saved.lockGlobal ?? this.lockGlobal;
+          this.persistedPosteReglages = saved.postesReglages ?? dto.postesReglages ?? [];
+        },
+        error: () => {}
+      });
     }
   }
 
@@ -383,14 +427,22 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
   private async initChartIfPossible() {
     const ChartModule = await import('chart.js/auto');
     this.ChartCtor = ChartModule.default || (ChartModule as any);
+    console.log('[Trajectoire] Chart.js module chargé:', !!this.ChartCtor);
   }
 
   private ensureChart(): void {
     if (!this.ChartCtor || this.chart) return;
 
     const canvas = document.getElementById('trajectory-chart') as HTMLCanvasElement | null;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d'); if (!ctx) return;
+    if (!canvas) {
+      console.warn('[Trajectoire] Canvas trajectory-chart introuvable');
+      return;
+    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.warn('[Trajectoire] Contexte 2D non disponible pour le canvas');
+      return;
+    }
 
     const datasets = this.postes.map(p => ({
       label: p.nom,
@@ -400,7 +452,7 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
       borderWidth: 1.5,
       stack: 'emissions'
     }));
-
+    console.log('[Trajectoire] Création du graphique, datasets init:', datasets.length);
     this.chart = new this.ChartCtor(ctx, {
       type: 'bar',
       data: { labels: this.years.map(String), datasets },
@@ -423,24 +475,39 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
   private updateChartData(relabel = false): void {
     if (!this.chart) return;
 
-    if (relabel) this.chart.data.labels = this.years.map(String);
+    if (relabel || !this.chart.data.labels) this.chart.data.labels = this.years.map(String);
 
     const effReductions = this.getEffectiveReductionsByPoste();
-
-    this.chart.data.datasets.forEach((ds: any, di: number) => {
-      const p = this.postes[di];
+    console.log('[Trajectoire] updateChartData', {
+      postes: this.postes.length,
+      labels: this.chart.data.labels,
+      effReductions: Array.from(effReductions.entries())
+    });
+    const datasets = this.postes.map(p => {
+      const color = POSTES_COLORS[p.id] || '#777';
       const targetPct = effReductions.get(p.id) ?? 0;
       const startVal  = p.emissionsReference;
       const endVal    = Math.round(p.emissionsReference * (1 - targetPct / 100));
       const n = Math.max(1, this.years.length - 1);
 
-      ds.data = this.years.map((_, i) => {
+      const data = this.years.map((_, i) => {
         const t = n > 0 ? i / n : 0;
         return Math.round(startVal + (endVal - startVal) * t);
       });
+
+      return {
+        label: p.nom,
+        data,
+        backgroundColor: this.hexToRgba(color, 0.85),
+        borderColor: color,
+        borderWidth: 1.5,
+        stack: 'emissions'
+      };
     });
 
-    this.chart.update('none');
+    this.chart.data.datasets = datasets;
+    console.log('[Trajectoire] Datasets synchronisés:', this.chart.data.datasets);
+    this.chart.update();
   }
 
   // ===== Export CSV / PDF =====

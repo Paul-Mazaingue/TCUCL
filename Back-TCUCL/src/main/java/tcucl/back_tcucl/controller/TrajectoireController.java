@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.validation.annotation.Validated;
 import tcucl.back_tcucl.dto.TrajectoireDto;
 import tcucl.back_tcucl.service.TrajectoireService;
+import tcucl.back_tcucl.dto.TrajectoirePosteDto;
+import tcucl.back_tcucl.dto.TrajectoirePosteReglageDto;
+import java.util.List;
 
 import static tcucl.back_tcucl.controller.ControllerConstante.*;
 
@@ -50,7 +53,24 @@ public class TrajectoireController {
         if (body.getTargetPercentage() < 0f || body.getTargetPercentage() > 100f) {
             return ResponseEntity.badRequest().build();
         }
+        if (body.getPostesReglages() != null) {
+            for (TrajectoirePosteReglageDto pr : body.getPostesReglages()) {
+                if (pr.getId() == null || pr.getId().isBlank()) {
+                    return ResponseEntity.badRequest().build();
+                }
+                Integer pct = pr.getReductionBasePct();
+                if (pct == null || pct < 0 || pct > 100) {
+                    return ResponseEntity.badRequest().build();
+                }
+            }
+        }
         TrajectoireDto saved = trajectoireService.upsert(entiteId, body);
         return ResponseEntity.ok(saved);
+    }
+
+    @PreAuthorize("hasRole('ROLE_SUPERADMIN') or hasRole('ROLE_ENTITE_' + #entiteId)")
+    @GetMapping("/postes-defaults")
+    public ResponseEntity<List<TrajectoirePosteDto>> getPostesDefaults(@PathVariable("entiteId") Long entiteId) {
+        return ResponseEntity.ok(trajectoireService.getPostesDefaults(entiteId));
     }
 }
