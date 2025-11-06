@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { NgChartsModule } from 'ng2-charts';
 import { ChartOptions, ChartData } from 'chart.js';
+import { BaseChartDirective } from 'ng2-charts';
 
 @Component({
   selector: 'app-posts',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgChartsModule],
+  imports: [CommonModule, FormsModule, BaseChartDirective],
   templateUrl: './posts.component.html',
   styleUrls: ['./posts.component.scss']
 })

@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NgChartsModule } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { BaseChartDirective } from 'ng2-charts';
 
 interface EmissionPost {
   name: string;
@@ -14,7 +14,7 @@ interface EmissionPost {
 @Component({
   selector: 'app-comparaison',
   standalone: true,
-  imports: [CommonModule, NgChartsModule, FormsModule],
+  imports: [CommonModule, FormsModule, BaseChartDirective],
   templateUrl: './comparaison.component.html',
   styleUrls: ['./comparaison.component.scss']
 })

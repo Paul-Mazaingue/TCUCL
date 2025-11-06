@@ -4,14 +4,19 @@ import {EnergieSaisieDonneesPageComponent} from './components/saisie-donnees-pag
 import {LoginPageComponent} from './components/login-page/login-page.component';
 import {HeaderSaisieDonneesComponent} from './components/header-saisie-donnees/header-saisie-donnees.component';
 import {TrajectoireComponent} from './components/affichage-graphiques/suivi/trajectoire-page.component';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideZoneChangeDetection({ eventCoalescing: true }), provideRouter([
-    { path: 'login', component: LoginPageComponent },
-    { path: 'header-saisie', component: HeaderSaisieDonneesComponent },
+  providers: [
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter([
+      { path: 'login', component: LoginPageComponent },
+      { path: 'header-saisie', component: HeaderSaisieDonneesComponent },
 
-    { path: 'saisie-donnees/:id', component: EnergieSaisieDonneesPageComponent },
+      { path: 'saisie-donnees/:id', component: EnergieSaisieDonneesPageComponent },
 
-    { path: '', redirectTo: '/login', pathMatch: 'full' }
-  ])]
+      { path: '', redirectTo: '/login', pathMatch: 'full' }
+    ]),
+    provideCharts(withDefaultRegisterables()),
+  ],
 };
