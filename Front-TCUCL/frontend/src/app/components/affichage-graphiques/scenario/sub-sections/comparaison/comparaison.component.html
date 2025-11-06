@@ -1,0 +1,98 @@
+<div class="comparaison-container">
+  <div class="header">
+    <div>
+      <h3>Comparaison des émissions</h3>
+      <p>Analyse dynamique des postes et performance globale</p>
+    </div>
+    <button class="btn-back" (click)="goToPilotageScenario()">← Retour</button>
+  </div>
+
+  <!-- Year Selection -->
+  <div class="year-selection">
+    <h4>Sélectionnez deux années à comparer :</h4>
+    <div class="year-dropdowns">
+      <label>
+        Année 1:
+        <select [(ngModel)]="year1" (change)="updateCharts()">
+          <option *ngFor="let y of availableYears" [value]="y">{{ y }}</option>
+        </select>
+      </label>
+      <label>
+        Année 2:
+        <select [(ngModel)]="year2" (change)="updateCharts()">
+          <option *ngFor="let y of availableYears" [value]="y">{{ y }}</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <!-- Post Selection -->
+  <div class="selection">
+    <h4>Sélectionnez les postes à inclure :</h4>
+    <div class="checkbox-group">
+      <label *ngFor="let post of emissionPosts">
+        <input type="checkbox" [(ngModel)]="post.selected" (change)="updateCharts()" />
+        {{ post.name }}
+      </label>
+    </div>
+  </div>
+
+  <!-- Adjust target values for Year2 -->
+  <div class="adjustment">
+    <h4>Ajuster les projections pour {{ year2 }} (tCO₂e)</h4>
+    <div class="adjustment-list">
+      <div class="adjust-item" *ngFor="let post of selectedPosts">
+        <label>{{ post.name }} ({{ year2 }})</label>
+        <input type="range" min="0" max="300" [(ngModel)]="post.emissions[year2]" (input)="updateCharts()" />
+        <span>{{ post.emissions[year2] }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison Chart -->
+  <div class="chart-section">
+    <h4>Comparaison {{ year1 }} vs {{ year2 }}</h4>
+    <div class="chart-wrapper">
+      <canvas
+        baseChart
+        [data]="barChartData"
+        [options]="barChartOptions"
+        chartType="bar">
+      </canvas>
+    </div>
+  </div>
+
+  <!-- Global Performance -->
+  <div class="global-performance">
+    <h4>Performance globale</h4>
+    <p>
+      Total {{ year1 }}: <strong>{{ totalYear1 }} tCO₂e</strong><br />
+      Total {{ year2 }}: <strong>{{ totalYear2 }} tCO₂e</strong><br />
+      Réduction globale: 
+      <strong [ngClass]="{ 'negative': +totalReduction < 0 }">{{ totalReduction }}%</strong>
+    </p>
+  </div>
+
+  <!-- Table -->
+  <div class="performance-table">
+    <h4>Détails par poste</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Poste</th>
+          <th>{{ year1 }}</th>
+          <th>{{ year2 }}</th>
+          <th>Baisse (%)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of calculatedPosts">
+          <td>{{ p.name }}</td>
+          <td>{{ p.value1 }}</td>
+          <td>{{ p.value2 }}</td>
+          <td [ngClass]="{ 'negative': +p.reduction < 0 }">{{ p.reduction }}%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

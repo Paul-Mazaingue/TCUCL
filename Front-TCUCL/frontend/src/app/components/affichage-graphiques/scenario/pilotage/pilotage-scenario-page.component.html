@@ -1,0 +1,38 @@
+<div class="container">
+  <header class="header">
+    <div class="title-section">
+      <h4 class="title">Pilotage par scénario</h4>
+      <p class="subtitle">
+        Simulez et comparez différents scénarios de réduction des émissions
+      </p>
+    </div>
+
+    <!-- ✅ Show count here -->
+    <button>{{ count }} scénarios actifs</button>
+  </header>
+
+  <!-- ✅ Listen for changes from the child -->
+  <app-scenerio-gestion (scenarioCountChange)="updateCount($event)"></app-scenerio-gestion>
+
+  <app-posts></app-posts>
+
+  <div class="card">
+    <h3>Donut chart (données fictives)</h3>
+    <div class="donut" [style.background]="gradient">
+      <div class="hole"></div>
+    </div>
+
+    <ul class="legend">
+      <li *ngFor="let s of slices">
+        <span class="dot" [style.background]="s.color"></span>
+        {{ s.label }} — {{ s.value }}%
+      </li>
+    </ul>
+    <h2>Pilotage par scénario (démo)</h2>
+  </div>
+
+  <footer>
+    <app-recommendations></app-recommendations>
+    <button class="btn" (click)="goHome()">Accueil</button>
+  </footer>
+</div>
