@@ -1,129 +1,686 @@
 package tcucl.back_tcucl.service.impl;
 
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import tcucl.back_tcucl.dto.OutilSuiviDto;
-import tcucl.back_tcucl.service.OutilSuiviService;
-
-import java.util.*;
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import tcucl.back_tcucl.dto.ListIdDto;
+import tcucl.back_tcucl.dto.OutilSuiviDto;
+import tcucl.back_tcucl.dto.SyntheseEGESResultatDto;
+import tcucl.back_tcucl.dto.onglet.dechet.DechetResultatDto;
+import tcucl.back_tcucl.dto.onglet.energie.EnergieResultatDto;
+import tcucl.back_tcucl.dto.onglet.mobiliteDomicileTravail.MobiliteDomicileTravailResultatDto;
+import tcucl.back_tcucl.dto.onglet.mobInternational.MobInternationalResultatDto;
+import tcucl.back_tcucl.entity.Annee;
+import tcucl.back_tcucl.entity.Trajectoire;
+import tcucl.back_tcucl.entity.onglet.GeneralOnglet;
+import tcucl.back_tcucl.entity.onglet.batiment.MobilierElectromenager;
+import tcucl.back_tcucl.entity.onglet.numerique.NumeriqueOnglet;
+import tcucl.back_tcucl.repository.AnneeRepository;
+import tcucl.back_tcucl.repository.TrajectoireRepository;
+import tcucl.back_tcucl.service.*;
+import tcucl.back_tcucl.exceptionPersonnalisee.AucunEtudiantEnregistre;
+import tcucl.back_tcucl.exceptionPersonnalisee.AucunSalarieEnregistre;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
 public class OutilSuiviServiceImpl implements OutilSuiviService {
+
     private static final Logger log = LoggerFactory.getLogger(OutilSuiviServiceImpl.class);
+
+    private static final List<String> POSTES = List.of(
+            "Emissions fugitives",
+            "Energie",
+            "Déplacements France",
+            "Déplacements internationaux",
+            "Bâtiments, mobilier et parkings",
+            "Numérique",
+            "Autres immobilisations",
+            "Achats et restauration",
+            "Déchets"
+    );
+
+    private static final Map<String, String> POSTE_TO_TRAJECTOIRE_KEY = Map.of(
+            "Emissions fugitives", "emissions-fugitives",
+            "Energie", "energie",
+            "Déplacements internationaux", "autres-deplacements",
+            "Bâtiments, mobilier et parkings", "batiments",
+            "Numérique", "numerique",
+            "Autres immobilisations", "autres-immobilisations",
+            "Achats et restauration", "achats",
+            "Déchets", "dechets"
+    );
+
+    private static final List<String> INDICATOR_KEYS = List.of(
+            "conso_energie",
+            "chauffage",
+            "electricite",
+            "intensite_carbone_energie",
+            "distance_salarie",
+            "part_modale_voiture_salarie",
+            "part_modale_ve_salarie",
+            "part_modale_doux_salarie",
+            "distance_etudiants",
+            "part_modale_voiture_etudiants",
+            "part_modale_ve_etudiants",
+            "part_modale_doux_etudiants",
+            "intensite_carbone_trajets",
+            "distance_internationale",
+            "intensite_carbone_international",
+            "nb_mobilier",
+            "nb_numerique",
+            "quantite_dechets"
+    );
+
+    private final AnneeRepository anneeRepository;
+    private final AnneeService anneeService;
+    private final SyntheseEGESService syntheseEGESService;
+    private final TrajectoireRepository trajectoireRepository;
+    private final GeneralOngletService generalOngletService;
+    private final EnergieOngletService energieOngletService;
+    private final MobiliteDomicileTravailOngletService mobiliteDomicileTravailOngletService;
+    private final MobInternationalOngletService mobInternationalOngletService;
+    private final BatimentImmobilisationMobilierOngletService batimentImmobilisationMobilierOngletService;
+    private final NumeriqueOngletService numeriqueOngletService;
+    private final DechetOngletService dechetOngletService;
+
+    public OutilSuiviServiceImpl(AnneeRepository anneeRepository,
+                                 AnneeService anneeService,
+                                 SyntheseEGESService syntheseEGESService,
+                                 TrajectoireRepository trajectoireRepository,
+                                 GeneralOngletService generalOngletService,
+                                 EnergieOngletService energieOngletService,
+                                 MobiliteDomicileTravailOngletService mobiliteDomicileTravailOngletService,
+                                 MobInternationalOngletService mobInternationalOngletService,
+                                 BatimentImmobilisationMobilierOngletService batimentImmobilisationMobilierOngletService,
+                                 NumeriqueOngletService numeriqueOngletService,
+                                 DechetOngletService dechetOngletService) {
+        this.anneeRepository = anneeRepository;
+        this.anneeService = anneeService;
+        this.syntheseEGESService = syntheseEGESService;
+        this.trajectoireRepository = trajectoireRepository;
+        this.generalOngletService = generalOngletService;
+        this.energieOngletService = energieOngletService;
+        this.mobiliteDomicileTravailOngletService = mobiliteDomicileTravailOngletService;
+        this.mobInternationalOngletService = mobInternationalOngletService;
+        this.batimentImmobilisationMobilierOngletService = batimentImmobilisationMobilierOngletService;
+        this.numeriqueOngletService = numeriqueOngletService;
+        this.dechetOngletService = dechetOngletService;
+    }
+
     @Override
     public OutilSuiviDto loadForEntite(Long entiteId) {
-        log.info("[OutilSuivi] loadForEntite exécuté pour entiteId={}", entiteId);
+        log.info("[OutilSuivi] Chargement des données pour entiteId={}", entiteId);
 
-        // Mocks alignés sur le composant Angular (remplacer par des calculs/requêtes réelles plus tard)
-        List<Integer> years = Arrays.asList(2018, 2019, 2020, 2021, 2022, 2023, 2025, 2027, 2030, 2032, 2035);
+        List<Integer> allYears = anneeRepository.findByEntiteId(entiteId).stream()
+                .map(Annee::getAnneeValeur)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+    log.info("[OutilSuivi] Années disponibles pour entiteId={} : {}", entiteId, allYears);
 
-        // Utiliser null pour "trous" (JSON ne supporte pas NaN)
-        List<Float> objectif = Arrays.asList(800f, 780f, 740f, null, 680f, 640f, 620f, null, 560f, 540f, 500f);
-        List<Float> realise  = Arrays.asList(850f, 700f, null, 720f, 710f, 590f, null, 605f, 540f, null, 480f);
+        if (allYears.isEmpty()) {
+            log.info("[OutilSuivi] Aucune année trouvée pour entiteId={}", entiteId);
+            return new OutilSuiviDto(entiteId,
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    new ArrayList<>(POSTES),
+                    new LinkedHashMap<>(),
+                    new LinkedHashMap<>(),
+                    new LinkedHashMap<>(),
+                    Collections.emptyList());
+        }
 
-        List<String> postes = Arrays.asList(
-                "Emissions fugitives","Energie","Déplacements France","Déplacements internationaux",
-                "Bâtiments, mobilier et parkings","Numérique","Autres immobilisations","Achats et restauration","Déchets"
-        );
+        Trajectoire trajectoire = trajectoireRepository.findByEntite_Id(entiteId).orElse(null);
+        List<Integer> years = filterYearsByTrajectoire(allYears, trajectoire);
+    log.info("[OutilSuivi] Années retenues pour entiteId={} (référence={}, cible={}) : {}", entiteId,
+                trajectoire != null ? trajectoire.getReferenceYear() : null,
+                trajectoire != null ? trajectoire.getTargetYear() : null,
+                years);
 
-        Map<Integer, List<Float>> postesObjectifParAn = new LinkedHashMap<>();
-        Map<Integer, List<Float>> postesRealiseParAn  = new LinkedHashMap<>();
+        if (years.isEmpty()) {
+            log.info("[OutilSuivi] Aucune année dans l'intervalle référence/cible pour entiteId={}", entiteId);
+            return new OutilSuiviDto(entiteId,
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    new ArrayList<>(POSTES),
+                    new LinkedHashMap<>(),
+                    new LinkedHashMap<>(),
+                    new LinkedHashMap<>(),
+                    Collections.emptyList());
+        }
 
+        Map<Integer, YearData> dataByYear = new LinkedHashMap<>();
+        for (Integer year : years) {
+            dataByYear.put(year, buildYearData(entiteId, year).orElse(null));
+            YearData snapshot = dataByYear.get(year);
+            if (snapshot != null) {
+                log.info("[OutilSuivi] Année {} - totalGlobal={} - postes={}", year, snapshot.globalTotal, snapshot.posteValues);
+                log.info("[OutilSuivi] Année {} - indicateurs={}", year, snapshot.indicatorValues);
+            } else {
+                log.info("[OutilSuivi] Année {} - aucune donnée calculée", year);
+            }
+        }
+
+        List<Float> realise = new ArrayList<>(years.size());
+        List<Float> globalTotals = new ArrayList<>(years.size());
+        Map<Integer, List<Float>> postesRealiseParAn = new LinkedHashMap<>();
         Map<Integer, Map<String, Float>> indicateursParAn = new LinkedHashMap<>();
 
-        // Scénarios pour quelques années (comme dans le composant)
-        Map<Integer, float[]> objScen = new HashMap<>();
-        objScen.put(2018, new float[]{5, 140, 220, 260, 70, 30, 10, 8, 40});
-        objScen.put(2020, new float[]{8, 90, 120, 110, 160, 35, 15, 9, 120});
-        objScen.put(2022, new float[]{0, 80, 150, 180, 80, 60, 0, 6, 70});
-        objScen.put(2025, new float[]{3, 60, 90, 120, 60, 30, 10, 50, 40});
-        objScen.put(2030, new float[]{2, 70, 130, 0, 70, 25, 8, 7, 5});
+        for (Integer year : years) {
+            YearData data = dataByYear.get(year);
+            List<Float> perPoste = new ArrayList<>(POSTES.size());
+            for (String poste : POSTES) {
+                perPoste.add(data != null ? data.posteValues.get(poste) : null);
+            }
+            postesRealiseParAn.put(year, perPoste);
 
-        Map<Integer, float[]> reaScen = new HashMap<>();
-        reaScen.put(2018, new float[]{6, 180, 260, 320, 95, 42, 12, 12, 55});
-        reaScen.put(2020, new float[]{7, 85, 100, 95, 200, 50, 18, 11, 140});
-        reaScen.put(2022, new float[]{0, 70, 140, 210, 85, 120, 0, 9, 90});
-        reaScen.put(2025, new float[]{4, 55, 85, 130, 65, 38, 12, 90, 42});
-        reaScen.put(2030, new float[]{3, 65, 110, 0, 60, 22, 6, 10, 3});
-
-        for (Integer y : years) {
-            float[] obj = objScen.get(y);
-            float[] rea = reaScen.get(y);
-            if (obj == null) obj = new float[]{12.0f, 95.0f, 181.2f, 234.4f, 89.0f, 41.0f, 22.0f, 5.5f, 76.9f};
-            if (rea == null) rea = new float[]{ 9.5f,113.2f, 178.5f, 315.2f,108.7f, 47.6f, 18.0f,11.8f, 50.5f};
-
-            postesObjectifParAn.put(y, toList(obj));
-            postesRealiseParAn.put(y, toList(rea));
+            Float globalValue = data != null ? data.globalTotal : null;
+            realise.add(globalValue);
+            globalTotals.add(globalValue);
+            indicateursParAn.put(year, snapshotIndicators(data));
         }
 
-        // Indicateurs base
-        Map<String, Number> base = new LinkedHashMap<>();
-        base.put("conso_energie", 3600);
-        base.put("chauffage", 1500);
-        base.put("electricite", 2100);
-        base.put("intensite_carbone_energie", 177.02);
-        base.put("distance_salarie", 2694930);
-        base.put("part_modale_voiture_salarie", 1);
-        base.put("part_modale_ve_salarie", 0);
-        base.put("part_modale_doux_salarie", 0);
-        base.put("distance_etudiants", 21288650);
-        base.put("part_modale_voiture_etudiants", 0);
-        base.put("part_modale_ve_etudiants", null);
-        base.put("part_modale_doux_etudiants", 1);
-        base.put("intensite_carbone_trajets", 91);
-        base.put("distance_internationale", 563211);
-        base.put("intensite_carbone_international", 145);
-        base.put("nb_mobilier", null);
-        base.put("nb_numerique", 4041);
-        base.put("quantite_dechets", 164);
+        Map<String, Map<Integer, Float>> posteObjectives = computePosteObjectives(years, dataByYear, trajectoire);
 
-        for (int i = 0; i < years.size(); i++) {
-            Integer y = years.get(i);
-            double progress = (years.size() > 1) ? ((double) i / (years.size() - 1)) : 0d;
-            double reduction = 1d - (progress * 0.7d);
-            Map<String, Float> vals = new LinkedHashMap<>();
-            vals.put("conso_energie", roundF(base.get("conso_energie"), reduction));
-            vals.put("chauffage", roundF(base.get("chauffage"), reduction));
-            vals.put("electricite", roundF(base.get("electricite"), reduction));
-            vals.put("intensite_carbone_energie", floatOrNull(base.get("intensite_carbone_energie"), 1 - progress * 0.3));
-            vals.put("distance_salarie", roundF(base.get("distance_salarie"), reduction));
-            vals.put("part_modale_voiture_salarie", floatOrNull(base.get("part_modale_voiture_salarie"), 1 - progress * 0.3));
-            vals.put("part_modale_ve_salarie", floatOrNull(base.get("part_modale_ve_salarie"), progress * 0.4));
-            vals.put("part_modale_doux_salarie", floatOrNull(base.get("part_modale_doux_salarie"), 1 + progress * 0.3));
-            vals.put("distance_etudiants", roundF(base.get("distance_etudiants"), reduction));
-            vals.put("part_modale_voiture_etudiants", floatOrNull(base.get("part_modale_voiture_etudiants"), 1));
-            vals.put("part_modale_ve_etudiants", floatOrNull(base.get("part_modale_ve_etudiants"), progress * 0.2));
-            vals.put("part_modale_doux_etudiants", floatOrNull(base.get("part_modale_doux_etudiants"), 1 + progress * 0.2));
-            vals.put("intensite_carbone_trajets", floatOrNull(base.get("intensite_carbone_trajets"), 1 - progress * 0.4));
-            vals.put("distance_internationale", roundF(base.get("distance_internationale"), reduction));
-            vals.put("intensite_carbone_international", floatOrNull(base.get("intensite_carbone_international"), 1 - progress * 0.25));
-            vals.put("nb_mobilier", floatOrNull(base.get("nb_mobilier"), (i * 50))); // peut rester null
-            vals.put("nb_numerique", floatOrNull(base.get("nb_numerique"), 1 + progress * 0.5));
-            vals.put("quantite_dechets", roundF(base.get("quantite_dechets"), reduction));
-            indicateursParAn.put(y, vals);
+        Map<Integer, List<Float>> postesObjectifParAn = new LinkedHashMap<>();
+        List<Float> objectif = new ArrayList<>(years.size());
+
+        for (Integer year : years) {
+            List<Float> objectives = new ArrayList<>(POSTES.size());
+            Float sum = null;
+            for (String poste : POSTES) {
+                Float value = posteObjectives.getOrDefault(poste, Collections.emptyMap()).get(year);
+                objectives.add(value);
+                if (value != null) {
+                    sum = sum == null ? value : sum + value;
+                }
+            }
+            postesObjectifParAn.put(year, objectives);
+            objectif.add(sum);
         }
 
-        List<Float> globalTotals = Arrays.asList(12.5f, 11.5f, 10.9f, 11.8f, 10.3f, 9.7f, 9.2f, 9.8f, 8.4f, 7.9f, 7.2f);
+    log.info("[OutilSuivi] Séries globales objectif={} realise={}", objectif, realise);
+    log.info("[OutilSuivi] Détails objectifs par poste={}", posteObjectives);
 
-        OutilSuiviDto dto = new OutilSuiviDto(entiteId, years, objectif, realise, postes, postesObjectifParAn, postesRealiseParAn, indicateursParAn, globalTotals);
-        log.info("[OutilSuivi] loadForEntite terminé pour entiteId={} ({} années, {} postes)", entiteId, years.size(), postes.size());
+
+        OutilSuiviDto dto = new OutilSuiviDto(
+                entiteId,
+                years,
+                objectif,
+                realise,
+                new ArrayList<>(POSTES),
+                postesObjectifParAn,
+                postesRealiseParAn,
+                indicateursParAn,
+                globalTotals
+        );
+
+    log.info("[OutilSuivi] DTO final renvoyé pour entiteId={} : {}", entiteId, dto);
+        log.info("[OutilSuivi] Chargement terminé pour entiteId={} (années={})", entiteId, years.size());
         return dto;
     }
 
-    private List<Float> toList(float[] arr) {
-        List<Float> list = new ArrayList<>(arr.length);
-        for (float v : arr) list.add(v);
-        return list;
+    private List<Integer> filterYearsByTrajectoire(List<Integer> years, Trajectoire trajectoire) {
+        if (trajectoire == null) {
+            return years;
+        }
+        Integer reference = trajectoire.getReferenceYear();
+        Integer target = trajectoire.getTargetYear();
+        if (reference == null || target == null) {
+            log.info("[OutilSuivi] Trajectoire sans référence ou cible, aucune filtration appliquée");
+            return years;
+        }
+        if (reference > target) {
+            log.warn("[OutilSuivi] Référence ({}) supérieure à la cible ({}) - conservation de toutes les années", reference, target);
+            return years;
+        }
+        return years.stream()
+                .filter(year -> year >= reference && year <= target)
+                .collect(Collectors.toList());
     }
-    private Float roundF(Number base, double factor) {
-        if (base == null) return null;
-        return (float) Math.round(base.doubleValue() * factor);
+
+    private Optional<YearData> buildYearData(Long entiteId, Integer year) {
+        try {
+            ListIdDto ongletIds = anneeService.getongletIdListForEntiteAndAnnee(entiteId, year);
+            if (ongletIds == null) {
+                log.info("[OutilSuivi] Aucun onglet enregistré pour entiteId={}, année={}", entiteId, year);
+                return Optional.empty();
+            }
+            log.info("[OutilSuivi] entiteId={}, année={} -> onglets={}", entiteId, year, ongletIds);
+
+            SyntheseEGESResultatDto synthese = syntheseEGESService.getSyntheseEGESResultat(entiteId, year);
+            Map<String, Float> postes = createPosteMap();
+
+            Float emissionFugitives = clean(synthese.getEmissionFugitivesGlobal());
+            Float energie = clean(synthese.getEnergieGlobal());
+            Float mobiliteDomicile = clean(synthese.getMobiliteDomicileTravailGlobal());
+            Float autreMobiliteFr = clean(synthese.getAutreMobiliteFrGlobal());
+            Float mobiliteInternational = clean(synthese.getMobiliteInternationalGlobal());
+            Float batiment = clean(synthese.getBatimentParkingGlobal());
+            Float numerique = clean(synthese.getNumeriqueGlobal());
+            Float autreImmobilisation = clean(synthese.getAutreImmobilisationGlobal());
+            Float achat = clean(synthese.getAchatGlobal());
+            Float dechet = clean(synthese.getDechetGlobal());
+
+            postes.put("Emissions fugitives", emissionFugitives);
+            postes.put("Energie", energie);
+            postes.put("Déplacements France", sumNullable(mobiliteDomicile, autreMobiliteFr));
+            postes.put("Déplacements internationaux", mobiliteInternational);
+            postes.put("Bâtiments, mobilier et parkings", batiment);
+            postes.put("Numérique", numerique);
+            postes.put("Autres immobilisations", autreImmobilisation);
+            postes.put("Achats et restauration", achat);
+            postes.put("Déchets", dechet);
+
+            Float globalTotal = clean(synthese.getBilanCarboneTotalGlobal());
+            if (globalTotal == null) {
+                globalTotal = sumNullable(postes.values().toArray(new Float[0]));
+            }
+
+            Map<String, Float> indicators = createIndicatorMap();
+            Float nbSalaries = null;
+            Float nbEtudiants = null;
+
+            if (ongletIds.getGeneralOnglet() != null) {
+                GeneralOnglet general = generalOngletService.getGeneralOngletById(ongletIds.getGeneralOnglet());
+                if (general != null) {
+                    nbSalaries = general.getNbSalarie() != null ? general.getNbSalarie().floatValue() : null;
+                    nbEtudiants = general.getNbEtudiant() != null ? general.getNbEtudiant().floatValue() : null;
+                }
+            }
+
+            EnergieResultatDto energieResultat = null;
+            if (ongletIds.getEnergieOnglet() != null) {
+                energieResultat = energieOngletService.getEnergieResultat(ongletIds.getEnergieOnglet());
+            }
+            populateEnergyIndicators(indicators, energieResultat);
+
+            MobiliteDomicileTravailResultatDto mobiliteResultat = null;
+            if (ongletIds.getMobiliteDomicileTravailOnglet() != null) {
+                try {
+                    mobiliteResultat = mobiliteDomicileTravailOngletService.getMobiliteDomicileTravailResultat(ongletIds.getMobiliteDomicileTravailOnglet());
+                } catch (AucunSalarieEnregistre | AucunEtudiantEnregistre ex) {
+                    log.info("[OutilSuivi] Mobilité domicile-travail incomplète pour entiteId={}, année={} : {}", entiteId, year, ex.getMessage());
+                }
+            }
+            populateMobilityIndicators(indicators, mobiliteResultat, nbSalaries, nbEtudiants);
+
+            MobInternationalResultatDto mobInternationalResultat = null;
+            if (ongletIds.getMobInternationalOnglet() != null) {
+                mobInternationalResultat = mobInternationalOngletService.getMobInternationalResultat(ongletIds.getMobInternationalOnglet());
+            }
+            populateInternationalIndicators(indicators, mobInternationalResultat);
+
+            if (ongletIds.getBatimentImmobilisationMobilierOnglet() != null) {
+                var batimentOnglet = batimentImmobilisationMobilierOngletService.getBatimentImmobilisationMobilierOngletById(ongletIds.getBatimentImmobilisationMobilierOnglet());
+                if (batimentOnglet != null) {
+                    float nbMobilier = batimentOnglet.getMobilierElectromenagers().stream()
+                            .filter(Objects::nonNull)
+                            .map(MobilierElectromenager::getQuantite)
+                            .filter(Objects::nonNull)
+                            .mapToInt(Integer::intValue)
+                            .sum();
+                    indicators.put("nb_mobilier", nbMobilier > 0 ? nbMobilier : 0f);
+                }
+            }
+
+            if (ongletIds.getNumeriqueOnglet() != null) {
+                NumeriqueOnglet numeriqueOnglet = numeriqueOngletService.getNumeriqueOngletById(ongletIds.getNumeriqueOnglet());
+                if (numeriqueOnglet != null) {
+                    float nbEquipements = numeriqueOnglet.getEquipementNumeriqueList().stream()
+                            .filter(Objects::nonNull)
+                            .map(e -> e.getNombre())
+                            .filter(Objects::nonNull)
+                            .mapToInt(Integer::intValue)
+                            .sum();
+                    indicators.put("nb_numerique", nbEquipements > 0 ? nbEquipements : 0f);
+                }
+            }
+
+            if (ongletIds.getDechetOnglet() != null) {
+                DechetResultatDto dechetResultat = dechetOngletService.getDechetResultat(ongletIds.getDechetOnglet());
+                indicators.put("quantite_dechets", clean(dechetResultat != null ? dechetResultat.getTotalProduit() : null));
+            }
+
+            return Optional.of(new YearData(year,
+                    globalTotal,
+                    postes,
+                    indicators,
+                    mobiliteDomicile,
+                    autreMobiliteFr,
+                    mobiliteInternational));
+        } catch (EntityNotFoundException ex) {
+            log.info("[OutilSuivi] Année non trouvée pour entiteId={} et année={} : {}", entiteId, year, ex.getMessage());
+            return Optional.empty();
+        } catch (RuntimeException ex) {
+            log.warn("[OutilSuivi] Impossible de calculer les données pour entiteId={}, année={} : {}", entiteId, year, ex.getMessage());
+            return Optional.empty();
+        }
     }
-    private Float floatOrNull(Number base, double factor) {
-        if (base == null) return null;
-        return (float) (base.doubleValue() * factor);
+
+    private Map<String, Float> snapshotIndicators(YearData data) {
+        Map<String, Float> snapshot = createIndicatorMap();
+        if (data != null) {
+            INDICATOR_KEYS.forEach(key -> snapshot.put(key, data.indicatorValues.get(key)));
+        }
+        return snapshot;
+    }
+
+    private Map<String, Map<Integer, Float>> computePosteObjectives(List<Integer> years,
+                                                                     Map<Integer, YearData> dataByYear,
+                                                                     Trajectoire trajectoire) {
+        Map<String, Map<Integer, Float>> result = new LinkedHashMap<>();
+
+        if (trajectoire == null) {
+            return copyActualSeries(years, dataByYear);
+        }
+
+        YearData baselineData = resolveBaselineData(trajectoire.getReferenceYear(), years, dataByYear);
+        if (baselineData == null) {
+            return copyActualSeries(years, dataByYear);
+        }
+
+        Integer refYear = trajectoire.getReferenceYear() != null ? trajectoire.getReferenceYear() : baselineData.year;
+        if (refYear == null && !years.isEmpty()) {
+            refYear = years.get(0);
+        }
+
+        Integer targetYear = trajectoire.getTargetYear();
+        if (targetYear == null && !years.isEmpty()) {
+            targetYear = years.get(years.size() - 1);
+        }
+
+        Float globalTargetPct = clampPct(trajectoire.getTargetPercentage());
+        Map<String, Integer> reductions = trajectoire.getPosteReductions() != null ? trajectoire.getPosteReductions() : Collections.emptyMap();
+
+        for (String poste : POSTES) {
+            Map<Integer, Float> series = new LinkedHashMap<>();
+            Float baselineValue = baselineData.posteValues.get(poste);
+            Float reductionPct = resolveReductionPct(poste, reductions, globalTargetPct);
+            Float targetValue = computeTargetValue(baselineValue, reductionPct);
+
+            for (Integer year : years) {
+                YearData actualData = dataByYear.get(year);
+                Float actualValue = actualData != null ? actualData.posteValues.get(poste) : null;
+                Float value = computeObjectiveValue(year, refYear, targetYear, baselineValue, targetValue, actualValue);
+                series.put(year, value);
+            }
+
+            result.put(poste, series);
+            log.info("[OutilSuivi] Objectifs poste='{}' baseline={} réduction={}%% -> {}", poste, baselineValue, reductionPct, series);
+        }
+
+        return result;
+    }
+
+    private Map<String, Map<Integer, Float>> copyActualSeries(List<Integer> years, Map<Integer, YearData> dataByYear) {
+        Map<String, Map<Integer, Float>> result = new LinkedHashMap<>();
+        for (String poste : POSTES) {
+            Map<Integer, Float> series = new LinkedHashMap<>();
+            for (Integer year : years) {
+                YearData data = dataByYear.get(year);
+                series.put(year, data != null ? data.posteValues.get(poste) : null);
+            }
+            result.put(poste, series);
+        }
+        return result;
+    }
+
+    private YearData resolveBaselineData(Integer referenceYear, List<Integer> years, Map<Integer, YearData> dataByYear) {
+        if (referenceYear != null) {
+            YearData data = dataByYear.get(referenceYear);
+            if (data != null) {
+                return data;
+            }
+        }
+        for (Integer year : years) {
+            YearData data = dataByYear.get(year);
+            if (data != null) {
+                return data;
+            }
+        }
+        return null;
+    }
+
+    private Map<String, Float> createPosteMap() {
+        Map<String, Float> map = new LinkedHashMap<>(POSTES.size());
+        POSTES.forEach(poste -> map.put(poste, null));
+        return map;
+    }
+
+    private Map<String, Float> createIndicatorMap() {
+        Map<String, Float> map = new LinkedHashMap<>(INDICATOR_KEYS.size());
+        INDICATOR_KEYS.forEach(key -> map.put(key, null));
+        return map;
+    }
+
+    private void populateEnergyIndicators(Map<String, Float> indicators, EnergieResultatDto energieResultat) {
+        indicators.put("conso_energie", clean(energieResultat != null ? energieResultat.getConsoEnergieFinale() : null));
+        indicators.put("chauffage", clean(energieResultat != null ? energieResultat.getConsoEnergieChauffage() : null));
+        indicators.put("electricite", clean(energieResultat != null ? energieResultat.getconsoEnergieSpecifique() : null));
+        indicators.put("intensite_carbone_energie", clean(energieResultat != null ? energieResultat.getIntensiteCarboneMoyenne() : null));
+    }
+
+    private void populateMobilityIndicators(Map<String, Float> indicators,
+                                            MobiliteDomicileTravailResultatDto mobilite,
+                                            Float nbSalaries,
+                                            Float nbEtudiants) {
+        Float distanceSalarie = multiply(clean(mobilite != null ? mobilite.getDistanceAnnuelleParUsagerSalaries() : null), nbSalaries);
+        Float distanceEtudiants = multiply(clean(mobilite != null ? mobilite.getDistanceAnnuelleParUsagerEtudiants() : null), nbEtudiants);
+
+        indicators.put("distance_salarie", distanceSalarie);
+        indicators.put("distance_etudiants", distanceEtudiants);
+
+        Float partVoitureSalarie = sumNullable(clean(mobilite != null ? mobilite.getPartModaleVoitureThermiqueSalaries() : null),
+                clean(mobilite != null ? mobilite.getPartModaleVoitureElectriqueSalaries() : null));
+        Float partVoitureEtudiant = sumNullable(clean(mobilite != null ? mobilite.getPartModaleVoitureThermiqueEtudiants() : null),
+                clean(mobilite != null ? mobilite.getPartModaleVoitureElectriqueEtudiants() : null));
+
+        indicators.put("part_modale_voiture_salarie", partVoitureSalarie);
+        indicators.put("part_modale_ve_salarie", clean(mobilite != null ? mobilite.getPartModaleVoitureElectriqueSalaries() : null));
+        indicators.put("part_modale_doux_salarie", clean(mobilite != null ? mobilite.getPartModaleModesDouxSalaries() : null));
+
+        indicators.put("part_modale_voiture_etudiants", partVoitureEtudiant);
+        indicators.put("part_modale_ve_etudiants", clean(mobilite != null ? mobilite.getPartModaleVoitureElectriqueEtudiants() : null));
+        indicators.put("part_modale_doux_etudiants", clean(mobilite != null ? mobilite.getPartModaleModesDouxEtudiants() : null));
+
+        Float intensity = computeMobilityIntensity(mobilite, distanceSalarie, distanceEtudiants);
+        indicators.put("intensite_carbone_trajets", intensity);
+    }
+
+    private Float computeMobilityIntensity(MobiliteDomicileTravailResultatDto mobilite,
+                                           Float distanceSalarie,
+                                           Float distanceEtudiant) {
+        if (mobilite == null) {
+            return null;
+        }
+        Float emissionSalaries = clean(mobilite.getTotalSalaries());
+        Float emissionEtudiants = clean(mobilite.getTotalEtudiants());
+
+        Float totalDistance = sumNullable(distanceSalarie, distanceEtudiant);
+        Float totalEmission = sumNullable(emissionSalaries, emissionEtudiants);
+
+        if (totalDistance == null || totalDistance <= 0 || totalEmission == null) {
+            return null;
+        }
+        double intensity = (totalEmission * 1_000_000d) / totalDistance;
+        return (float) intensity;
+    }
+
+    private void populateInternationalIndicators(Map<String, Float> indicators, MobInternationalResultatDto resultat) {
+        InternationalTotals totals = computeInternationalTotals(resultat);
+        indicators.put("distance_internationale", totals.distanceKm);
+        if (totals.distanceKm != null && totals.distanceKm > 0 && totals.emissionTon != null) {
+            indicators.put("intensite_carbone_international", (totals.emissionTon * 1_000_000f) / totals.distanceKm);
+        }
+    }
+
+    private InternationalTotals computeInternationalTotals(MobInternationalResultatDto resultat) {
+        if (resultat == null) {
+            return new InternationalTotals(null, null);
+        }
+
+        Float proEmission = sumNullable(resultat.getEmissionGesProEurope(), resultat.getEmissionGesProHorsEurope());
+        Float stageEmission = sumNullable(resultat.getEmissionGesStageEurope(), resultat.getEmissionGesStagesHorsEurope());
+        Float semestreEmission = sumNullable(resultat.getEmissionGesSemestresEtudiantsEurope(), resultat.getEmissionGesSemestresEtudiantsHorsEurope());
+        Float formationEmission = sumNullable(resultat.getEmissionGesFormationContinueEurope(), resultat.getEmissionGesFormationContinueHorsEurope());
+
+        Float proDistance = computeDistanceFromEmission(proEmission, clean(resultat.getProsIntensiteCarboneDesDeplacemeents_gCo2eParKm()));
+        Float stageDistance = computeDistanceFromEmission(stageEmission, clean(resultat.getStagesIntensiteCarboneDesDeplacemeents_gCo2eParKm()));
+        Float semestreDistance = computeDistanceFromEmission(semestreEmission, clean(resultat.getSemestresIntensiteCarboneDesDeplacemeents_gCo2eParKm()));
+        Float formationDistance = computeDistanceFromEmission(formationEmission, clean(resultat.getFormationContinueIntensiteCarboneDesDeplacemeents_gCo2eParKm()));
+
+        Float totalEmission = sumNullable(proEmission, stageEmission, semestreEmission, formationEmission);
+        Float totalDistance = sumNullable(proDistance, stageDistance, semestreDistance, formationDistance);
+
+        return new InternationalTotals(totalEmission, totalDistance);
+    }
+
+    private Float computeDistanceFromEmission(Float emissionTon, Float intensity) {
+        if (emissionTon == null || intensity == null || intensity <= 0f) {
+            return null;
+        }
+        double distance = (emissionTon * 1_000_000d) / intensity;
+        return (float) distance;
+    }
+
+    private Float resolveReductionPct(String poste, Map<String, Integer> reductions, Float defaultPct) {
+        Float fallback = defaultPct != null ? defaultPct : 0f;
+        if ("Déplacements France".equals(poste)) {
+            Integer pct = reductions.get("mobilite-dom-tram");
+            return pct != null ? clampPct(pct.floatValue()) : fallback;
+        }
+        String key = POSTE_TO_TRAJECTOIRE_KEY.get(poste);
+        if (key != null) {
+            Integer pct = reductions.get(key);
+            if (pct != null) {
+                return clampPct(pct.floatValue());
+            }
+        }
+        return fallback;
+    }
+
+    private Float computeTargetValue(Float baseline, Float reductionPct) {
+        if (baseline == null) {
+            return null;
+        }
+        if (reductionPct == null) {
+            return baseline;
+        }
+        return baseline * (1f - reductionPct / 100f);
+    }
+
+    private Float computeObjectiveValue(Integer year,
+                                        Integer refYear,
+                                        Integer targetYear,
+                                        Float baseline,
+                                        Float target,
+                                        Float actual) {
+        if (baseline == null || target == null || refYear == null || targetYear == null) {
+            return actual;
+        }
+        if (year <= refYear) {
+            return actual != null ? actual : baseline;
+        }
+        if (year >= targetYear) {
+            return target;
+        }
+        int span = targetYear - refYear;
+        if (span <= 0) {
+            return target;
+        }
+        double progress = (double) (year - refYear) / span;
+        return baseline + (target - baseline) * (float) progress;
+    }
+
+    private Float clean(Float value) {
+        if (value == null) {
+            return null;
+        }
+        if (value.isNaN() || value.isInfinite()) {
+            return null;
+        }
+        return value;
+    }
+
+    private Float multiply(Float a, Float b) {
+        Float ca = clean(a);
+        Float cb = clean(b);
+        if (ca == null || cb == null) {
+            return null;
+        }
+        return ca * cb;
+    }
+
+    private Float sumNullable(Float... values) {
+        float sum = 0f;
+        boolean hasValue = false;
+        if (values != null) {
+            for (Float value : values) {
+                Float cleanValue = clean(value);
+                if (cleanValue != null) {
+                    sum += cleanValue;
+                    hasValue = true;
+                }
+            }
+        }
+        return hasValue ? sum : null;
+    }
+
+    private Float clampPct(Float pct) {
+        if (pct == null) {
+            return null;
+        }
+        float value = Math.max(0f, Math.min(100f, pct));
+        return value;
+    }
+
+    private static final class YearData {
+        final Integer year;
+        final Float globalTotal;
+        final Map<String, Float> posteValues;
+        final Map<String, Float> indicatorValues;
+        final Float mobiliteDomicile;
+        final Float autreMobiliteFrance;
+        final Float mobiliteInternational;
+
+        YearData(Integer year,
+                 Float globalTotal,
+                 Map<String, Float> posteValues,
+                 Map<String, Float> indicatorValues,
+                 Float mobiliteDomicile,
+                 Float autreMobiliteFrance,
+                 Float mobiliteInternational) {
+            this.year = year;
+            this.globalTotal = globalTotal;
+            this.posteValues = posteValues;
+            this.indicatorValues = indicatorValues;
+            this.mobiliteDomicile = mobiliteDomicile;
+            this.autreMobiliteFrance = autreMobiliteFrance;
+            this.mobiliteInternational = mobiliteInternational;
+        }
+    }
+
+    private static final class InternationalTotals {
+        final Float emissionTon;
+        final Float distanceKm;
+
+        InternationalTotals(Float emissionTon, Float distanceKm) {
+            this.emissionTon = emissionTon;
+            this.distanceKm = distanceKm;
+        }
     }
 }
