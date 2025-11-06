@@ -44,9 +44,9 @@ export class OutilSuiviPageComponent implements OnInit {
   diff: string[] = []; // calculé une fois les données chargées
 
   // TODO BACKEND: Remplacer la logique d'établissement par un chargement dynamique depuis le serveur
-  etablissements = ['Campus Lyon', 'Campus Paris', 'Campus Lille'];
+  etablissements = ['JUNIA ISEN', 'JUNIA HEI', 'JUNIA ISA','UCL'];
   selectedEtablissement = this.etablissements[0];
-  
+   
   // Méthode appelée quand l'établissement change
   onEtablissementChange() {
     // TODO BACKEND: Recharger toutes les données pour le nouvel établissement

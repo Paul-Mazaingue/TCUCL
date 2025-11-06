@@ -18,11 +18,11 @@ public class OutilSuiviServiceImpl implements OutilSuiviService {
         log.info("[OutilSuivi] loadForEntite exécuté pour entiteId={}", entiteId);
 
         // Mocks alignés sur le composant Angular (remplacer par des calculs/requêtes réelles plus tard)
-        List<Integer> years = Arrays.asList(2018, 2019, 2020, 2021, 2022, 2023, 2025, 2027, 2030, 2032, 2035);
+        List<Integer> years = Arrays.asList(2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030);
 
         // Utiliser null pour "trous" (JSON ne supporte pas NaN)
-        List<Float> objectif = Arrays.asList(800f, 780f, 740f, null, 680f, 640f, 620f, null, 560f, 540f, 500f);
-        List<Float> realise  = Arrays.asList(850f, 700f, null, 720f, 710f, 590f, null, 605f, 540f, null, 480f);
+        List<Float> objectif = Arrays.asList(780f, 750f, 720f, 680f, 650f, 620f, 590f, 589f, 550f, 520f, 490f, 460f);
+        List<Float> realise  = Arrays.asList(780f, 740f, 710f, 700f, 670f, 700f, 600f, 580f, 600f, 489f, 500f, 460f);
 
         List<String> postes = Arrays.asList(
                 "Emissions fugitives","Energie","Déplacements France","Déplacements internationaux",
@@ -34,20 +34,24 @@ public class OutilSuiviServiceImpl implements OutilSuiviService {
 
         Map<Integer, Map<String, Float>> indicateursParAn = new LinkedHashMap<>();
 
-        // Scénarios pour quelques années (comme dans le composant)
+        // Scénarios pour quelques années avec des données vraiment différentes
         Map<Integer, float[]> objScen = new HashMap<>();
-        objScen.put(2018, new float[]{5, 140, 220, 260, 70, 30, 10, 8, 40});
-        objScen.put(2020, new float[]{8, 90, 120, 110, 160, 35, 15, 9, 120});
-        objScen.put(2022, new float[]{0, 80, 150, 180, 80, 60, 0, 6, 70});
-        objScen.put(2025, new float[]{3, 60, 90, 120, 60, 30, 10, 50, 40});
-        objScen.put(2030, new float[]{2, 70, 130, 0, 70, 25, 8, 7, 5});
+        objScen.put(2019, new float[]{12, 165, 245, 290, 95, 45, 18, 15, 65});
+        objScen.put(2020, new float[]{9, 125, 180, 220, 140, 55, 22, 12, 95});
+        objScen.put(2022, new float[]{4, 95, 135, 175, 105, 75, 8, 18, 85});
+        objScen.put(2024, new float[]{6, 70, 110, 145, 85, 50, 14, 35, 60});
+        objScen.put(2026, new float[]{2, 55, 95, 130, 70, 42, 11, 28, 50});
+        objScen.put(2028, new float[]{1, 45, 80, 110, 60, 35, 9, 22, 42});
+        objScen.put(2030, new float[]{0, 35, 65, 90, 50, 28, 6, 18, 35});
 
         Map<Integer, float[]> reaScen = new HashMap<>();
-        reaScen.put(2018, new float[]{6, 180, 260, 320, 95, 42, 12, 12, 55});
-        reaScen.put(2020, new float[]{7, 85, 100, 95, 200, 50, 18, 11, 140});
-        reaScen.put(2022, new float[]{0, 70, 140, 210, 85, 120, 0, 9, 90});
-        reaScen.put(2025, new float[]{4, 55, 85, 130, 65, 38, 12, 90, 42});
-        reaScen.put(2030, new float[]{3, 65, 110, 0, 60, 22, 6, 10, 3});
+        reaScen.put(2019, new float[]{14, 190, 280, 335, 110, 52, 20, 18, 75});
+        reaScen.put(2020, new float[]{11, 140, 195, 240, 155, 62, 25, 15, 110});
+        reaScen.put(2022, new float[]{5, 105, 150, 195, 115, 88, 10, 22, 95});
+        reaScen.put(2024, new float[]{7, 78, 125, 160, 95, 58, 16, 42, 68});
+        reaScen.put(2026, new float[]{3, 62, 108, 145, 78, 48, 13, 32, 56});
+        reaScen.put(2028, new float[]{2, 50, 88, 120, 68, 40, 11, 26, 47});
+        reaScen.put(2030, new float[]{1, 40, 72, 100, 55, 32, 8, 21, 38});
 
         for (Integer y : years) {
             float[] obj = objScen.get(y);
@@ -106,7 +110,7 @@ public class OutilSuiviServiceImpl implements OutilSuiviService {
             indicateursParAn.put(y, vals);
         }
 
-        List<Float> globalTotals = Arrays.asList(12.5f, 11.5f, 10.9f, 11.8f, 10.3f, 9.7f, 9.2f, 9.8f, 8.4f, 7.9f, 7.2f);
+        List<Float> globalTotals = Arrays.asList(12.2f, 11.8f, 13f, 10.5f, 10.0f, 14f, 8.9f, 8.3f, 7.8f, 7.3f, 6.8f, 6.2f);
 
         OutilSuiviDto dto = new OutilSuiviDto(entiteId, years, objectif, realise, postes, postesObjectifParAn, postesRealiseParAn, indicateursParAn, globalTotals);
         log.info("[OutilSuivi] loadForEntite terminé pour entiteId={} ({} années, {} postes)", entiteId, years.size(), postes.size());

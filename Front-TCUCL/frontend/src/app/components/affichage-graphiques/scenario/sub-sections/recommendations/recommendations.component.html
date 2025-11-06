@@ -1,0 +1,12 @@
+<div class="container">
+  <div class="header">
+    <h3>Recommandations et leviers d'action</h3>
+    <p>Suggestions automatiques basées sur votre scénario</p>
+  </div>
+  <div class="recommendations">
+    <div class="recommendation" *ngFor="let recommendation of recommendations">
+      <h3>{{ recommendation.title }}</h3>
+      <p>{{ recommendation.description }}</p>
+    </div>
+  </div>
+</div>

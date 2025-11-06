@@ -1,99 +1,134 @@
 header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background-color: #fff;
-  border-bottom: 1px solid #ddd;
-
-  &.logged-in {
-    background-color: #ffffff;
-  }
-
-  .logo {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 1rem;
-
-    h1 {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin: 0;
+    padding: 1rem 2rem;
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+  
+    &.logged-in {
+      background-color: #ffffff;
     }
-
-    .splitter {
-      width: 1px;
-      height: 50px;
-      background-color: #ccc;
-    }
-  }
-
-  .account-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    position: relative;
-
-    .info {
+  
+    .logo {
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-
-      .name {
+      align-items: center;
+      gap: 1rem;
+  
+      h1 {
+        font-size: 1.2rem;
         font-weight: 600;
+        margin: 0;
       }
-
-      .entity {
-        font-size: 0.85rem;
-        color: #666;
+  
+      .splitter {
+        width: 1px;
+        height: 50px;
+        background-color: #ccc;
       }
     }
 
-    .dropdown-wrapper {
-      position: relative;
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0 1rem;
 
-      button {
-        background: transparent;
+      .button {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+        font-weight: 500;
         border: none;
-        cursor: pointer;
-        padding: 0;
-        width: 100%;
-        justify-content: left;
-        margin: 0.75rem 1rem;
-
-        img {
-          border-radius: 50%;
-          width: 50px;
-          height: 50px;
-          display: block;
-        }
-      }
-
-      .dropdown {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        margin-top: 0.5rem;
-        background-color: white;
-        border: 1px solid #ccc;
         border-radius: 6px;
-        padding: 0;
-        list-style: none;
-        width: 200px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        z-index: 100;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
 
-        li {
-          font-size: 0.95rem;
-          cursor: pointer;
-          transition: background-color 0.2s ease;
+        &.primary-button {
+          background-color: #007bff;
+          color: white;
 
           &:hover {
-            background-color: #f0f0f0;
+            background-color: #0056b3;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+          }
+
+          &:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(0, 123, 255, 0.2);
           }
         }
       }
     }
+  
+    .account-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+  
+      .info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+  
+        .name {
+          font-weight: 600;
+        }
+  
+        .entity {
+          font-size: 0.85rem;
+          color: #666;
+        }
+      }
+  
+      .dropdown-wrapper {
+        position: relative;
+  
+        button {
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          padding: 0;
+          width: 100%;
+          justify-content: left;
+          margin: 0.75rem 1rem;
+  
+          img {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: block;
+          }
+        }
+  
+        .dropdown {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          margin-top: 0.5rem;
+          background-color: white;
+          border: 1px solid #ccc;
+          border-radius: 6px;
+          padding: 0;
+          list-style: none;
+          width: 200px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          z-index: 100;
+  
+          li {
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+  
+            &:hover {
+              background-color: #f0f0f0;
+            }
+          }
+        }
+      }
+    }
+  
   }
-
-}
+  
