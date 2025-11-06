@@ -124,6 +124,16 @@ export const ApiEndpoints = {
 
   auth: {
     connexion: () => `${BASE_URL}/auth/connexion`
+  },
+  
+  Trajectoire: {
+    getByEntite: (entiteId: number) => `${BASE_URL}/trajectoire/${entiteId}`,
+    upsert: (entiteId: number) => `${BASE_URL}/trajectoire/${entiteId}`,
+    getPostesDefaults: (entiteId: number) => `${BASE_URL}/trajectoire/${entiteId}/postes-defaults`
+  }
+  ,
+  OutilSuivi: {
+    getByEntite: (entiteId: number) => `${BASE_URL}/outil-suivi/${entiteId}`
   }
 }
   
