@@ -2,7 +2,12 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
 import { provideHttpClient } from '@angular/common/http';
 import { AppRouter } from './app/app.routes';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 bootstrapApplication(AppComponent, {
-  providers: [provideHttpClient(), AppRouter],
+  providers: [
+    provideHttpClient(),
+    AppRouter,
+    provideCharts(withDefaultRegisterables())
+  ],
 }).catch(err => console.error(err));

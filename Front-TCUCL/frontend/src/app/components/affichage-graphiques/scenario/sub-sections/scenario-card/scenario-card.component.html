@@ -1,5 +1,8 @@
-<div class="scenario-card" (click)="onSelect()"
-[ngClass]="{ 'selected': isSelected }">
+<div
+  class="scenario-card"
+  (click)="onSelect()"
+  [ngClass]="{ selected: isSelected }"
+>
   <!-- Display mode -->
   <div class="header-section" *ngIf="!isEditing; else editMode">
     <div class="header">
@@ -7,16 +10,14 @@
       <p class="sub-title">{{ scenario.description }}</p>
     </div>
     <div class="icon-section" [matMenuTriggerFor]="menu">
-        <img src="/assets/more_Vert.png" alt="">
-</div>
+      <img src="/assets/more_Vert.png" alt="" />
+    </div>
 
-      <mat-menu #menu="matMenu">
-        <img src="/assets/edit.png" alt="Edit" (click)="startEdit()" />
-        <img src="/assets/copy.png" alt="Duplicate" (click)="onDuplicate()" />
-        <img src="/assets/delete.png" alt="Delete" (click)="onDelete()" />
-      </mat-menu>
-     
-    
+    <mat-menu #menu="matMenu">
+      <img src="/assets/edit.png" alt="Edit" (click)="startEdit()" />
+      <img src="/assets/copy.png" alt="Duplicate" (click)="onDuplicate()" />
+      <img src="/assets/delete.png" alt="Delete" (click)="onDelete()" />
+    </mat-menu>
   </div>
 
   <hr />
