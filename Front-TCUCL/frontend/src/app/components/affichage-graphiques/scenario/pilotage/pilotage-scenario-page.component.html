@@ -7,14 +7,10 @@
       </p>
     </div>
 
-    <!-- ✅ Show count here -->
     <button>{{ count }} scénarios actifs</button>
   </header>
 
-  <!-- ✅ Listen for changes from the child -->
   <app-scenerio-gestion (scenarioCountChange)="updateCount($event)"></app-scenerio-gestion>
-
-  <app-posts></app-posts>
   <footer>
     <app-recommendations></app-recommendations>
     <button class="btn" (click)="goHome()">Accueil</button>

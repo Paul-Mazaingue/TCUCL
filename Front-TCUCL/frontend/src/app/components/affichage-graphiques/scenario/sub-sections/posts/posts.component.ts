@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ChartOptions, ChartData } from 'chart.js';
+import { ChartData, ChartOptions } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
+import { EmissionPost } from '../../../../../models/scenario.model';
 
 @Component({
   selector: 'app-posts',
@@ -11,38 +12,15 @@ import { BaseChartDirective } from 'ng2-charts';
   templateUrl: './posts.component.html',
   styleUrls: ['./posts.component.scss']
 })
-export class PostsComponent {
-  // === Base emission data ===
-  emissionCategories = [
-    { name: 'Énergie et eau', color: '#2ecc71', value: 35, currentEmission: 420, reduction: 780 },
-    { name: 'Émissions fugitives', color: '#27ae60', value: 15, currentEmission: 7, reduction: 38 },
-    { name: 'Mobilité domicile-travail', color: '#f39c12', value: 100, currentEmission: 850, reduction: 0 },
-    { name: 'Déplacements professionnels', color: '#e67e22', value: 100, currentEmission: 650, reduction: 0 },
-    { name: 'Bâtiments et mobilier', color: '#f39c12', value: 100, currentEmission: 500, reduction: 0 },
-    { name: 'Numérique', color: '#9b59b6', value: 100, currentEmission: 280, reduction: 0 },
-    { name: 'Autres immobilisations', color: '#8e44ad', value: 100, currentEmission: 220, reduction: 0 },
-    { name: 'Achats et restauration', color: '#3498db', value: 100, currentEmission: 950, reduction: 0 },
-    { name: 'Déchets', color: '#16a085', value: 100, currentEmission: 180, reduction: 0 }
-  ];
+export class PostsComponent implements OnChanges {
+  @Input() posts: EmissionPost[] = [];
 
-  // store initial emissions
-  private baseEmissions = this.emissionCategories.map(e => e.currentEmission);
+  activePost: EmissionPost | null = null;
 
-  categories = this.emissionCategories.map(e => e.name);
+  private baseEmissions: Record<string, number> = {};
 
-  // === BAR CHART ===
-  barChartData: ChartData<'bar'> = {
-    labels: this.categories,
-    datasets: [
-      {
-        label: 'Émissions (tCO₂e)',
-        data: this.emissionCategories.map(e => e.currentEmission),
-        backgroundColor: '#a8e063',
-        borderColor: '#7ac142',
-        borderWidth: 1
-      }
-    ]
-  };
+  barChartData!: ChartData<'bar'>;
+  radarChartData!: ChartData<'radar'>;
 
   barChartOptions: ChartOptions<'bar'> = {
     indexAxis: 'y',
@@ -62,21 +40,6 @@ export class PostsComponent {
         ticks: { color: '#333' }
       }
     }
-  };
-
-  // === RADAR CHART ===
-  radarChartData: ChartData<'radar'> = {
-    labels: this.categories,
-    datasets: [
-      {
-        label: 'Ajustement (%)',
-        data: this.emissionCategories.map(e => e.value),
-        backgroundColor: 'rgba(76, 29, 149, 0.3)', // purple background
-        borderColor: '#4c1d95',
-        borderWidth: 2,
-        pointBackgroundColor: '#4c1d95'
-      }
-    ]
   };
 
   radarChartOptions: ChartOptions<'radar'> = {
@@ -110,27 +73,64 @@ export class PostsComponent {
     }
   };
 
-  // === UPDATE LOGIC ===
-  updateEmission(item: any) {
-    const index = this.emissionCategories.indexOf(item);
-    const baseValue = this.baseEmissions[index];
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['posts'] && this.posts?.length > 0) {
+      this.baseEmissions = this.posts.reduce((acc, p) => {
+        acc[p.name] = p.currentEmission;
+        return acc;
+      }, {} as Record<string, number>);
 
-    // compute new emission
-    item.currentEmission = Math.round(baseValue * (item.value / 100));
+      this.activePost = this.posts[0];
 
-    // difference vs base value (reduction if < 0, increase if > 0)
-    item.reduction = Math.round(item.currentEmission - baseValue);
+      const first = this.activePost;
+      const base = this.baseEmissions[first.name];
+      const newEmission = (base * first.value) / 100;
+      first.currentEmission = +newEmission.toFixed(1);
+      first.reduction = +(newEmission - base).toFixed(1);
 
+      this.updateCharts();
+    }
+  }
+
+  applyPost(post: EmissionPost): void {
+    this.activePost = post;
+
+    const base = this.baseEmissions[post.name];
+    const newEmission = (base * post.value) / 100;
+
+    post.currentEmission = +newEmission.toFixed(1);
+    post.reduction = +(newEmission - base).toFixed(1);
+
+    this.posts = [...this.posts]; 
     this.updateCharts();
   }
 
-  updateCharts() {
-    this.barChartData.datasets[0].data = this.emissionCategories.map(e => e.currentEmission);
-    this.radarChartData.datasets[0].data = this.emissionCategories.map(e => e.value);
+  updateCharts(): void {
+    this.barChartData = {
+      labels: this.posts.map(p => p.name),
+      datasets: [
+        {
+          label: 'Émissions (tCO₂e)',
+          data: this.posts.map(p => p.currentEmission),
+          backgroundColor: this.posts.map(p => p.color),
+          borderWidth: 1
+        }
+      ]
+    };
 
-    // reassign to trigger Angular change detection
-    this.barChartData = { ...this.barChartData };
-    this.radarChartData = { ...this.radarChartData };
+    this.radarChartData = {
+      labels: this.posts.map(p => p.name),
+      datasets: [
+        {
+          label: 'Ajustement (%)',
+          data: this.posts.map(p => p.value),
+          backgroundColor: 'rgba(76, 29, 149, 0.3)',
+          borderColor: '#4c1d95',
+          borderWidth: 2,
+          pointBackgroundColor: '#4c1d95'
+        }
+      ]
+    };
   }
 
   getAbsValue(value: number): number {

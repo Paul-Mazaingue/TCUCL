@@ -6,13 +6,13 @@
     </div>
     <div class="buttons">
       <button class="btn-primary" (click)="addScenario()">
-        <img src="/assets/add.png" alt="">
-          Nouveau scenario
+        <img src="/assets/add.png" alt="" />
+        Nouveau scenario
       </button>
       <button class="btn-tertiary" (click)="toggleCompareMode()">
-        {{ isComparing ? 'Quitter comparaison' : 'Comparer' }}
+        {{ isComparing ? "Quitter comparaison" : "Comparer" }}
       </button>
-          </div>
+    </div>
   </div>
   <div class="card-section">
     <!-- Scenario cards list -->
@@ -20,13 +20,14 @@
     <div class="scenario-grid">
       <div class="scenario-list">
         <app-scenario-card
-        *ngFor="let scenario of scenarios"
-        [scenario]="scenario"
-        (select)="selectScenario(scenario)"
-        [isSelected]="scenario.id === selectedScenario?.id"
-        (delete)="deleteScenario(scenario.id)"
-        (duplicate)="duplicateScenario(scenario)"
-        ></app-scenario-card>
+          *ngFor="let scenario of scenarios"
+          [scenario]="scenario"
+          (click)="selectScenario(scenario)"
+          [class.selected]="scenario === selectedScenario"
+        >
+          (delete)="deleteScenario(scenario.id)"
+          (duplicate)="duplicateScenario(scenario)" ></app-scenario-card
+        >
       </div>
 
       <div class="scenario-details" *ngIf="selectedScenario">
@@ -57,7 +58,7 @@
         </div>
 
         <!-- Form to add new scenario -->
-        <div class="scenario-form">
+        <!-- <div class="scenario-form">
           <input
             placeholder="Scenario de reference"
             [(ngModel)]="newScenario.name"
@@ -77,7 +78,9 @@
               Scenario mobilité durable
             </option>
           </select>
-        </div>
+        </div> -->
+        <app-posts *ngIf="selectedScenario" [posts]="selectedScenario.posts">
+        </app-posts>
       </div>
     </div>
   </div>

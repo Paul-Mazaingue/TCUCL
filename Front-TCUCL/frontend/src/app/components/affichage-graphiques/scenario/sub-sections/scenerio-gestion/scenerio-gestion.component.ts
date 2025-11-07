@@ -5,12 +5,13 @@ import { ScenarioCardComponent } from '../scenario-card/scenario-card.component'
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { ScenarioService } from "../../scenario.service";
-import { Scenario } from "../../../../../models/scenario.model"
+import { Scenario } from "../../../../../models/scenario.model";
+import { PostsComponent } from '../posts/posts.component';
 
 @Component({
   selector: 'app-scenerio-gestion',
   standalone: true,
-  imports: [CommonModule, FormsModule, ScenarioCardComponent],
+  imports: [CommonModule, FormsModule, ScenarioCardComponent, PostsComponent],
   providers: [ScenarioService],
   templateUrl: './scenerio-gestion.component.html',
   styleUrls: ['./scenerio-gestion.component.scss'],

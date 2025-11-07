@@ -2,7 +2,7 @@
   <h3>Ajustez les postes d’émission <span>(en % de la référence)</span></h3>
 
   <div class="emission-grid">
-    <div class="emission-card" *ngFor="let item of emissionCategories">
+    <div class="emission-card" *ngFor="let item of posts" (click)="applyPost(item)">
       <div class="card-header">
         <div class="label">
           <span class="dot" [ngStyle]="{ 'background-color': item.color }"></span>
@@ -18,7 +18,7 @@
           max="150"
           step="1"
           [(ngModel)]="item.value"
-          (input)="updateEmission(item)"
+          (input)="applyPost(item)"
         />
       </div>
 
