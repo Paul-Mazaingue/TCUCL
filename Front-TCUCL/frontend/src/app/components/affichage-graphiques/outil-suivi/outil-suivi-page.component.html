@@ -12,9 +12,14 @@
 
     <div class="filters">
       <label for="etablissement">Établissement :</label>
-      <select id="etablissement" [(ngModel)]="selectedEtablissement" (ngModelChange)="onEtablissementChange()">
-        <option *ngFor="let e of etablissements" [value]="e">{{ e }}</option>
+      <!-- Si superadmin, afficher un menu déroulant avec toutes les entités -->
+      <select *ngIf="userService.isSuperAdmin()" id="etablissement" [(ngModel)]="selectedEntiteId" (ngModelChange)="onEtablissementChange($event)">
+        <option *ngFor="let entite of entites" [value]="entite.id">{{ entite.nom }}</option>
       </select>
+      <!-- Si pas superadmin, afficher uniquement le nom de l'établissement de l'utilisateur -->
+      <span *ngIf="!userService.isSuperAdmin()" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; background: #f5f5f5; display: inline-block;">
+        {{ getSelectedEtablissementName() }}
+      </span>
     </div>
 
     <!-- ============================ -->
@@ -33,7 +38,7 @@
         </div>
       </div>
     <h3>Évolution des émissions (kgCO₂e/usager)</h3>
-  <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+  <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ getSelectedEtablissementName() }}</strong></div>
 
       <div class="chart-scroll">
         <!-- Légende -->
@@ -154,7 +159,7 @@
         </div>
       </div>
   <h3>Évolution des émissions globales (tCO₂)</h3>
-  <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+  <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ getSelectedEtablissementName() }}</strong></div>
       <div class="chart-scroll">
         <!-- Légende -->
         <div class="legend" style="margin: 4px 0 8px;">
@@ -251,7 +256,7 @@
         </div>
       </div>
       <h3>Suivi des émissions par poste (kgCO₂e/usager)</h3>
-      <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+      <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ getSelectedEtablissementName() }}</strong></div>
 
       <div class="filters" style="margin-bottom:8px;">
         <label for="anneePostes">Année :</label>
@@ -350,7 +355,7 @@
         </div>
       </div>
     <h3>Comparaison des émissions par poste (kgCO₂e/utilisateur)</h3>
-    <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+    <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ getSelectedEtablissementName() }}</strong></div>
 
     <div class="filters" style="margin-bottom:8px;">
         <label>Sélectionner les années à comparer :</label>
@@ -491,7 +496,7 @@
         </div>
       </div>
       <h3>Suivi des indicateurs</h3>
-      <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+      <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ getSelectedEtablissementName() }}</strong></div>
 
       <div class="filters" style="margin-bottom:8px;">
         <label>Sélectionner les années :</label>

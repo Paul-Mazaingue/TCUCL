@@ -2,7 +2,7 @@ import { Component, HostListener, ChangeDetectorRef, OnInit } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { OutilSuiviService, OutilSuiviData } from '../../../services/outil-suivi.service';
+import { OutilSuiviService, OutilSuiviData, EntiteNomId } from '../../../services/outil-suivi.service';
 import { UserService } from '../../../services/user.service';
 import { AuthService } from '../../../services/auth.service';
 
@@ -18,7 +18,7 @@ export class OutilSuiviPageComponent implements OnInit {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private outilSuiviSrv: OutilSuiviService,
-    private userService: UserService,
+    public userService: UserService,
     private authService: AuthService
   ) {}
 
@@ -43,27 +43,32 @@ export class OutilSuiviPageComponent implements OnInit {
   realise: number[] = [];
   diff: string[] = []; // calculé une fois les données chargées
 
-  // TODO BACKEND: Remplacer la logique d'établissement par un chargement dynamique depuis le serveur
-  etablissements = ['JUNIA ISEN', 'JUNIA HEI', 'JUNIA ISA','UCL'];
-  selectedEtablissement = this.etablissements[0];
-   
+  // Gestion des entités/établissements
+  entites: EntiteNomId[] = [];
+  selectedEntiteId: number | null = null;
+  
   // Méthode appelée quand l'établissement change
-  onEtablissementChange() {
-    // TODO BACKEND: Recharger toutes les données pour le nouvel établissement
-    // Exemples d'appels API à faire :
-    // - this.loadEmissionsUsager(this.selectedEtablissement);
-    //   .subscribe(data => { this.years = data.years; this.objectif = data.objectif; this.realise = data.realise; });
-    // - this.loadEmissionsGlobales(this.selectedEtablissement);
-    //   .subscribe(data => { this.globalTotals = data.totals; });
-    // - this.loadPostesData(this.selectedEtablissement);
-    //   .subscribe(data => { this.postesObjectifParAn = data.objectifParAn; this.postesRealiseParAn = data.realiseParAn; });
-    // - this.loadIndicateursData(this.selectedEtablissement);
-    //   .subscribe(data => { this.indicateursParAn = data.indicateursParAn; });
-    
-    // Après chaque chargement, appeler this.cdr.detectChanges() pour forcer la mise à jour
-    
-  // Pour l'instant, on recharge via le service (mock interne)
-  this.loadAllFromService();
+  onEtablissementChange(newEntiteId: number | string) {
+    // Convertir en number si c'est une string (cas du select HTML)
+    const entiteId = typeof newEntiteId === 'string' ? Number(newEntiteId) : newEntiteId;
+    // Mettre à jour selectedEntiteId avec la nouvelle valeur
+    this.selectedEntiteId = entiteId;
+    if (this.selectedEntiteId) {
+      this.loadAllFromService();
+    }
+  }
+  
+  // Récupère le nom de l'établissement sélectionné ou celui de l'utilisateur
+  getSelectedEtablissementName(): string {
+    // Si on est superadmin et qu'on a chargé les entités et qu'on a sélectionné une entité
+    if (this.userService.isSuperAdmin() && this.entites.length > 0 && this.selectedEntiteId) {
+      const entite = this.entites.find(e => e.id === this.selectedEntiteId);
+      if (entite) {
+        return entite.nom;
+      }
+    }
+    // Sinon, utiliser directement le nom de l'entité de l'utilisateur
+    return this.userService.entite() || '';
   }
 
   // =============================================================
@@ -653,21 +658,49 @@ export class OutilSuiviPageComponent implements OnInit {
       this.router.navigate(['/login']);
       return;
     }
-    this.loadAllFromService();
+    
+    // Si superadmin, charger toutes les entités et initialiser avec l'entité de l'utilisateur
+    if (this.userService.isSuperAdmin()) {
+      this.outilSuiviSrv.getAllEntites().subscribe({
+        next: (entites) => {
+          this.entites = entites;
+          // Initialiser avec l'entité de l'utilisateur connecté
+          this.selectedEntiteId = entiteId;
+          this.loadAllFromService();
+        },
+        error: (err) => {
+          console.error('Erreur lors du chargement des entités:', err);
+          // En cas d'erreur, utiliser l'entité de l'utilisateur
+          this.selectedEntiteId = entiteId;
+          this.loadAllFromService();
+        }
+      });
+    } else {
+      // Si pas superadmin, utiliser directement l'entité de l'utilisateur
+      this.selectedEntiteId = entiteId;
+      this.loadAllFromService();
+    }
   }
 
   // (Supprimé) Ancien loader de mocks — les données proviennent désormais uniquement du service/API
 
   // Chargement centralisé depuis le service (mocks pour l'instant)
   private loadAllFromService() {
-    // Récupère l'entiteId depuis le UserService (lié à l'utilisateur connecté)
-    const entiteId = Number(this.userService.entiteId());
-    if (!entiteId) {
+    // Utilise l'entité sélectionnée si superadmin et qu'une entité est sélectionnée, sinon celle de l'utilisateur
+    let entiteId: number;
+    if (this.userService.isSuperAdmin() && this.selectedEntiteId !== null && this.selectedEntiteId !== undefined) {
+      entiteId = Number(this.selectedEntiteId);
+    } else {
+      entiteId = Number(this.userService.entiteId());
+    }
+    
+    if (!entiteId || isNaN(entiteId)) {
       console.warn('Outil-suivi: entiteId non disponible, requête API annulée.');
       return;
     }
 
-    this.outilSuiviSrv.loadAll(entiteId, this.selectedEtablissement).subscribe({
+    const etablissementLabel = this.getSelectedEtablissementName();
+    this.outilSuiviSrv.loadAll(entiteId, etablissementLabel).subscribe({
       next: (data: OutilSuiviData) => {
         // Graphique 1
         this.years = data.years;

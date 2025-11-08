@@ -15,6 +15,11 @@ export interface OutilSuiviData {
   globalTotals: number[];
 }
 
+export interface EntiteNomId {
+  id: number;
+  nom: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class OutilSuiviService {
   constructor(private http: HttpClient, private auth: AuthService) {}
@@ -26,5 +31,9 @@ export class OutilSuiviService {
 
   loadAll(entiteId: number, etablissementLabel?: string): Observable<OutilSuiviData> {
     return this.http.get<OutilSuiviData>(ApiEndpoints.OutilSuivi.getByEntite(entiteId), { headers: this.headers() });
+  }
+
+  getAllEntites(): Observable<EntiteNomId[]> {
+    return this.http.get<EntiteNomId[]>(ApiEndpoints.Utilisateur.getAllEntiteNomId(), { headers: this.headers() });
   }
 }
