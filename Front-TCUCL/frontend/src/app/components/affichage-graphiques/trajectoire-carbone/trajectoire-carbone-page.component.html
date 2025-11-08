@@ -1,6 +1,6 @@
 <div class="page">
 
-  <!-- Barre d’actions en haut -->
+  <!-- Barre d'actions en haut -->
   <section class="top-actions">
     <div class="top-actions__group">
       <button class="btn" (click)="exportCSV()">📄 CSV</button>
@@ -17,15 +17,43 @@
   <!-- Filtres -->
   <section class="filters">
     <div class="filter-card">
+      <label>Établissement</label>
+      <!-- Si superadmin, afficher un menu déroulant avec toutes les entités -->
+      <select class="select" 
+              *ngIf="userService.isSuperAdmin()" 
+              [(ngModel)]="selectedEntiteId" 
+              (ngModelChange)="onEtablissementChange($event)">
+        <option *ngFor="let entite of entites" [value]="entite.id">{{ entite.nom }}</option>
+      </select>
+      <!-- Si pas superadmin, afficher un input text readonly -->
+      <input type="text" 
+             *ngIf="!userService.isSuperAdmin()"
+             class="select"
+             [value]="getSelectedEtablissementName() || userService.entite() || 'Chargement...'"
+             [readonly]="true"
+             [disabled]="true"
+             [class.readonly]="true"
+             style="cursor: not-allowed;" />
+    </div>
+
+    <div class="filter-card">
       <label>Année de référence</label>
-      <select class="select" [(ngModel)]="startYear" (ngModelChange)="onStartYearSelect($event)">
+      <select class="select" 
+              [(ngModel)]="startYear" 
+              (ngModelChange)="onStartYearSelect($event)"
+              [disabled]="!userService.isSuperAdmin()"
+              [class.readonly]="!userService.isSuperAdmin()">
         <option *ngFor="let y of allowedYears" [ngValue]="y" [disabled]="y > endYear">{{ y }}</option>
       </select>
     </div>
 
     <div class="filter-card">
       <label>Année objectif</label>
-      <select class="select" [(ngModel)]="endYear" (ngModelChange)="onEndYearSelect($event)">
+      <select class="select" 
+              [(ngModel)]="endYear" 
+              (ngModelChange)="onEndYearSelect($event)"
+              [disabled]="!userService.isSuperAdmin()"
+              [class.readonly]="!userService.isSuperAdmin()">
         <option *ngFor="let y of allowedYears" [ngValue]="y" [disabled]="y < startYear">{{ y }}</option>
       </select>
     </div>
@@ -35,7 +63,14 @@
         <label>Baisse globale souhaitée</label>
         <span class="percent-chip">{{ reduction }}%</span>
       </div>
-      <input type="range" min="0" max="100" step="1" [(ngModel)]="reduction" (input)="onReductionInput($event)" />
+      <input type="range" 
+             min="0" 
+             max="100" 
+             step="1" 
+             [(ngModel)]="reduction" 
+             (input)="onReductionInput($event)"
+             [disabled]="!userService.isSuperAdmin()"
+             [class.readonly]="!userService.isSuperAdmin()" />
     </div>
   </section>
 
@@ -78,8 +113,12 @@
 
       <div class="advanced-stats">
         <label class="lock-toggle">
-          <input type="checkbox" [(ngModel)]="lockGlobal" (change)="saveSettingsPublic()" />
-          🔒 Verrouiller l’objectif global ({{ reduction }}%)
+          <input type="checkbox" 
+                 [(ngModel)]="lockGlobal" 
+                 (change)="saveSettingsPublic()"
+                 [disabled]="!userService.isSuperAdmin()"
+                 [class.readonly]="!userService.isSuperAdmin()" />
+          🔒 Verrouiller l'objectif global ({{ reduction }}%)
         </label>
 
         <div class="weighted-info">
@@ -91,7 +130,12 @@
           </strong>
         </div>
 
-        <button class="btn btn-secondary" (click)="resetPostes()">↺ Réinitialiser les postes</button>
+        <button class="btn btn-secondary" 
+                (click)="resetPostes()"
+                [disabled]="!userService.isSuperAdmin()"
+                [class.readonly]="!userService.isSuperAdmin()">
+          ↺ Réinitialiser les postes
+        </button>
       </div>
     </div>
 
@@ -101,9 +145,13 @@
           <span class="poste-name">{{ p.nom }}</span>
           <span class="poste-badge">{{ p.reductionBasePct | number:'1.0-0' }}%</span>
         </div>
-        <input type="range" min="0" max="100"
+        <input type="range" 
+               min="0" 
+               max="100"
                [(ngModel)]="p.reductionBasePct"
-               (input)="onPosteReductionChange(p.id)" />
+               (input)="onPosteReductionChange(p.id)"
+               [disabled]="!userService.isSuperAdmin()"
+               [class.readonly]="!userService.isSuperAdmin()" />
       </div>
     </div>
   </section>

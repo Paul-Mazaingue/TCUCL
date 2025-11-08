@@ -74,6 +74,21 @@
   padding: 0.35rem 0.5rem;
   font-size: 0.9rem;
 }
+.select.readonly,
+input[type="range"].readonly,
+input[type="checkbox"].readonly {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #f1f5f9;
+}
+input[type="range"].readonly {
+  background: #e2e8f0;
+}
+button.readonly {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 .filter-card--slider { flex-grow: 1; min-width: 240px; }
 .filter-card__head { display: flex; justify-content: space-between; align-items: center; }
 .percent-chip {

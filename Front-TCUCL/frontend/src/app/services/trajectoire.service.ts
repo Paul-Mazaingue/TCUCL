@@ -5,6 +5,11 @@ import { Trajectoire } from '../models/trajectoire.model';
 import { ApiEndpoints } from './api-endpoints';
 import { AuthService } from './auth.service';
 
+export interface EntiteNomId {
+  id: number;
+  nom: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TrajectoireService {
   constructor(private http: HttpClient, private auth: AuthService) {}
@@ -30,5 +35,9 @@ export class TrajectoireService {
       ApiEndpoints.Trajectoire.getPostesDefaults(entiteId),
       { headers: this.headers() }
     );
+  }
+
+  getAllEntites(): Observable<EntiteNomId[]> {
+    return this.http.get<EntiteNomId[]>(ApiEndpoints.Utilisateur.getAllEntiteNomId(), { headers: this.headers() });
   }
 }

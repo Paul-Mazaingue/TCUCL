@@ -1,11 +1,11 @@
-import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-import { TrajectoireService } from '../../../services/trajectoire.service';
+import { TrajectoireService, EntiteNomId } from '../../../services/trajectoire.service';
 import { UserService } from '../../../services/user.service';
 import { AuthService } from '../../../services/auth.service';
 import { Trajectoire, TrajectoirePosteReglage } from '../../../models/trajectoire.model';
@@ -76,21 +76,27 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
   years: number[] = [];
   tableRows: TableRow[] = [];
 
+  // Gestion des entités/établissements
+  entites: EntiteNomId[] = [];
+  selectedEntiteId: number | null = null;
+
   // Chart.js
   private chart: any = null;
   private ChartCtor: any = null;
 
+  // Exposer userService publiquement pour l'utiliser dans le template
   constructor(
     private router: Router,
     private trajectoireSrv: TrajectoireService,
-    private userService: UserService,
-    private authService: AuthService
+    public userService: UserService,
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   // ===== Lifecycle =====
   ngOnInit(): void {
     this.allowedYears = Array.from({ length: this.MAX_YEAR - this.REF_YEAR + 1 }, (_, i) => this.REF_YEAR + i);
-  // Les données initiales proviennent du backend
+    // Les données initiales proviennent du backend
 
     const token = this.authService.getToken();
     const entiteIdFromUser = Number(this.userService.entiteId());
@@ -99,64 +105,112 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
       return;
     }
 
-    const entiteId = entiteIdFromUser;
-    if(entiteId) {
-      this.trajectoireSrv.get(entiteId).subscribe({
-        next: (dto: Trajectoire) => {
-          if (dto) {
-            // Remonter les valeurs serveur
-            this.startYear = dto.referenceYear ?? this.startYear;
-            this.endYear = dto.targetYear ?? this.endYear;
-            this.reduction = Math.round((dto.targetPercentage ?? this.reduction));
-            this.lockGlobal = dto.lockGlobal ?? this.lockGlobal;
-            this.persistedPosteReglages = dto.postesReglages ?? [];
-            console.log('Trajectoire chargée depuis le serveur :', dto);
-          } else {
-            // Pas de trajectoire encore: on garde les valeurs UI par défaut
-            this.persistedPosteReglages = [];
-          }
-          this.rebuildYears();
-          this.applyPersistedPosteReglages();
-          this.generateTableRows();
-          this.ensureChart();
-          this.updateChartData(true);
-          this.chart?.update();
+    // Si superadmin, charger toutes les entités et initialiser avec l'entité de l'utilisateur
+    if (this.userService.isSuperAdmin()) {
+      this.trajectoireSrv.getAllEntites().subscribe({
+        next: (entites) => {
+          this.entites = entites;
+          // Initialiser avec l'entité de l'utilisateur connecté
+          this.selectedEntiteId = entiteIdFromUser;
+          this.loadDataForEntite(entiteIdFromUser);
         },
-        error: _ => {
-          // En cas d'erreur auth/serveur, pas de fallback localStorage/mocks
-          this.rebuildYears();
-          this.generateTableRows();
-          this.ensureChart();
-          this.updateChartData(true);
-          this.chart?.update();
-        }
-      });
-
-      // Charger les postes par défaut depuis le backend
-      this.trajectoireSrv.getPostesDefaults(entiteId).subscribe({
-        next: (postes) => {
-          this.postes = postes.map(p => ({ ...p }));
-          this.defaultPostes = postes.map(p => ({ ...p }));
-          console.log('[Trajectoire] Postes chargés depuis API:', this.postes);
-          // Recalculer le tableau avec les postes désormais disponibles
-          this.applyPersistedPosteReglages();
-          this.generateTableRows();
-          // Mettre à jour le graphique maintenant que les postes sont chargés
-          this.ensureChart();
-          this.updateChartData(true);
-          this.chart?.update();
-        },
-        error: _ => {
-          // Pas de postes: rester sur vide, l'UI s'adapte
+        error: (err) => {
+          console.error('Erreur lors du chargement des entités:', err);
+          // En cas d'erreur, utiliser l'entité de l'utilisateur
+          this.selectedEntiteId = entiteIdFromUser;
+          this.loadDataForEntite(entiteIdFromUser);
         }
       });
     } else {
-      console.log('Trajectoire: entiteId non disponible.');
-      // Non connecté (routes publiques dev) -> pas de fallback mock
-      this.rebuildYears();
-      this.generateTableRows();
+      // Si pas superadmin, utiliser directement l'entité de l'utilisateur
+      this.selectedEntiteId = entiteIdFromUser;
+      this.loadDataForEntite(entiteIdFromUser);
     }
+  }
 
+  // Méthode pour charger les données pour une entité donnée
+  private loadDataForEntite(entiteId: number): void {
+    this.trajectoireSrv.get(entiteId).subscribe({
+      next: (dto: Trajectoire) => {
+        if (dto) {
+          // Remonter les valeurs serveur
+          this.startYear = dto.referenceYear ?? this.startYear;
+          this.endYear = dto.targetYear ?? this.endYear;
+          this.reduction = Math.round((dto.targetPercentage ?? this.reduction));
+          this.lockGlobal = dto.lockGlobal ?? this.lockGlobal;
+          this.persistedPosteReglages = dto.postesReglages ?? [];
+          console.log('Trajectoire chargée depuis le serveur :', dto);
+        } else {
+          // Pas de trajectoire encore: on garde les valeurs UI par défaut
+          this.persistedPosteReglages = [];
+        }
+        this.rebuildYears();
+        this.applyPersistedPosteReglages();
+        this.generateTableRows();
+        this.ensureChart();
+        this.updateChartData(true);
+        this.chart?.update();
+        this.cdr.detectChanges();
+      },
+      error: _ => {
+        // En cas d'erreur auth/serveur, pas de fallback localStorage/mocks
+        this.rebuildYears();
+        this.generateTableRows();
+        this.ensureChart();
+        this.updateChartData(true);
+        this.chart?.update();
+        this.cdr.detectChanges();
+      }
+    });
+
+    // Charger les postes par défaut depuis le backend
+    this.trajectoireSrv.getPostesDefaults(entiteId).subscribe({
+      next: (postes) => {
+        this.postes = postes.map(p => ({ ...p }));
+        this.defaultPostes = postes.map(p => ({ ...p }));
+        console.log('[Trajectoire] Postes chargés depuis API:', this.postes);
+        // Recalculer le tableau avec les postes désormais disponibles
+        this.applyPersistedPosteReglages();
+        this.generateTableRows();
+        // Mettre à jour le graphique maintenant que les postes sont chargés
+        this.ensureChart();
+        this.updateChartData(true);
+        this.chart?.update();
+        this.cdr.detectChanges();
+      },
+      error: _ => {
+        // Pas de postes: rester sur vide, l'UI s'adapte
+      }
+    });
+  }
+
+  // Méthode appelée quand l'établissement change
+  onEtablissementChange(newEntiteId: number | string): void {
+    // Convertir en number si c'est une string (cas du select HTML)
+    const entiteId = typeof newEntiteId === 'string' ? Number(newEntiteId) : newEntiteId;
+    // Mettre à jour selectedEntiteId avec la nouvelle valeur
+    this.selectedEntiteId = entiteId;
+    if (this.selectedEntiteId) {
+      this.loadDataForEntite(entiteId);
+    }
+  }
+
+  // Récupère le nom de l'établissement sélectionné ou celui de l'utilisateur
+  getSelectedEtablissementName(): string {
+    // Si on est superadmin et qu'on a chargé les entités et qu'on a sélectionné une entité
+    if (this.userService.isSuperAdmin() && this.entites.length > 0 && this.selectedEntiteId) {
+      const entite = this.entites.find(e => e.id === this.selectedEntiteId);
+      if (entite) {
+        return entite.nom;
+      }
+    }
+    // Sinon, utiliser directement le nom de l'entité de l'utilisateur
+    const entiteNom = this.userService.entite();
+    if (entiteNom && entiteNom.trim().length > 0) {
+      return entiteNom;
+    }
+    // Si toujours vide, retourner une valeur par défaut
+    return '';
   }
 
   async ngAfterViewInit(): Promise<void> {
@@ -221,6 +275,9 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
 
   // ===== Persistance =====
   saveSettings(): void {
+    // Ne sauvegarder que si superadmin
+    if (!this.userService.isSuperAdmin()) return;
+    
     const payload: StoredSettings = {
       reduction: this.reduction,
       lockGlobal: this.lockGlobal,
@@ -234,7 +291,7 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch {}
 
     // Sauvegarde back si connecté à une entité
-    const entiteId = Number(this.userService.entiteId());
+    const entiteId = this.selectedEntiteId || Number(this.userService.entiteId());
     if (entiteId) {
       const dto: Trajectoire = {
         entiteId,
@@ -388,27 +445,36 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
 
   // ===== Interactions =====
   onReductionInput(evt: Event): void {
+    // Ne permettre la modification que si superadmin
+    if (!this.userService.isSuperAdmin()) return;
     const t = evt.target as HTMLInputElement | null;
     if (t) this.reduction = this.clampPct(Number(t.value));
     this.generateTableRows();
     this.updateChartData(true);
     this.saveSettings();
+    this.cdr.detectChanges(); // Forcer la mise à jour de l'affichage
   }
 
   onStartYearSelect(val: number | string): void {
+    // Ne permettre la modification que si superadmin
+    if (!this.userService.isSuperAdmin()) return;
     this.startYear = Number(val);
     this.rebuildYears();
     this.generateTableRows();
     this.updateChartData(true);
     this.saveSettings();
+    this.cdr.detectChanges(); // Forcer la mise à jour de l'affichage
   }
 
   onEndYearSelect(val: number | string): void {
+    // Ne permettre la modification que si superadmin
+    if (!this.userService.isSuperAdmin()) return;
     this.endYear = Number(val);
     this.rebuildYears();
     this.generateTableRows();
     this.updateChartData(true);
     this.saveSettings();
+    this.cdr.detectChanges(); // Forcer la mise à jour de l'affichage
   }
 
   toggleAdvancedMode(): void {
@@ -417,6 +483,8 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
 
   /** Quand un slider de poste bouge. Si lockGlobal, on rééquilibre les autres postes. */
   onPosteReductionChange(changedId?: string): void {
+    // Ne permettre la modification que si superadmin
+    if (!this.userService.isSuperAdmin()) return;
     if (this.lockGlobal && changedId) {
       this.rebalanceOthersToKeepGlobal(changedId);
     } else if (changedId) {
@@ -426,14 +494,18 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
     this.generateTableRows();
     this.updateChartData(true);
     this.saveSettings();
+    this.cdr.detectChanges(); // Forcer la mise à jour de l'affichage
   }
 
   /** 🔄 Réinitialise tous les postes à leurs valeurs par défaut */
   resetPostes(): void {
+    // Ne permettre la modification que si superadmin
+    if (!this.userService.isSuperAdmin()) return;
     this.postes = this.defaultPostes.map(p => ({ ...p }));
     this.generateTableRows();
     this.updateChartData(true);
     this.saveSettings();
+    this.cdr.detectChanges(); // Forcer la mise à jour de l'affichage
   }
 
   // ===== Chart.js (robuste) =====
