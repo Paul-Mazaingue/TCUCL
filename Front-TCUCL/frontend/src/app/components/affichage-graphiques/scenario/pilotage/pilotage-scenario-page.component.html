@@ -1,0 +1,18 @@
+<div class="container">
+  <header class="header">
+    <div class="title-section">
+      <h4 class="title">Pilotage par scénario</h4>
+      <p class="subtitle">
+        Simulez et comparez différents scénarios de réduction des émissions
+      </p>
+    </div>
+
+    <button>{{ count }} scénarios actifs</button>
+  </header>
+
+  <app-scenerio-gestion (scenarioCountChange)="updateCount($event)"></app-scenerio-gestion>
+  <footer>
+    <app-recommendations></app-recommendations>
+    <button class="btn" (click)="goHome()">Accueil</button>
+  </footer>
+</div>
