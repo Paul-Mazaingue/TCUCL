@@ -2,10 +2,17 @@
   <h3>Ajustez les postes d’émission <span>(en % de la référence)</span></h3>
 
   <div class="emission-grid">
-    <div class="emission-card" *ngFor="let item of posts" (click)="applyPost(item)">
+    <div
+      class="emission-card"
+      *ngFor="let item of posts"
+      (click)="applyPost(item)"
+    >
       <div class="card-header">
         <div class="label">
-          <span class="dot" [ngStyle]="{ 'background-color': item.color }"></span>
+          <span
+            class="dot"
+            [ngStyle]="{ 'background-color': item.color }"
+          ></span>
           <h4>{{ item.name }}</h4>
         </div>
         <span class="percent">{{ item.value }}%</span>
@@ -28,9 +35,12 @@
           <p>{{ item.currentEmission }} tCO₂e</p>
           <p
             class="reduction"
-            [ngClass]="{ positive: item.reduction > 0, negative: item.reduction < 0 }"
+            [ngClass]="{
+              positive: item.reduction > 0,
+              negative: item.reduction < 0
+            }"
           >
-            {{ item.reduction > 0 ? '+' : '' }}{{ item.reduction }} tCO₂e
+            {{ item.reduction > 0 ? "+" : "" }}{{ item.reduction }} tCO₂e
           </p>
         </div>
         <span>150%</span>
@@ -44,7 +54,12 @@
     <h4>Répartition des émissions</h4>
     <p>Par poste d'activité (tCO₂e)</p>
     <div class="chart-wrapper">
-      <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="'bar'"></canvas>
+      <canvas
+        baseChart
+        [data]="barChartData"
+        [options]="barChartOptions"
+        [type]="'bar'"
+      ></canvas>
     </div>
   </div>
 
@@ -52,10 +67,45 @@
     <h4>Vue radar des paramètres</h4>
     <p>Niveau d’ajustement par poste (%)</p>
     <div class="chart-wrapper">
-      <canvas baseChart [data]="radarChartData" [options]="radarChartOptions" [type]="'radar'"></canvas>
+      <canvas
+        baseChart
+        [data]="radarChartData"
+        [options]="radarChartOptions"
+        [type]="'radar'"
+      ></canvas>
     </div>
     <div class="note">
-      100% = niveau de référence | &lt;100% = réduction | &gt;100% = augmentation
+      100% = niveau de référence | &lt;100% = réduction | &gt;100% =
+      augmentation
     </div>
   </div>
+</div>
+
+<!-- posts.component.html -->
+<div class="scenario-form">
+  <h3>Ajouter un nouveau poste</h3>
+
+  <div class="form-grid">
+    <input
+      placeholder="Nom du poste"
+      [(ngModel)]="newPost.name"
+      name="name"
+    />
+
+    <input
+      placeholder="Émissions actuelles (tCO₂e)"
+      type="number"
+      [(ngModel)]="newPost.currentEmission"
+      name="currentEmission"
+    />
+
+    <input
+      placeholder="Valeur (%)"
+      type="number"
+      [(ngModel)]="newPost.value"
+      name="value"
+    />
+  </div>
+
+  <button (click)="addPost()">Ajouter le poste</button>
 </div>

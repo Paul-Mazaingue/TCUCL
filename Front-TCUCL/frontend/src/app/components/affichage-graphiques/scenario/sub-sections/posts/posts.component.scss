@@ -68,7 +68,7 @@
   .slider-wrapper {
     margin: 1rem 0;
 
-    input[type='range'] {
+    input[type="range"] {
       width: 100%;
       accent-color: #4c1d95;
       cursor: pointer;
@@ -158,6 +158,81 @@
     text-align: center;
   }
 }
+
+
+/* posts.component.scss */
+
+.scenario-form {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin: 20px 0;
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1rem;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+
+    @media (min-width: 640px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.5rem;
+      font-size: 0.95rem;
+      color: #111827;
+      background-color: #fff;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+      &::placeholder {
+        color: #9ca3af;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+      }
+    }
+  }
+
+  button {
+    margin-top: 1rem;
+    background-color: #3dc02b;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+
+    &:hover {
+      background-color: #4338ca; 
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+
+    &:disabled {
+      background-color: #c7d2fe;
+      cursor: not-allowed;
+    }
+  }
+}
+
 
 // === RESPONSIVE TUNING ===
 @media (max-width: 768px) {

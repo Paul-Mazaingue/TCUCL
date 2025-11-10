@@ -45,9 +45,8 @@
   flex-direction: column;
   gap: 20px;
   flex-wrap: wrap;
-}
-
-.metric {
+  
+  .metric {
   display: flex;
   justify-content: space-between;
   align-items: center; 
@@ -58,8 +57,14 @@
   }
   p{
     font-size: 14px;
+    border-radius: 20px;
+    background-color: antiquewhite;
+    padding: 6px 8px; 
   }
 }
+}
+
+
 
 .metric .material-symbols-outlined {
   font-size: 1.4rem;

@@ -136,4 +136,31 @@ export class PostsComponent implements OnChanges {
   getAbsValue(value: number): number {
     return Math.abs(value);
   }
+
+  newPost: Partial<EmissionPost> = {
+    name: '',
+    currentEmission: 0,
+    value: 100,
+    color: '#6366f1'
+  };
+  
+  addPost(): void {
+    if (!this.newPost.name || this.newPost.currentEmission == null) return;
+  
+    const post: EmissionPost = {
+      name: this.newPost.name,
+      currentEmission: this.newPost.currentEmission,
+      reduction: 0,
+      value: this.newPost.value ?? 100,
+      color: this.newPost.color ?? '#6366f1'
+    };
+  
+    this.posts = [...this.posts, post];
+  
+    this.baseEmissions[post.name] = post.currentEmission;
+  
+    this.newPost = { name: '', currentEmission: 0, value: 100 };
+  
+    this.updateCharts();
+  }
 }
