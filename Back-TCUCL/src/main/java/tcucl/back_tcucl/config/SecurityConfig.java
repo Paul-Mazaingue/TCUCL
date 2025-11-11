@@ -2,6 +2,8 @@ package tcucl.back_tcucl.config;
 
 import java.util.Arrays;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,6 +12,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -33,10 +36,14 @@ public class SecurityConfig {
 
     private final CustomUserDetailsServiceImpl customUserDetailsService;
     private final JwtUtils jwtUtils;
+    private final boolean devMode;
 
-    public SecurityConfig(CustomUserDetailsServiceImpl customUserDetailsService, JwtUtils jwtUtils) {
+    public SecurityConfig(CustomUserDetailsServiceImpl customUserDetailsService,
+                          JwtUtils jwtUtils,
+                          @Value("${app.dev-mode:false}") boolean devMode) {
         this.customUserDetailsService = customUserDetailsService;
         this.jwtUtils = jwtUtils;
+        this.devMode = devMode;
     }
 
     @Bean
@@ -48,10 +55,13 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        if (devMode) {
+            http.cors(Customizer.withDefaults());
+        } else {
+            http.cors(AbstractHttpConfigurer::disable);
+        }
+
         http
-                // todo_toProd Supprimer Cors en Prod
-                .cors(cors -> {
-                })
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers(REST_API + REST_AUTH + REST_CONNEXION, REST_API + REST_AUTH + REST_CHANGE_MDP_PREMIERE_CONNEXION
@@ -68,8 +78,8 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // todo_toProd Supprimer Cors en Prod
     @Bean
+    @ConditionalOnProperty(name = "app.dev-mode", havingValue = "true")
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));

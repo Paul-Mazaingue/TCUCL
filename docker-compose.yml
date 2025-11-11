@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./Back-TCUCL
+    image: tcucl-backend:latest
+    env_file:
+      - .env
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://host.docker.internal:5432/bdd}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-carbonucldata_usermaster}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-mdpusermaster}
+      APP_JWT_KEY: ${APP_JWT_KEY:-change-me}
+      APP_JWT_EXPIRATION_MS: ${APP_JWT_EXPIRATION_MS:-43200000}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-smtp.gmail.com}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      SPRING_MAIL_VERIFY_HOST: "${SPRING_MAIL_VERIFY_HOST:-http://localhost:8081}"
+      JAVA_OPTS: ${JAVA_OPTS:-}
+      DEV_MODE: ${DEV_MODE:-false}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    restart: unless-stopped
+    networks:
+      - tcucl-net
+
+  frontend:
+    build:
+      context: ./Front-TCUCL/frontend
+    image: tcucl-frontend:latest
+    env_file:
+      - .env
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:8080/api}
+      DEV_MODE: ${DEV_MODE:-false}
+    ports:
+      - "${FRONTEND_PORT:-8081}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - tcucl-net
+
+networks:
+  tcucl-net:
+    driver: bridge

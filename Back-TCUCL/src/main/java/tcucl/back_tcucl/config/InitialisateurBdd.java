@@ -1,6 +1,7 @@
 package tcucl.back_tcucl.config;
 
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import tcucl.back_tcucl.dto.CreationEntiteEtAdminDto_SuperAdmin;
@@ -19,12 +20,19 @@ public class InitialisateurBdd implements CommandLineRunner {
     private final ApplicationParamService applicationParamService;
     private final ParametreService parametreService;
     private final EntiteService entiteService;
+    private final String superAdminEmail;
 
-    public InitialisateurBdd(ApplicationParamService applicationParamService, ParametreService parametreService, EntiteService entiteService) {
+    public InitialisateurBdd(ApplicationParamService applicationParamService,
+                             ParametreService parametreService,
+                             EntiteService entiteService,
+                             @Value("${spring.mail.username:}") String superAdminEmail) {
         this.applicationParamService = applicationParamService;
         this.parametreService = parametreService;
 
         this.entiteService = entiteService;
+        this.superAdminEmail = (superAdminEmail != null && !superAdminEmail.isBlank())
+                ? superAdminEmail
+                : "trajectoirecarbone.ucl@gmail.com";
     }
 
     @Override
@@ -46,7 +54,7 @@ public class InitialisateurBdd implements CommandLineRunner {
                                 "SUPERADMIN",                        // Type
                                 "Super Admin",                       // NomUtilisateur
                                 "Utilisateur Technique 1",           // PrenomUtilisateur
-                                "trajectoirecarbone.ucl@gmail.com",  // <-- A REMPLACER PAR L'EMAIL DU SUPERADMIN
+                                superAdminEmail,
                                 SUPERADMIN_TRUE                      // EstSuperAdmin
                         )
                 );
