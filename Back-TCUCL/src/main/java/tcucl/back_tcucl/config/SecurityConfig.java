@@ -1,9 +1,7 @@
 package tcucl.back_tcucl.config;
 
 import java.util.Arrays;
-import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -34,17 +32,10 @@ public class SecurityConfig {
     private final CustomUserDetailsServiceImpl customUserDetailsService;
     private final JwtUtils jwtUtils;
 
-    // origine du front (lue depuis application.properties / .env)
-    private final String allowedOrigin;
-
-    public SecurityConfig(CustomUserDetailsServiceImpl customUserDetailsService,
-                          JwtUtils jwtUtils,
-                          @Value("${app.cors.allowed-origin:http://192.168.1.22:8081}") String allowedOrigin) {
+    public SecurityConfig(CustomUserDetailsServiceImpl customUserDetailsService, JwtUtils jwtUtils) {
         this.customUserDetailsService = customUserDetailsService;
         this.jwtUtils = jwtUtils;
-        this.allowedOrigin = allowedOrigin;
-
-        System.out.println(">>> SecurityConfig init - allowedOrigin=" + allowedOrigin);
+        System.out.println(">>> SecurityConfig init");
     }
 
     @Bean
@@ -57,14 +48,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        // CORS toujours activé
+        // CORS TOUJOURS ACTIVÉ
         http.cors(Customizer.withDefaults());
 
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth ->
                 auth
-                    // IMPORTANT : laisser passer TOUTES les pré-requêtes OPTIONS
+                    // OPTIONS = toujours autorisé (preflight CORS)
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                     // Endpoints publics
@@ -77,7 +68,7 @@ public class SecurityConfig {
                             "/v3/api-docs/**"
                     ).permitAll()
 
-                    // Tout le reste nécessite auth
+                    // Le reste sécurisé
                     .anyRequest().authenticated()
             )
             .addFilterBefore(new JwtFilter(customUserDetailsService, jwtUtils),
@@ -90,20 +81,19 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // On autorise ton front (et on peut rajouter localhost pour dev)
-        configuration.setAllowedOrigins(List.of(
-                allowedOrigin,
-                "http://localhost:8081",
-                "http://localhost:4200"
-        ));
+        // ⚠️ DEV : on ouvre large, on n’essaie pas d’être malin
+        configuration.addAllowedOrigin("http://192.168.1.22:8081");
+        configuration.addAllowedOrigin("http://localhost:8081");
+        configuration.addAllowedOrigin("http://localhost:4200");
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // CORS appliqué à toutes les routes
         source.registerCorsConfiguration("/**", configuration);
+
+        System.out.println(">>> CORS config registered");
         return source;
     }
 }
