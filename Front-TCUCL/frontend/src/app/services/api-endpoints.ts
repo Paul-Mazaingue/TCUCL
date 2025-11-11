@@ -1,10 +1,7 @@
 import {ONGLET_KEYS} from '../constants/onglet-keys';
 
 const runtimeEnv = typeof window !== 'undefined' ? (window as any).__env : undefined;
-const devModeFlag = String(runtimeEnv?.devMode ?? '').toLowerCase() === 'true';
-const BASE_URL = devModeFlag
-  ? 'http://localhost:8080/api'
-  : ((runtimeEnv?.apiBaseUrl as string) ?? 'https://trajectoirecarbone.univ-catholille.fr/api');
+const BASE_URL = (runtimeEnv?.apiBaseUrl as string) ?? 'https://trajectoirecarbone.univ-catholille.fr/api';
 
 export const ApiEndpoints = {
   Onglets: {
