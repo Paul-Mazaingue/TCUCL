@@ -4,9 +4,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -44,6 +44,9 @@ public class SecurityConfig {
         this.jwtUtils = jwtUtils;
         this.devMode = devMode;
         this.allowedOrigin = allowedOrigin;
+
+        // Simple log pour vérifier dans les logs que devMode est bien lu
+        System.out.println(">>> SecurityConfig initialised - devMode=" + devMode + ", allowedOrigin=" + allowedOrigin);
     }
 
     @Bean
@@ -55,41 +58,51 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Active CORS uniquement en mode dev
-        if (devMode) {
-            http.cors(Customizer.withDefaults());
-        } else {
-            http.cors(AbstractHttpConfigurer::disable);
-        }
+
+        // CORS toujours activé tant qu'on a un front sur un autre port/domaine
+        http.cors(Customizer.withDefaults());
 
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth ->
-                auth.requestMatchers(
-                        REST_API + REST_AUTH + REST_CONNEXION,
-                        REST_API + REST_AUTH + REST_CHANGE_MDP_PREMIERE_CONNEXION,
-                        REST_API + "/test/**",
-                        REST_API + "/test",
-                        "/swagger-ui/**",
-                        "/v3/api-docs/**"
-                ).permitAll()
-                .anyRequest().authenticated()
+                auth
+                    // Très important : laisser passer TOUTES les OPTIONS (preflight CORS)
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                    // Endpoints publics
+                    .requestMatchers(
+                            REST_API + REST_AUTH + REST_CONNEXION,
+                            REST_API + REST_AUTH + REST_CHANGE_MDP_PREMIERE_CONNEXION,
+                            REST_API + "/test/**",
+                            REST_API + "/test",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**"
+                    ).permitAll()
+
+                    // Le reste nécessite auth
+                    .anyRequest().authenticated()
             )
             .addFilterBefore(new JwtFilter(customUserDetailsService, jwtUtils), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    /**
-     * Configuration CORS activée uniquement si app.dev-mode=true
-     */
     @Bean
-    @ConditionalOnProperty(name = "app.dev-mode", havingValue = "true")
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // autorise automatiquement la valeur définie dans .env (API_BASE_URL)
-        configuration.setAllowedOrigins(List.of(allowedOrigin));
+        // En dev, on peut être plus permissif si besoin
+        if (devMode) {
+            // On accepte l'origine du .env + quelques valeurs utiles
+            configuration.setAllowedOriginPatterns(List.of(
+                    allowedOrigin,
+                    "http://localhost:8081",
+                    "http://localhost:4200"
+            ));
+        } else {
+            // En "prod", on garde uniquement ce qui vient de la config
+            configuration.setAllowedOriginPatterns(List.of(allowedOrigin));
+        }
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
