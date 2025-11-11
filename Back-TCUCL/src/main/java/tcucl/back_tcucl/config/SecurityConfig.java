@@ -33,20 +33,18 @@ public class SecurityConfig {
 
     private final CustomUserDetailsServiceImpl customUserDetailsService;
     private final JwtUtils jwtUtils;
-    private final boolean devMode;
+
+    // origine du front (lue depuis application.properties / .env)
     private final String allowedOrigin;
 
     public SecurityConfig(CustomUserDetailsServiceImpl customUserDetailsService,
                           JwtUtils jwtUtils,
-                          @Value("${app.dev-mode:false}") boolean devMode,
-                          @Value("${app.cors.allowed-origin:http://localhost:4200}") String allowedOrigin) {
+                          @Value("${app.cors.allowed-origin:http://192.168.1.22:8081}") String allowedOrigin) {
         this.customUserDetailsService = customUserDetailsService;
         this.jwtUtils = jwtUtils;
-        this.devMode = devMode;
         this.allowedOrigin = allowedOrigin;
 
-        // Simple log pour vérifier dans les logs que devMode est bien lu
-        System.out.println(">>> SecurityConfig initialised - devMode=" + devMode + ", allowedOrigin=" + allowedOrigin);
+        System.out.println(">>> SecurityConfig init - allowedOrigin=" + allowedOrigin);
     }
 
     @Bean
@@ -59,14 +57,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        // CORS toujours activé tant qu'on a un front sur un autre port/domaine
+        // CORS toujours activé
         http.cors(Customizer.withDefaults());
 
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth ->
                 auth
-                    // Très important : laisser passer TOUTES les OPTIONS (preflight CORS)
+                    // IMPORTANT : laisser passer TOUTES les pré-requêtes OPTIONS
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                     // Endpoints publics
@@ -79,10 +77,11 @@ public class SecurityConfig {
                             "/v3/api-docs/**"
                     ).permitAll()
 
-                    // Le reste nécessite auth
+                    // Tout le reste nécessite auth
                     .anyRequest().authenticated()
             )
-            .addFilterBefore(new JwtFilter(customUserDetailsService, jwtUtils), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new JwtFilter(customUserDetailsService, jwtUtils),
+                             UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -91,25 +90,19 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // En dev, on peut être plus permissif si besoin
-        if (devMode) {
-            // On accepte l'origine du .env + quelques valeurs utiles
-            configuration.setAllowedOriginPatterns(List.of(
-                    allowedOrigin,
-                    "http://localhost:8081",
-                    "http://localhost:8080",
-                    "http://localhost:4200"
-            ));
-        } else {
-            // En "prod", on garde uniquement ce qui vient de la config
-            configuration.setAllowedOriginPatterns(List.of(allowedOrigin));
-        }
+        // On autorise ton front (et on peut rajouter localhost pour dev)
+        configuration.setAllowedOrigins(List.of(
+                allowedOrigin,
+                "http://localhost:8081",
+                "http://localhost:4200"
+        ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        // CORS appliqué à toutes les routes
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
