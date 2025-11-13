@@ -18,6 +18,7 @@ services:
       SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
       SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
       SPRING_MAIL_VERIFY_HOST: "${SPRING_MAIL_VERIFY_HOST:-http://localhost:8081}"
+      FRONT_ORIGIN: "${FRONT_ORIGIN:-http://localhost:${FRONTEND_PORT:-8081}}"
       JAVA_OPTS: ${JAVA_OPTS:-}
       DEV_MODE: ${DEV_MODE:-false}
     ports:

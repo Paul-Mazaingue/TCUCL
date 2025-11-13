@@ -1,7 +1,10 @@
 package tcucl.back_tcucl.config;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,6 +34,9 @@ public class SecurityConfig {
 
     private final CustomUserDetailsServiceImpl customUserDetailsService;
     private final JwtUtils jwtUtils;
+
+    @Value("${app.cors.allowed-origin:${FRONT_ORIGIN:${API_BASE_URL:http://localhost:4200}}}")
+    private String corsAllowedOrigin;
 
     public SecurityConfig(CustomUserDetailsServiceImpl customUserDetailsService, JwtUtils jwtUtils) {
         this.customUserDetailsService = customUserDetailsService;
@@ -81,10 +87,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // ⚠️ DEV : on ouvre large, on n’essaie pas d’être malin
-        configuration.addAllowedOrigin("http://192.168.1.22:8081");
-        configuration.addAllowedOrigin("http://localhost:8081");
-        configuration.addAllowedOrigin("http://localhost:4200");
+    // Origines autorisées depuis la propriété (séparées par des virgules si besoin)
+    List<String> origins = Arrays.stream(corsAllowedOrigin.split(","))
+        .map(String::trim)
+        .filter(s -> !s.isEmpty())
+        .collect(Collectors.toList());
+    configuration.setAllowedOrigins(origins);
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.addAllowedHeader("*");
