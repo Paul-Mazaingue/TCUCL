@@ -45,6 +45,11 @@ CREATE DATABASE bdd OWNER carbonucldata_usermaster;
 GRANT ALL PRIVILEGES ON DATABASE bdd TO carbonucldata_usermaster;
 ```
 
+### Quitter
+```sql
+\q
+```
+
 ### Config réseau PostgreSQL
 
 Modifier la ligne dans le fichier `postgresql.conf` (/etc/postgresql/*/main/postgresql.conf) :
@@ -70,6 +75,15 @@ sudo systemctl restart postgresql
 sudo apt install ca-certificates curl gnupg lsb-release -y
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) \
+signed-by=/etc/apt/keyrings/docker.gpg] \
+https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+| sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+sudo systemctl enable docker
 ```
 
 ## 5. Récupération du projet
