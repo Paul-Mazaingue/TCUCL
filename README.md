@@ -40,9 +40,9 @@ sudo -u postgres psql
 ### Création base + utilisateur
 
 ```sql
-CREATE USER carbonucldata_usermaster WITH PASSWORD 'mdpusermaster';
-CREATE DATABASE bdd OWNER carbonucldata_usermaster;
-GRANT ALL PRIVILEGES ON DATABASE bdd TO carbonucldata_usermaster;
+CREATE USER example_name WITH PASSWORD 'example_password';
+CREATE DATABASE bdd OWNER example_name;
+GRANT ALL PRIVILEGES ON DATABASE bdd TO example_name;
 ```
 
 ### Quitter
@@ -116,8 +116,8 @@ API_BASE_URL=/api
 DEV_MODE=false
 
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/bdd
-SPRING_DATASOURCE_USERNAME=carbonucldata_usermaster
-SPRING_DATASOURCE_PASSWORD=mdpusermaster
+SPRING_DATASOURCE_USERNAME=example_name
+SPRING_DATASOURCE_PASSWORD=example_password
 
 APP_JWT_KEY=XXXXXXXXXXXXXXXXXXXXXX
 APP_JWT_EXPIRATION_MS=43200000
