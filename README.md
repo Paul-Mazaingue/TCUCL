@@ -1,5 +1,5 @@
 # Déploiement – Trajectoire Carbone
-## Version Dockerisée – Juillet 2025
+## Version Dockerisée
 
 ## 1. Résumé du fonctionnement
 
