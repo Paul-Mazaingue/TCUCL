@@ -7,10 +7,182 @@
       </p>
     </div>
 
-    <button>{{ count }} scénarios actifs</button>
+    <div class="buttons"> 
+      <button class="counter">{{ count }} scénarios actifs</button>
+      <button class="btn-primary" (click)="toggleForm()">
+        <img src="/assets/add.png" alt="" />
+        Nouveau scenario
+      </button>
+    </div>
   </header>
 
-  <app-scenerio-gestion (scenarioCountChange)="updateCount($event)"></app-scenerio-gestion>
+  <!-- Form as a Card -->
+  <div *ngIf="showForm" class="scenario-form-card">
+    <div class="card-header">
+      <h4>Créer un nouveau scénario</h4>
+    </div>
+    
+    <div class="card-content">
+      <div class="form-group">
+        <label>Nom du scénario</label>
+        <input
+          placeholder="Entrez le nom du scénario"
+          [(ngModel)]="newScenario.name"
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <input
+          placeholder="Décrivez le scénario"
+          [(ngModel)]="newScenario.description"
+          class="form-input"
+        />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Année</label>
+          <input 
+            type="number" 
+            placeholder="Année" 
+            [(ngModel)]="newScenario.year" 
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Objectif (%)</label>
+          <input 
+            type="number" 
+            placeholder="Objectif" 
+            [(ngModel)]="newScenario.goal" 
+            class="form-input"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Type de scénario</label>
+        <select [(ngModel)]="newScenario.name" class="form-select">
+          <option value="Scenario de reference">Scenario de reference</option>
+          <option value="Scenario reduction energetique">Scenario reduction energetique</option>
+          <option value="Scenario mobilité durable">Scenario mobilité durable</option>
+          <option value="">Personnalisé</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card-actions">
+      <button class="btn-secondary" (click)="cancelForm()">Annuler</button>
+      <button class="btn-primary" (click)="addScenario()">Créer le scénario</button>
+    </div>
+  </div>
+
+  <!-- Existing Scenario Cards -->
+  <div class="scenarios-container">
+    <div *ngFor="let scenario of scenarios" 
+         class="scenario-card"
+         (click)="onSelectScenario(scenario.id)"
+         [ngClass]="{ selected: selectedScenarioId === scenario.id && editingScenarioId !== scenario.id, editing: editingScenarioId === scenario.id }">
+      
+      <!-- Display Mode -->
+      <div *ngIf="editingScenarioId !== scenario.id" class="header-section">
+        <div class="scenario-header">
+          <h5 class="title">{{ scenario.name }}</h5>
+          <p class="sub-title">{{ scenario.description }}</p>
+          <div class="details">
+            <span class="detail-item">Année: {{ scenario.year }}</span>
+            <span class="detail-item">Objectif: {{ scenario.goal }}%</span>
+          </div>
+        </div>
+        <div class="icon-section" [matMenuTriggerFor]="menu">
+          <img src="/assets/more_Vert.png" alt="Options" />
+        </div>
+
+        <mat-menu #menu="matMenu">
+          <button mat-menu-item (click)="onEditScenario(scenario)">
+            <img src="/assets/edit.png" alt="Edit" />
+            <span>Modifier</span>
+          </button>
+          <button mat-menu-item (click)="onDuplicateScenario(scenario)">
+            <img src="/assets/copy.png" alt="Duplicate" />
+            <span>Dupliquer</span>
+          </button>
+          <button mat-menu-item (click)="onDeleteScenario(scenario.id)">
+            <img src="/assets/delete.png" alt="Delete" />
+            <span>Supprimer</span>
+          </button>
+        </mat-menu>
+      </div>
+
+      <!-- Edit Mode -->
+      <div *ngIf="editingScenarioId === scenario.id" class="edit-section">
+        <div class="card-header">
+          <h5>Modifier le scénario</h5>
+        </div>
+        
+        <div class="card-content">
+          <div class="form-group">
+            <label>Nom du scénario</label>
+            <input
+              placeholder="Nom du scénario"
+              [(ngModel)]="editedScenario.name"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <input
+              placeholder="Description"
+              [(ngModel)]="editedScenario.description"
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Année</label>
+              <input 
+                type="number" 
+                placeholder="Année" 
+                [(ngModel)]="editedScenario.year" 
+                class="form-input"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Objectif (%)</label>
+              <input 
+                type="number" 
+                placeholder="Objectif" 
+                [(ngModel)]="editedScenario.goal" 
+                class="form-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn-secondary" (click)="cancelEdit()">Annuler</button>
+          <button class="btn-primary" (click)="saveEdit()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gestion Page for Selected Scenario -->
+<div *ngIf="selectedScenarioId" class="gestion-container">
+  <app-scenerio-gestion [scenarioId]="selectedScenarioId"></app-scenerio-gestion>
+</div>
+
+  <!-- No scenarios message -->
+  <div *ngIf="scenarios.length === 0 && !showForm" class="no-scenarios">
+    <p>Aucun scénario créé. Cliquez sur "Nouveau scenario" pour commencer.</p>
+  </div>
+
   <footer>
     <app-recommendations></app-recommendations>
     <button class="btn" (click)="goHome()">Accueil</button>
