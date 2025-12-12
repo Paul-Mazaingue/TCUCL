@@ -26,6 +26,13 @@ export class ScenarioCardComponent {
   @Input() isSelected = false;
   @Output() select = new EventEmitter<any>();
 
+
+  formatNumber(value: number): string {
+    return value.toLocaleString('fr-FR', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
+    });
+  }
   
   onSelect() {
     this.select.emit(this.category);

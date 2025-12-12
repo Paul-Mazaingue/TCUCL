@@ -36,7 +36,7 @@
           <div class="detail">
             <span>Écart avec cible</span>
             <div>
-              <h4>{{ selectedScenario.ecartCible }}</h4>
+              <h4>{{ selectedScenario.ecartCible.toFixed(4) }}</h4>
               <p>tCO₂e à réduire</p>
             </div>
           </div>
@@ -49,8 +49,18 @@
             </div>
           </div>
         </div>
-        <app-posts *ngIf="selectedScenario" [posts]="selectedScenario.posts">
-        </app-posts>
+        <div>
+          <h3>Gestion des émissions pour {{ selectedScenario.name }}</h3>
+          <app-posts
+            *ngIf="selectedScenario"
+            [posts]="selectedScenario.posts"
+            [scenarioName]="selectedScenario.name"
+            (totalEmissionsChange)="onTotalEmissionsChange($event)"
+            (totalReductionChange)="onTotalReductionChange($event)"
+            (reductionRateChange)="onReductionRateChange($event)"
+          >
+          </app-posts>
+        </div>
       </div>
     </div>
   </div>

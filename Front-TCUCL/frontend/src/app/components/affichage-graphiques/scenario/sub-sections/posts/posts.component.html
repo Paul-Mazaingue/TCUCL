@@ -1,5 +1,5 @@
 <div class="emission-adjustment">
-  <h3>Ajustez les postes d’émission <span>(en % de la référence)</span></h3>
+  <h3>Ajustez les postes d’émission <span>(en % <strong>{{scenarioName}}</strong>)</span></h3>
 
   <div class="emission-grid">
     <div
@@ -51,7 +51,7 @@
 
 <div class="charts-container">
   <div class="chart-card">
-    <h4>Répartition des émissions</h4>
+    <h4>Répartition des émissions - {{ scenarioName }}</h4>
     <p>Par poste d'activité (tCO₂e)</p>
     <div class="chart-wrapper">
       <canvas
@@ -64,8 +64,8 @@
   </div>
 
   <div class="chart-card">
-    <h4>Vue radar des paramètres</h4>
-    <p>Niveau d’ajustement par poste (%)</p>
+    <h4>Vue radar des paramètres - {{ scenarioName }}</h4>
+      <p>Niveau d'ajustement par poste (%)</p>
     <div class="chart-wrapper">
       <canvas
         baseChart
@@ -79,33 +79,4 @@
       augmentation
     </div>
   </div>
-</div>
-
-<!-- posts.component.html -->
-<div class="scenario-form">
-  <h3>Ajouter un nouveau poste</h3>
-
-  <div class="form-grid">
-    <input
-      placeholder="Nom du poste"
-      [(ngModel)]="newPost.name"
-      name="name"
-    />
-
-    <input
-      placeholder="Émissions actuelles (tCO₂e)"
-      type="number"
-      [(ngModel)]="newPost.currentEmission"
-      name="currentEmission"
-    />
-
-    <input
-      placeholder="Valeur (%)"
-      type="number"
-      [(ngModel)]="newPost.value"
-      name="value"
-    />
-  </div>
-
-  <button (click)="addPost()">Ajouter le poste</button>
 </div>

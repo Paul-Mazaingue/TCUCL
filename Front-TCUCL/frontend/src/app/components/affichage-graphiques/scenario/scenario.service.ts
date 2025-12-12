@@ -1,19 +1,19 @@
 import { Injectable } from '@angular/core';
-import { Scenario, EmissionPost } from '../../../models/scenario.model';
+import { categories, EmissionPost } from '../../../models/scenario.model';
 import { Observable, of } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ScenarioService {
-  private scenarios: Scenario[] = [
+  private categories : categories[] = [
     {
       id: 1,
-      name: 'Scénario de référence',
+      name: "L'evolution de référence",
       description: 'Basé sur les données actuelles (100% par poste)',
-      totalEmission: '4875 tCO₂e',
-      ecartCible: '+2194',
-      reductionEstimee: '-0.0%',
+      totalEmission: 0,
+      ecartCible: 0,
+      reductionEstimee: 0,
       posts: [
         {
           name: 'Énergie et eau',
@@ -82,12 +82,12 @@ export class ScenarioService {
     },
     {
       id: 2,
-      name: 'Scénario du parc Immoblier',
+      name: "L'evolution du parc Immoblier",
       description:
         'Réduction ciblée sur l’énergie et le numérique pour les bâtiments',
-      totalEmission: '4408 tCO₂e',
-      ecartCible: '+1727',
-      reductionEstimee: '-9.6%',
+      totalEmission: 0,
+      ecartCible: 0,
+      reductionEstimee: 0,
       posts: [
         {
           name: 'Surface de bâtiment supplémentaire',
@@ -170,12 +170,12 @@ export class ScenarioService {
     },
     {
       id: 3,
-      name: 'Scénario mobilité quotidienne',
+      name: "L'evolution de la mobilité quotidienne",
       description:
         'Diminution des émissions via la mobilité durable et les déplacements réduits',
-      totalEmission: '4243 tCO₂e',
-      ecartCible: '+1562',
-      reductionEstimee: '-13.0%',
+      totalEmission: 0,
+      ecartCible: 0,
+      reductionEstimee:0,
       posts: [
         {
           name: 'Part des étudiants sur site',
@@ -237,12 +237,12 @@ export class ScenarioService {
     },
     {
       id: 4,
-      name: 'Scénario de la mobilité internationale',
+      name: "L'evolution de la mobilité internationale",
       description:
         'Adaptation des déplacements internationaux, limitation des voyages professionnels vers l’étranger',
-      totalEmission: '4550 tCO₂e',
-      ecartCible: '+1869',
-      reductionEstimee: '-6.7%',
+      totalEmission: 0,
+      ecartCible: 0,
+      reductionEstimee: 0,
       posts: [
         {
           name: "Part d'étudiants partant en mobilité chaque année",
@@ -318,12 +318,12 @@ export class ScenarioService {
     },
     {
       id: 5,
-      name: 'Scénario des effectifs',
+      name:" L'evolution des effectifs",
       description:
         'Hypothèse de réajustement des effectifs et réduction corrélée des activités administratives et logistiques',
-      totalEmission: '4300 tCO₂e',
-      ecartCible: '+1619',
-      reductionEstimee: '-11.8%',
+      totalEmission: 0,
+      ecartCible: 0,
+      reductionEstimee: 0,
       posts: [
         {
           name: 'Effectif étudiant',
@@ -347,17 +347,17 @@ export class ScenarioService {
 
   constructor() {
     // Store base emissions for each scenario
-    this.scenarios.forEach(scenario => {
+    this.categories.forEach(scenario => {
       this.baseEmissions[scenario.id] = scenario.posts.map(post => post.currentEmission);
     });
   }
 
-  getScenarios(): Observable<Scenario[]> {
-    return of(this.scenarios);
+  getScenarios(): Observable<categories[]> {
+    return of(this.categories);
   }
 
-  getScenarioById(id: number): Observable<Scenario | undefined> {
-    return of(this.scenarios.find(scenario => scenario.id === id));
+  getScenarioById(id: number): Observable<categories | undefined> {
+    return of(this.categories.find(scenario => scenario.id === id));
   }
 
   updatePost(scenarioId: number, post: EmissionPost): void {

@@ -64,7 +64,7 @@ export class ScenerioGestionComponent implements OnInit {
     this.totalEmissions = total;
     // Update the selected scenario with new total if needed
     if (this.selectedScenario) {
-      this.selectedScenario.totalEmission = total.toString();
+      this.selectedScenario.totalEmission = total;
     }
     console.log('Total Emissions updated:', total);
   }
@@ -72,7 +72,7 @@ export class ScenerioGestionComponent implements OnInit {
   onTotalReductionChange(reduction: number) {
     this.totalReduction = reduction;
     if (this.selectedScenario) {
-      this.selectedScenario.reductionEstimee = reduction.toString();
+      this.selectedScenario.reductionEstimee = reduction;
     }
     console.log('Total Reduction updated:', reduction);
   }
@@ -80,7 +80,7 @@ export class ScenerioGestionComponent implements OnInit {
   onReductionRateChange(rate: number) {
     this.reductionRate = rate;
     if (this.selectedScenario) {
-      this.selectedScenario.ecartCible = rate.toString();
+      this.selectedScenario.ecartCible = rate;
     }
     console.log('Reduction Rate updated:', rate);
   }
