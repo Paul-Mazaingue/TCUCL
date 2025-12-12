@@ -1,28 +1,32 @@
 import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { ScenarioCardComponent } from '../scenario-card/scenario-card.component';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { ScenarioService } from "../../scenario.service";
-import { Scenario } from "../../../../../models/scenario.model";
+import { categories } from "../../../../../models/scenario.model";
 import { PostsComponent } from '../posts/posts.component';
+import { Input } from '@angular/core';
 
 @Component({
   selector: 'app-scenerio-gestion',
   standalone: true,
-  imports: [CommonModule, FormsModule, ScenarioCardComponent, PostsComponent],
+  imports: [CommonModule, ScenarioCardComponent, PostsComponent],
   providers: [ScenarioService],
   templateUrl: './scenerio-gestion.component.html',
   styleUrls: ['./scenerio-gestion.component.scss'],
 })
 export class ScenerioGestionComponent implements OnInit {
-  scenarios: Scenario[] = [];
-  selectedScenario: Scenario | null = null;
+  @Input() categories: categories[] = [];
+  selectedScenario: categories | null = null;
+  @Input() scenarioId!: number; 
   isComparing = false;
-  newScenario: Partial<Scenario> = {};
-
   @Output() scenarioCountChange = new EventEmitter<number>();
+
+  // Add these properties to store the emission data
+  totalEmissions: number = 0;
+  totalReduction: number = 0;
+  reductionRate: number = 0;
 
   constructor(
     private router: Router,
@@ -30,94 +34,86 @@ export class ScenerioGestionComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // watch router events to toggle compare mode
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
         this.isComparing = event.urlAfterRedirects.includes('comparaison');
       });
 
-    // ✅ fetch scenarios from service
     this.loadScenarios();
   }
 
   private loadScenarios() {
-    this.scenarioService.getScenarios().subscribe(scenarios => {
-      this.scenarios = scenarios;
-      if (this.scenarios.length > 0) {
-        this.selectedScenario = this.scenarios[0];
+    this.scenarioService.getScenarios().subscribe(categories => {
+      this.categories = categories;
+  
+      if (this.scenarioId) {
+        this.selectedScenario = this.categories.find(s => s.id === this.scenarioId) || null;
+        // Optionally, initialize totals from the selected scenario
+        if (this.selectedScenario) {
+          this.calculateInitialTotals(this.selectedScenario);
+        }
       }
-      this.scenarioCountChange.emit(this.scenarios.length);
+  
+      this.scenarioCountChange.emit(this.categories.length);
     });
   }
 
+  // Add these methods to handle the emission events
+  onTotalEmissionsChange(total: number) {
+    this.totalEmissions = total;
+    // Update the selected scenario with new total if needed
+    if (this.selectedScenario) {
+      this.selectedScenario.totalEmission = total.toString();
+    }
+    console.log('Total Emissions updated:', total);
+  }
+
+  onTotalReductionChange(reduction: number) {
+    this.totalReduction = reduction;
+    if (this.selectedScenario) {
+      this.selectedScenario.reductionEstimee = reduction.toString();
+    }
+    console.log('Total Reduction updated:', reduction);
+  }
+
+  onReductionRateChange(rate: number) {
+    this.reductionRate = rate;
+    if (this.selectedScenario) {
+      this.selectedScenario.ecartCible = rate.toString();
+    }
+    console.log('Reduction Rate updated:', rate);
+  }
+
+  // Optional: Calculate initial totals from the scenario data
+  private calculateInitialTotals(scenario: categories) {
+    if (scenario.posts && scenario.posts.length > 0) {
+      this.totalEmissions = scenario.posts.reduce((sum, post) => sum + post.currentEmission, 0);
+      this.totalReduction = scenario.posts.reduce((sum, post) => sum + (post.reduction || 0), 0);
+      // You might need to calculate initial reduction rate based on base emissions
+    }
+  }
+  
   toggleCompareMode() {
     this.isComparing ? this.router.navigate(['/']) : this.router.navigate(['/comparaison']);
   }
 
+  ngOnChanges() {
+    if (this.categories.length > 0 && this.scenarioId) {
+      this.selectedScenario = this.categories.find(s => s.id === this.scenarioId) || null;
+      if (this.selectedScenario) {
+        this.calculateInitialTotals(this.selectedScenario);
+      }
+    }
+  }
+  
   compareScenarios() {
     this.router.navigate(['/comparaison']);
   }
 
-  selectScenario(scenario: Scenario) {
-    this.selectedScenario = scenario;
-  }
-
-  addScenario() {
-    if (!this.newScenario.name) return;
-
-    const newId =
-      this.scenarios.length > 0
-        ? Math.max(...this.scenarios.map(s => s.id)) + 1
-        : 1;
-
-    let preset = { totalEmission: '', reduction: '' };
-
-    switch (this.newScenario.name.toLowerCase()) {
-      case 'reference':
-        preset = { totalEmission: '4875 tCO₂e', reduction: '-0.0%' };
-        break;
-      case 'energie':
-        preset = { totalEmission: '4408 tCO₂e', reduction: '-9.6%' };
-        break;
-      case 'mobilite':
-        preset = { totalEmission: '4243 tCO₂e', reduction: '-13.0%' };
-        break;
-    }
-
-    const newScenario: Scenario = {
-      id: newId,
-      name: this.newScenario.name,
-      description: this.newScenario.description || '',
-      totalEmission: preset.totalEmission,
-      reductionEstimee: preset.reduction,
-      ecartCible: '',
-      posts: []
-    };
-
-    this.scenarios.push(newScenario);
-    this.scenarioCountChange.emit(this.scenarios.length);
-    this.newScenario = {};
-  }
-
-  duplicateScenario(scenario: Scenario) {
-    const newId =
-      this.scenarios.length > 0
-        ? Math.max(...this.scenarios.map(s => s.id)) + 1
-        : 1;
-
-    const duplicate: Scenario = {
-      ...scenario,
-      id: newId,
-      name: `${scenario.name} (Copie)`
-    };
-
-    this.scenarios.push(duplicate);
-    this.scenarioCountChange.emit(this.scenarios.length);
-  }
-
-  deleteScenario(id: number) {
-    this.scenarios = this.scenarios.filter(s => s.id !== id);
-    this.scenarioCountChange.emit(this.scenarios.length);
+  selectScenario(category: categories) {
+    this.selectedScenario = category;
+    // Reset totals when selecting a new scenario
+    this.calculateInitialTotals(category);
   }
 }
