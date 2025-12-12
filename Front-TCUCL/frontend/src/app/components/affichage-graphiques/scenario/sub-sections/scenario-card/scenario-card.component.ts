@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatMenuModule } from '@angular/material/menu';
+import { categories } from '../../../../../models/scenario.model';
 
 
 export interface Scenario {
@@ -21,12 +22,12 @@ export interface Scenario {
   styleUrls: ['./scenario-card.component.scss']
 })
 export class ScenarioCardComponent {
-  @Input() scenario!: Scenario;
+  @Input() category!: categories;
   @Input() isSelected = false;
   @Output() select = new EventEmitter<any>();
 
   
   onSelect() {
-    this.select.emit(this.scenario);
+    this.select.emit(this.category);
   }
 }
