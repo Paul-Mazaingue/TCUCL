@@ -49,9 +49,8 @@ export class ScenerioGestionComponent implements OnInit {
   
       if (this.scenarioId) {
         this.selectedScenario = this.categories.find(s => s.id === this.scenarioId) || null;
-        // Optionally, initialize totals from the selected scenario
         if (this.selectedScenario) {
-          this.calculateInitialTotals(this.selectedScenario);
+          // this.calculateInitialTotals(this.selectedScenario);
         }
       }
   
@@ -59,10 +58,8 @@ export class ScenerioGestionComponent implements OnInit {
     });
   }
 
-  // Add these methods to handle the emission events
   onTotalEmissionsChange(total: number) {
     this.totalEmissions = total;
-    // Update the selected scenario with new total if needed
     if (this.selectedScenario) {
       this.selectedScenario.totalEmission = total;
     }
@@ -85,14 +82,12 @@ export class ScenerioGestionComponent implements OnInit {
     console.log('Reduction Rate updated:', rate);
   }
 
-  // Optional: Calculate initial totals from the scenario data
-  private calculateInitialTotals(scenario: categories) {
-    if (scenario.posts && scenario.posts.length > 0) {
-      this.totalEmissions = scenario.posts.reduce((sum, post) => sum + post.currentEmission, 0);
-      this.totalReduction = scenario.posts.reduce((sum, post) => sum + (post.reduction || 0), 0);
-      // You might need to calculate initial reduction rate based on base emissions
-    }
-  }
+  // private calculateInitialTotals(scenario: categories) {
+  //   if (scenario.posts && scenario.posts.length > 0) {
+  //     this.totalEmissions = scenario.posts.reduce((sum, post) => sum + post.currentEmission, 0);
+  //     this.totalReduction = scenario.posts.reduce((sum, post) => sum + (post.reduction || 0), 0);
+  //   }
+  //}
   
   toggleCompareMode() {
     this.isComparing ? this.router.navigate(['/']) : this.router.navigate(['/comparaison']);
@@ -101,9 +96,9 @@ export class ScenerioGestionComponent implements OnInit {
   ngOnChanges() {
     if (this.categories.length > 0 && this.scenarioId) {
       this.selectedScenario = this.categories.find(s => s.id === this.scenarioId) || null;
-      if (this.selectedScenario) {
-        this.calculateInitialTotals(this.selectedScenario);
-      }
+      // if (this.selectedScenario) {
+      //   this.calculateInitialTotals(this.selectedScenario);
+      // }
     }
   }
   
@@ -113,7 +108,6 @@ export class ScenerioGestionComponent implements OnInit {
 
   selectScenario(category: categories) {
     this.selectedScenario = category;
-    // Reset totals when selecting a new scenario
-    this.calculateInitialTotals(category);
+    // this.calculateInitialTotals(category);
   }
 }

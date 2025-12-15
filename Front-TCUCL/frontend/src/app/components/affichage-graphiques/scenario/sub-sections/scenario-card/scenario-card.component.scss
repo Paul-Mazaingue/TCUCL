@@ -4,14 +4,37 @@
   border: 1px solid #eaedf1;
   max-width: 500px;
   width: 100%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #ffffff;
 
   &:hover {
     background-color: #f8f9fa;
+    border-color: #d0d7e2;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  &:active {
+    background-color: #ddfdcf;
+    box-shadow: 0 0 10px rgba(25, 118, 210, 0.1);
+    transform: translateY(0);
   }
 
   &.selected {
-    background-color: #e8fae0; 
-    box-shadow: 0 0 10px rgba(25, 118, 210, 0.1);
+    background-color: #e8f5e9;
+    border: 2px solid #4caf50;
+    box-shadow: 0 4px 20px rgba(76, 175, 80, 0.15);
+
+    .title {
+      color: #2e7d32;
+      font-weight: 600;
+    }
+
+    .metric p {
+      background-color: #4caf50;
+      color: white;
+    }
   }
 
   .header-section {
@@ -26,48 +49,57 @@
         font-size: 16px;
         font-weight: 500;
         margin-bottom: 5px;
+        color: #333;
+        transition: color 0.3s ease;
       }
       .sub-title {
         font-size: 13px;
         font-weight: 300;
+        color: #666;
       }
-
     }
   }
-  
-  hr{
+
+  hr {
     border: 1px solid #eaedf1;
     margin-bottom: 5px;
+    transition: border-color 0.3s ease;
+  }
+
+  &.selected hr {
+    border-color: #4caf50;
   }
 
   .metrics {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  flex-wrap: wrap;
-  
-  .metric {
-  display: flex;
-  justify-content: space-between;
-  align-items: center; 
-  font-weight: 400;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex-wrap: wrap;
 
-  span{
-    font-size: 13px;
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 400;
+
+      span {
+        font-size: 13px;
+        color: #555;
+      }
+
+      p {
+        font-size: 14px;
+        border-radius: 20px;
+        background-color: antiquewhite;
+        padding: 6px 12px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+    }
   }
-  p{
-    font-size: 14px;
-    border-radius: 20px;
-    background-color: antiquewhite;
-    padding: 6px 8px; 
+
+  .metric .material-symbols-outlined {
+    font-size: 1.4rem;
+    color: #329dd5;
   }
-}
-}
-
-
-
-.metric .material-symbols-outlined {
-  font-size: 1.4rem;
-  color: #329dd5;
-}
 }

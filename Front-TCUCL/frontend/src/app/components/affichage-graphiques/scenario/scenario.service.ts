@@ -19,7 +19,7 @@ export class ScenarioService {
           name: 'Énergie et eau',
           color: '#2ecc71',
           value: 35,
-          currentEmission: 420,
+          currentEmission: 120,
           reduction: 780,
         },
         {
@@ -68,7 +68,7 @@ export class ScenarioService {
           name: 'Achats et restauration',
           color: '#3498db',
           value: 100,
-          currentEmission: 950,
+          currentEmission: 250,
           reduction: 0,
         },
         {

@@ -15,37 +15,19 @@
         font-weight: 400;
       }
     }
-
-    .buttons {
-      display: flex;
-      gap: 10px;
-  
-      .btn-tertiary,
-      .btn-primary {
+      .btn-tertiary {
         padding: 8px 15px;
         cursor: pointer;
         font-size: 14px;
         border-radius: 8px;
         border: none;
       }
-      .btn-primary {
-        background-color: #2c9431;
-        color: white;
-        display: flex;
-        gap: 5px;
-        justify-content: center;
-        align-items: center;
-        margin-left: 5px;
-  
-        &:hover {
-          background-color: #1c7027d8;
-        }
-      }
       .btn-tertiary {
         background-color: #f3f4f6;
         color: #1f2937;
         border: 1px solid #d1d5db;
         transition: all 0.3s ease;
+        padding: 16px;
       
         &.active {
           background-color: #d1fae5;
@@ -53,8 +35,6 @@
           color: #065f46;
         }
       }
-      
-    }
   }
 
   .scenario-list {
