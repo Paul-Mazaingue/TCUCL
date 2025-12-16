@@ -44,6 +44,12 @@ export class PilotageScenarioPageComponent {
     this.count = newCount;
   }
 
+  validateYear(value: number) {
+    if (value < 2019) {
+      this.newScenario.year = 2019;
+    }
+  }
+  
   resetForm(): void {
     this.newScenario = {
       name: 'Scenario de reference',
@@ -55,25 +61,30 @@ export class PilotageScenarioPageComponent {
 
   addScenario(): void {
     if (!this.newScenario.name) return;
-
-    const newId = this.scenarios.length > 0 
-      ? Math.max(...this.scenarios.map(s => s.id)) + 1 
+  
+    if (Number(this.newScenario.year ?? 0) < 2019) {
+      this.newScenario.year = 2019;
+    }
+  
+    const newId = this.scenarios.length > 0
+      ? Math.max(...this.scenarios.map(s => s.id)) + 1
       : 1;
-
+  
     const newScenario: Scenario = {
       id: newId,
       name: this.newScenario.name,
       description: this.newScenario.description || '',
-      year: this.newScenario.year || new Date().getFullYear(),
+      year: this.newScenario.year || 2019,
       goal: this.newScenario.goal || 0,
     };
-
+  
     this.scenarios.push(newScenario);
     this.scenarioCountChange.emit(this.scenarios.length);
     this.resetForm();
     this.showForm = false;
     this.count = this.scenarios.length;
   }
+  
 
   toggleForm(): void {
     this.showForm = !this.showForm;
@@ -104,20 +115,24 @@ export class PilotageScenarioPageComponent {
       goal: scenario.goal
     };
   }
-
   saveEdit(): void {
-    if (this.editingScenarioId && this.editedScenario.name) {
-      const index = this.scenarios.findIndex(s => s.id === this.editingScenarioId);
-      if (index !== -1) {
-        this.scenarios[index] = {
-          ...this.scenarios[index],
-          ...this.editedScenario
-        };
-      }
-      this.cancelEdit();
+    if (!this.editingScenarioId || !this.editedScenario.name) return;
+  
+    if (Number(this.editedScenario.year ?? 0) < 2019) {
+      this.editedScenario.year = 2019;
     }
+  
+    const index = this.scenarios.findIndex(s => s.id === this.editingScenarioId);
+    if (index !== -1) {
+      this.scenarios[index] = {
+        ...this.scenarios[index],
+        ...this.editedScenario
+      };
+    }
+  
+    this.cancelEdit();
   }
-
+  
   cancelEdit(): void {
     this.editingScenarioId = null;
     this.editedScenario = {

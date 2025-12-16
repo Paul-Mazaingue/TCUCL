@@ -50,7 +50,6 @@ export class ScenerioGestionComponent implements OnInit {
       if (this.scenarioId) {
         this.selectedScenario = this.categories.find(s => s.id === this.scenarioId) || null;
         if (this.selectedScenario) {
-          // this.calculateInitialTotals(this.selectedScenario);
         }
       }
   
@@ -82,13 +81,6 @@ export class ScenerioGestionComponent implements OnInit {
     console.log('Reduction Rate updated:', rate);
   }
 
-  // private calculateInitialTotals(scenario: categories) {
-  //   if (scenario.posts && scenario.posts.length > 0) {
-  //     this.totalEmissions = scenario.posts.reduce((sum, post) => sum + post.currentEmission, 0);
-  //     this.totalReduction = scenario.posts.reduce((sum, post) => sum + (post.reduction || 0), 0);
-  //   }
-  //}
-  
   toggleCompareMode() {
     this.isComparing ? this.router.navigate(['/']) : this.router.navigate(['/comparaison']);
   }
@@ -96,9 +88,6 @@ export class ScenerioGestionComponent implements OnInit {
   ngOnChanges() {
     if (this.categories.length > 0 && this.scenarioId) {
       this.selectedScenario = this.categories.find(s => s.id === this.scenarioId) || null;
-      // if (this.selectedScenario) {
-      //   this.calculateInitialTotals(this.selectedScenario);
-      // }
     }
   }
   
@@ -108,6 +97,5 @@ export class ScenerioGestionComponent implements OnInit {
 
   selectScenario(category: categories) {
     this.selectedScenario = category;
-    // this.calculateInitialTotals(category);
   }
 }
