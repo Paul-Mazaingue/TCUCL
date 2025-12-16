@@ -1,7 +1,7 @@
 import {ONGLET_KEYS} from '../constants/onglet-keys';
 
-//const BASE_URL = 'https://trajectoirecarbone.univ-catholille.fr/api';
-const BASE_URL = 'http://localhost:8080/api';
+const runtimeEnv = typeof window !== 'undefined' ? (window as any).__env : undefined;
+const BASE_URL = (runtimeEnv?.apiBaseUrl as string) ?? 'https://trajectoirecarbone.univ-catholille.fr/api';
 
 export const ApiEndpoints = {
   Onglets: {

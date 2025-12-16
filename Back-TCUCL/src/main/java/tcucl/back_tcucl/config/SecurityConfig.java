@@ -1,15 +1,20 @@
 package tcucl.back_tcucl.config;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -17,14 +22,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import static tcucl.back_tcucl.controller.ControllerConstante.REST_API;
-import static tcucl.back_tcucl.controller.ControllerConstante.REST_AUTH;
-import static tcucl.back_tcucl.controller.ControllerConstante.REST_CHANGE_MDP_PREMIERE_CONNEXION;
-import static tcucl.back_tcucl.controller.ControllerConstante.REST_CONNEXION;
+import static tcucl.back_tcucl.controller.ControllerConstante.*;
+
 import tcucl.back_tcucl.filter.JwtFilter;
 import tcucl.back_tcucl.service.impl.CustomUserDetailsServiceImpl;
-
-
 
 @EnableMethodSecurity
 @EnableWebSecurity
@@ -34,9 +35,13 @@ public class SecurityConfig {
     private final CustomUserDetailsServiceImpl customUserDetailsService;
     private final JwtUtils jwtUtils;
 
+    @Value("${app.cors.allowed-origin:${FRONT_ORIGIN:${API_BASE_URL:http://localhost:4200}}}")
+    private String corsAllowedOrigin;
+
     public SecurityConfig(CustomUserDetailsServiceImpl customUserDetailsService, JwtUtils jwtUtils) {
         this.customUserDetailsService = customUserDetailsService;
         this.jwtUtils = jwtUtils;
+        System.out.println(">>> SecurityConfig init");
     }
 
     @Bean
@@ -48,36 +53,55 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        // CORS TOUJOURS ACTIVÉ
+        http.cors(Customizer.withDefaults());
+
         http
-                // todo_toProd Supprimer Cors en Prod
-                .cors(cors -> {
-                })
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth ->
-                        auth.requestMatchers(REST_API + REST_AUTH + REST_CONNEXION, REST_API + REST_AUTH + REST_CHANGE_MDP_PREMIERE_CONNEXION
-                                    //     todo_toProd Supprimer les endpoints non sécurisés et de tests en production 
-                                       ,REST_API + "/test/**" 
-                                       ,REST_API + "/test"
-                                       ,"/swagger-ui/**"
-                                       ,"/v3/api-docs/**"
-                                ).permitAll()
-                                .anyRequest().authenticated()
-                )
-                .addFilterBefore(new JwtFilter(customUserDetailsService, jwtUtils), UsernamePasswordAuthenticationFilter.class);
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth ->
+                auth
+                    // OPTIONS = toujours autorisé (preflight CORS)
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                    // Endpoints publics
+                    .requestMatchers(
+                            REST_API + REST_AUTH + REST_CONNEXION,
+                            REST_API + REST_AUTH + REST_CHANGE_MDP_PREMIERE_CONNEXION,
+                            REST_API + "/test/**",
+                            REST_API + "/test",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**"
+                    ).permitAll()
+
+                    // Le reste sécurisé
+                    .anyRequest().authenticated()
+            )
+            .addFilterBefore(new JwtFilter(customUserDetailsService, jwtUtils),
+                             UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // todo_toProd Supprimer Cors en Prod
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+
+    // Origines autorisées depuis la propriété (séparées par des virgules si besoin)
+    List<String> origins = Arrays.stream(corsAllowedOrigin.split(","))
+        .map(String::trim)
+        .filter(s -> !s.isEmpty())
+        .collect(Collectors.toList());
+    configuration.setAllowedOrigins(origins);
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
+        System.out.println(">>> CORS config registered");
         return source;
     }
 }
