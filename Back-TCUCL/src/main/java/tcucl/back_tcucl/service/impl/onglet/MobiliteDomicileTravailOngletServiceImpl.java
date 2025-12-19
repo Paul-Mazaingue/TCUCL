@@ -240,46 +240,41 @@ public class MobiliteDomicileTravailOngletServiceImpl implements MobiliteDomicil
                 mobiliteOnglet.getMarcheAPiedEtudiantKm();
 
 
-        if (nbSalarie == 0) {
-            throw new AucunSalarieEnregistre();
-        }
+        // Si aucun salarié/étudiant, on évite les exceptions et on renvoie des métriques à zéro pour permettre l'affichage des synthèses.
+        float distanceAnnParUsagerSalaries = (nbSalarie == 0) ? 0f : sommeDistanceSalarie / nbSalarie;
+        float distanceAnnParUsagerEtudiants = (nbEtudiant == 0) ? 0f : sommeDistanceEtudiant / nbEtudiant;
+        mobiliteResultatDto.setDistanceAnnuelleParUsagerSalaries(distanceAnnParUsagerSalaries);
+        mobiliteResultatDto.setDistanceAnnuelleParUsagerEtudiants(distanceAnnParUsagerEtudiants);
 
-        if (nbEtudiant == 0) {
-            throw new AucunEtudiantEnregistre();
-
-        }
-
-        mobiliteResultatDto.setDistanceAnnuelleParUsagerSalaries(sommeDistanceSalarie / nbSalarie);
-        mobiliteResultatDto.setDistanceAnnuelleParUsagerEtudiants(sommeDistanceEtudiant / nbEtudiant);
-
+        float denomSalarie = mobiliteOnglet.getNbJoursDeplacementSalarie() * 2f;
+        float denomEtudiant = mobiliteOnglet.getNbJoursDeplacementEtudiant() * 2f;
         mobiliteResultatDto.setDistanceDomicileTravailMoyenneSalaries(
-                mobiliteResultatDto.getDistanceAnnuelleParUsagerSalaries() / (
-                        mobiliteOnglet.getNbJoursDeplacementSalarie() * 2
-                )
+                (distanceAnnParUsagerSalaries == 0f || denomSalarie == 0f) ? 0f : distanceAnnParUsagerSalaries / denomSalarie
         );
         mobiliteResultatDto.setDistanceDomicileTravailMoyenneEtudiants(
-                mobiliteResultatDto.getDistanceAnnuelleParUsagerEtudiants() / (
-                        mobiliteOnglet.getNbJoursDeplacementEtudiant() * 2
-                )
+                (distanceAnnParUsagerEtudiants == 0f || denomEtudiant == 0f) ? 0f : distanceAnnParUsagerEtudiants / denomEtudiant
         );
 
+
+        float denomPartSal = (sommeDistanceSalarie == 0f) ? 1f : sommeDistanceSalarie; // évite division par zéro
+        float denomPartEtu = (sommeDistanceEtudiant == 0f) ? 1f : sommeDistanceEtudiant;
 
         mobiliteResultatDto.setPartModaleVoitureThermiqueSalaries(
                 ((mobiliteOnglet.getVoitureThermiqueSalarieKm()
                         + mobiliteOnglet.getVoitureHybrideEtudiantKm()
-                        + mobiliteOnglet.getMotoSalarieKm()) / sommeDistanceSalarie ) * 100
+                        + mobiliteOnglet.getMotoSalarieKm()) / denomPartSal ) * 100
         );
         mobiliteResultatDto.setPartModaleVoitureThermiqueEtudiants(
                 ((mobiliteOnglet.getVoitureThermiqueEtudiantKm()
                         + mobiliteOnglet.getVoitureHybrideEtudiantKm()
-                        + mobiliteOnglet.getMotoEtudiantKm()) / sommeDistanceEtudiant ) * 100
+                        + mobiliteOnglet.getMotoEtudiantKm()) / denomPartEtu ) * 100
         );
 
         mobiliteResultatDto.setPartModaleVoitureElectriqueSalaries(
-                ((mobiliteOnglet.getVoitureElectriqueSalarieKm()) / sommeDistanceSalarie ) * 100
+                ((mobiliteOnglet.getVoitureElectriqueSalarieKm()) / denomPartSal ) * 100
         );
         mobiliteResultatDto.setPartModaleVoitureElectriqueEtudiants((float)
-                ((mobiliteOnglet.getVoitureElectriqueEtudiantKm()) / sommeDistanceEtudiant ) * 100
+                ((mobiliteOnglet.getVoitureElectriqueEtudiantKm()) / denomPartEtu ) * 100
         );
 
         mobiliteResultatDto.setPartModaleModesDouxSalaries(
@@ -289,7 +284,7 @@ public class MobiliteDomicileTravailOngletServiceImpl implements MobiliteDomicil
                         + mobiliteOnglet.getVeloSalarieKm()
                         + mobiliteOnglet.getTrottinetteElectriqueSalarieKm()
                         + mobiliteOnglet.getVeloElectriqueSalarieKm()
-                        + mobiliteOnglet.getMarcheAPiedSalarieKm()) / sommeDistanceSalarie ) * 100
+                        + mobiliteOnglet.getMarcheAPiedSalarieKm()) / denomPartSal ) * 100
         );
         mobiliteResultatDto.setPartModaleModesDouxEtudiants(
                 ((mobiliteOnglet.getTrainRegionalEtudiantKm()
@@ -298,14 +293,14 @@ public class MobiliteDomicileTravailOngletServiceImpl implements MobiliteDomicil
                         + mobiliteOnglet.getVeloEtudiantKm()
                         + mobiliteOnglet.getTrottinetteElectriqueEtudiantKm()
                         + mobiliteOnglet.getVeloElectriqueEtudiantKm()
-                        + mobiliteOnglet.getMarcheAPiedEtudiantKm()) / sommeDistanceEtudiant ) * 100
+                        + mobiliteOnglet.getMarcheAPiedEtudiantKm()) / denomPartEtu ) * 100
         );
 
         mobiliteResultatDto.setIntensiteCarboneMoyenSalaries(
-                mobiliteResultatDto.totalSalaries*1000000f/sommeDistanceSalarie
+                (denomPartSal == 0f ? 0f : mobiliteResultatDto.totalSalaries*1000000f/denomPartSal)
         );
         mobiliteResultatDto.setIntensiteCarboneMoyenEtudiants(
-                mobiliteResultatDto.totalEtudiants*1000000f/sommeDistanceEtudiant
+                (denomPartEtu == 0f ? 0f : mobiliteResultatDto.totalEtudiants*1000000f/denomPartEtu)
         );
 
 
