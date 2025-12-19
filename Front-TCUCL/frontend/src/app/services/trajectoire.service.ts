@@ -5,6 +5,12 @@ import { Trajectoire } from '../models/trajectoire.model';
 import { ApiEndpoints } from './api-endpoints';
 import { AuthService } from './auth.service';
 
+export interface TrajectoireResponse {
+  real: Trajectoire | null;
+  mock: Trajectoire | null;
+  warnings?: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class TrajectoireService {
   constructor(private http: HttpClient, private auth: AuthService) {}
@@ -17,12 +23,16 @@ export class TrajectoireService {
     });
   }
 
-  get(entiteId: number): Observable<Trajectoire> {
-    return this.http.get<Trajectoire>(ApiEndpoints.Trajectoire.getByEntite(entiteId), { headers: this.headers() });
+  get(entiteId: number): Observable<TrajectoireResponse> {
+    return this.http.get<TrajectoireResponse>(ApiEndpoints.Trajectoire.getByEntite(entiteId), { headers: this.headers() });
   }
 
   upsert(entiteId: number, payload: Trajectoire): Observable<Trajectoire> {
     return this.http.put<Trajectoire>(ApiEndpoints.Trajectoire.upsert(entiteId), payload, { headers: this.headers() });
+  }
+
+  propagateGlobal(): Observable<void> {
+    return this.http.post<void>(ApiEndpoints.Trajectoire.propagateGlobal(), {}, { headers: this.headers() });
   }
 
   getPostesDefaults(entiteId: number): Observable<Array<{ id: string; nom: string; emissionsReference: number; reductionBasePct: number }>> {

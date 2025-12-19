@@ -12,8 +12,8 @@ public class Trajectoire {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "entite_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "entite_id", nullable = true)
     private Entite entite;
 
     @Column(name = "reference_year", nullable = false)

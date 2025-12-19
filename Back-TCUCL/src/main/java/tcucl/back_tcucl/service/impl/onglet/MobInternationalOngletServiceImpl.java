@@ -17,8 +17,6 @@ import tcucl.back_tcucl.entity.onglet.GeneralOnglet;
 import tcucl.back_tcucl.entity.onglet.mobInternationale.MobInternationalOnglet;
 import tcucl.back_tcucl.entity.onglet.mobInternationale.Voyage;
 import tcucl.back_tcucl.entity.onglet.mobInternationale.enums.EnumMobInternationale_Pays;
-import tcucl.back_tcucl.exceptionPersonnalisee.AucunEtudiantEnregistre;
-import tcucl.back_tcucl.exceptionPersonnalisee.AucunSalarieEnregistre;
 import tcucl.back_tcucl.exceptionPersonnalisee.NonTrouveGeneralCustomException;
 import tcucl.back_tcucl.exceptionPersonnalisee.ValidationCustomException;
 import tcucl.back_tcucl.manager.MobInternationalOngletManager;
@@ -364,18 +362,19 @@ public class MobInternationalOngletServiceImpl implements MobInternationalOnglet
 
         // SECOND TABLEAU
         // Proportion de departs
-        if (nbSalaries != 0f) {
-            resultat.setProsProportionDeDeparts((C9D124sumProsDepart.get() / nbSalaries) * 100); // a dupliquer si ajout de colonne (attention : si relatif aux étudiants voir au if en dessous)
-        } else {
-            throw new AucunSalarieEnregistre();
-        }
-        if (nbEtudiants != 0f) {
-            resultat.setStagesProportionDeDeparts((E9F124sumStagesEtudiantsDepart.get() / nbEtudiants) * 100);
-            resultat.setSemestresProportionDeDeparts((G9H124sumSemestresEtudiantsDepart.get() / nbEtudiants) * 100);
-            resultat.setFormationContinueProportionDeDeparts((G9H124sumFormationContinueDepart.get() / nbEtudiants) * 100); // a dupliquer si ajout de colonne (attention : si relatif aux salariés voir au if au dessus)
-        } else {
-            throw new AucunEtudiantEnregistre();
-        }
+        resultat.setProsProportionDeDeparts(nbSalaries != 0f
+            ? (C9D124sumProsDepart.get() / nbSalaries) * 100
+            : 0f); // a dupliquer si ajout de colonne (attention : si relatif aux étudiants voir au if en dessous)
+
+        resultat.setStagesProportionDeDeparts(nbEtudiants != 0f
+            ? (E9F124sumStagesEtudiantsDepart.get() / nbEtudiants) * 100
+            : 0f);
+        resultat.setSemestresProportionDeDeparts(nbEtudiants != 0f
+            ? (G9H124sumSemestresEtudiantsDepart.get() / nbEtudiants) * 100
+            : 0f);
+        resultat.setFormationContinueProportionDeDeparts(nbEtudiants != 0f
+            ? (G9H124sumFormationContinueDepart.get() / nbEtudiants) * 100
+            : 0f); // a dupliquer si ajout de colonne (attention : si relatif aux salariés voir au if au dessus)
 
         // Part Europe vs Non Europe
         if (C9D124sumProsDepart.get() != 0f) {

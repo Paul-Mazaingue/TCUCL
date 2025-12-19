@@ -2,9 +2,12 @@ package tcucl.back_tcucl.service.impl;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import tcucl.back_tcucl.entity.facteurEmission.FacteurEmission;
+import tcucl.back_tcucl.exceptionPersonnalisee.NonTrouveGeneralCustomException;
 import tcucl.back_tcucl.manager.FacteurEmissionManager;
 import tcucl.back_tcucl.service.FacteurEmissionService;
 import net.objecthunter.exp4j.Expression;
@@ -16,6 +19,8 @@ import java.util.regex.Pattern;
 
 @Service
 public class FacteurEmissionServiceImpl implements FacteurEmissionService {
+
+    private static final Logger log = LoggerFactory.getLogger(FacteurEmissionServiceImpl.class);
 
     private final FacteurEmissionManager facteurEmissionManager;
 
@@ -66,12 +71,31 @@ public class FacteurEmissionServiceImpl implements FacteurEmissionService {
     }
     @Override
     public FacteurEmission findByCategorieAndTypeAndUnite(String categorie, String type, String unite){
-        return facteurEmissionManager.findByCategorieAndTypeAndUnite(categorie, type, unite);
+        try {
+            return facteurEmissionManager.findByCategorieAndTypeAndUnite(categorie, type, unite);
+        } catch (NonTrouveGeneralCustomException e) {
+            log.warn("Facteur d'émission introuvable pour categorie={} type={} unite={}, fallback à 0", categorie, type, unite);
+            FacteurEmission facteurEmission = new FacteurEmission();
+            facteurEmission.setCategorie(categorie);
+            facteurEmission.setType(type);
+            facteurEmission.setUnite(unite);
+            facteurEmission.setFacteurEmission(0f);
+            return facteurEmission;
+        }
     }
 
     @Override
     public FacteurEmission findByCategorieAndType(String categorie, String type) {
-        return facteurEmissionManager.findByCategorieAndType(categorie, type);
+        try {
+            return facteurEmissionManager.findByCategorieAndType(categorie, type);
+        } catch (NonTrouveGeneralCustomException e) {
+            log.warn("Facteur d'émission introuvable pour categorie={} type={}, fallback à 0", categorie, type);
+            FacteurEmission facteurEmission = new FacteurEmission();
+            facteurEmission.setCategorie(categorie);
+            facteurEmission.setType(type);
+            facteurEmission.setFacteurEmission(0f);
+            return facteurEmission;
+        }
     }
 
     private String getCellValue(Cell cell) {

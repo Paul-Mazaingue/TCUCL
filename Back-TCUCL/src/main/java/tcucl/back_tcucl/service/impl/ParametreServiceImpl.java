@@ -93,15 +93,18 @@ public class ParametreServiceImpl implements ParametreService {
     public void creerAnneeSuivante() {
 
         int anneeUniversitaire = AnneeConfig.getAnneeCourante();
+        boolean createdSomething = false;
 
-        //On vérifie si l'année universitaire courante est déjà créée
-        if (applicationParamService.getDerniereAnneeCreee() == anneeUniversitaire) {
-            throw new AnneeUniversitaireDejaCreeException(anneeUniversitaire);
-        }
-
-        //on récupère toutes les entités except l'entité superAdmin créé à l'initialisation donc id = 1
-        List<Entite> entites = entiteService.getAllEntites().stream().filter(entite -> entite.getId() != 1).toList();
+        // on récupère toutes les entités (y compris l'entité SUPERADMIN id=1)
+        List<Entite> entites = entiteService.getAllEntites();
         for (Entite entite : entites) {
+
+            boolean dejaCreee = entite.getAnnees()
+                    .stream()
+                    .anyMatch(a -> a.getAnneeValeur() == anneeUniversitaire);
+            if (dejaCreee) {
+                continue;
+            }
 
             Annee anneeActu = new Annee(anneeUniversitaire);
             Annee anneePrec = entite.getAnnees()
@@ -109,24 +112,30 @@ public class ParametreServiceImpl implements ParametreService {
                     .max(Comparator.comparingInt(Annee::getAnneeValeur))
                     .orElse(null);
 
-            assert anneePrec != null;
-            BatimentImmobilisationMobilierOnglet anneePrecBatOnglet = anneePrec.getBatimentImmobilisationMobilierOnglet();
-            BatimentImmobilisationMobilierOnglet anneeActuBatOnglet = anneeActu.getBatimentImmobilisationMobilierOnglet();
+            if (anneePrec != null) {
+                BatimentImmobilisationMobilierOnglet anneePrecBatOnglet = anneePrec.getBatimentImmobilisationMobilierOnglet();
+                BatimentImmobilisationMobilierOnglet anneeActuBatOnglet = anneeActu.getBatimentImmobilisationMobilierOnglet();
 
-            // On ajoute les bâtiments existants de l'année précédente à l'année actuelle
-            anneePrecBatOnglet.getBatimentExistantOuNeufConstruits()
-                    .forEach(anneeActuBatOnglet::ajouterBatimentExistantOuNeufConstruit);
+                // On ajoute les bâtiments existants de l'année précédente à l'année actuelle
+                anneePrecBatOnglet.getBatimentExistantOuNeufConstruits()
+                        .forEach(anneeActuBatOnglet::ajouterBatimentExistantOuNeufConstruit);
 
-            // On ajoute les Entretiens courants de l'année précédente à l'année actuelle
-            anneePrecBatOnglet.getEntretienCourants()
-                    .forEach(anneeActuBatOnglet::ajouterEntretienCourant);
+                // On ajoute les Entretiens courants de l'année précédente à l'année actuelle
+                anneePrecBatOnglet.getEntretienCourants()
+                        .forEach(anneeActuBatOnglet::ajouterEntretienCourant);
+            }
 
             entite.addAnnee(anneeActu); // gère la liaison bidirectionnelle
-
             entiteService.saveEntite(entite);
+            createdSomething = true;
         }
-        applicationParamService.setDerniereAnneeCreee(anneeUniversitaire);
-        log.info("Année universitaire {} créée pour toutes les entités.", anneeUniversitaire);
+
+        if (createdSomething) {
+            applicationParamService.setDerniereAnneeCreee(anneeUniversitaire);
+            log.info("Année universitaire {} créée pour toutes les entités.", anneeUniversitaire);
+        } else {
+            throw new AnneeUniversitaireDejaCreeException(anneeUniversitaire);
+        }
     }
 
     @Override

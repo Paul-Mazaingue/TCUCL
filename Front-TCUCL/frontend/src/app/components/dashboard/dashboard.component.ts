@@ -59,7 +59,7 @@ export class DashboardComponent implements OnInit {
     private syntheseService: SyntheseEgesService,
     private auth: AuthService
   ) {
-    this.currentYear = new Date().getFullYear();
+    this.currentYear = this.yearService.getCurrentAcademicYear();
     this.selectedYear = this.currentYear;
     const user = this.auth.getUserInfo()();
     if (user?.entiteId) {
@@ -74,7 +74,7 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetchSectors();
-    this.currentYear = new Date().getFullYear();
+    this.currentYear = this.yearService.getCurrentAcademicYear();
     this.years = Array.from({ length: this.currentYear - 2018 }, (_, i) => {
       const end = this.currentYear - i;
       const start = end - 1;

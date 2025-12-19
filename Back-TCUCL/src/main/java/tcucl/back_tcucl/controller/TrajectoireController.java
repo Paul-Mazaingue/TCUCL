@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.validation.annotation.Validated;
@@ -13,12 +14,13 @@ import tcucl.back_tcucl.dto.TrajectoireDto;
 import tcucl.back_tcucl.service.TrajectoireService;
 import tcucl.back_tcucl.dto.TrajectoirePosteDto;
 import tcucl.back_tcucl.dto.TrajectoirePosteReglageDto;
+import tcucl.back_tcucl.dto.TrajectoireResponseDto;
 import java.util.List;
 
 import static tcucl.back_tcucl.controller.ControllerConstante.*;
 
 @RestController
-@RequestMapping(REST_API + REST_TRAJECTOIRE + REST_ENTITE_ID)
+@RequestMapping(REST_API + REST_TRAJECTOIRE)
 public class TrajectoireController {
 
     private final TrajectoireService trajectoireService;
@@ -27,16 +29,23 @@ public class TrajectoireController {
         this.trajectoireService = trajectoireService;
     }
 
-    @PreAuthorize("hasRole('ROLE_SUPERADMIN') or hasRole('ROLE_ENTITE_' + #entiteId)")
-    @GetMapping()
-    public ResponseEntity<TrajectoireDto> getTrajectoire(@PathVariable("entiteId") Long entiteId) {
-        TrajectoireDto dto = trajectoireService.getByEntiteId(entiteId);
+    @PreAuthorize("hasAuthority('ROLE_SUPERADMIN') or hasAuthority('ROLE_ENTITE_' + #entiteId)")
+    @GetMapping(REST_ENTITE_ID)
+    public ResponseEntity<TrajectoireResponseDto> getTrajectoire(@PathVariable("entiteId") Long entiteId) {
+        TrajectoireResponseDto dto = trajectoireService.getByEntiteId(entiteId);
         if (dto == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(dto);
     }
 
-    @PreAuthorize("hasRole('ROLE_SUPERADMIN') or hasRole('ROLE_ENTITE_' + #entiteId)")
-    @PutMapping
+    @PreAuthorize("hasAuthority('ROLE_SUPERADMIN')")
+    @PostMapping("/propagate-global")
+    public ResponseEntity<Void> propagateGlobalToAll() {
+        trajectoireService.propagateGlobalToAll();
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_SUPERADMIN')")
+    @PutMapping(REST_ENTITE_ID)
     public ResponseEntity<TrajectoireDto> upsert(
             @PathVariable("entiteId") Long entiteId,
             @Validated @RequestBody TrajectoireDto body
@@ -68,8 +77,8 @@ public class TrajectoireController {
         return ResponseEntity.ok(saved);
     }
 
-    @PreAuthorize("hasRole('ROLE_SUPERADMIN') or hasRole('ROLE_ENTITE_' + #entiteId)")
-    @GetMapping("/postes-defaults")
+    @PreAuthorize("hasAuthority('ROLE_SUPERADMIN') or hasAuthority('ROLE_ENTITE_' + #entiteId)")
+    @GetMapping(REST_ENTITE_ID + "/postes-defaults")
     public ResponseEntity<List<TrajectoirePosteDto>> getPostesDefaults(@PathVariable("entiteId") Long entiteId) {
         return ResponseEntity.ok(trajectoireService.getPostesDefaults(entiteId));
     }

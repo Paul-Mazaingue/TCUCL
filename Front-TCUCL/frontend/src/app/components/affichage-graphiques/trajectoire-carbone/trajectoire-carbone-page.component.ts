@@ -5,9 +5,10 @@ import { Router } from '@angular/router';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-import { TrajectoireService } from '../../../services/trajectoire.service';
+import { TrajectoireService, TrajectoireResponse } from '../../../services/trajectoire.service';
 import { UserService } from '../../../services/user.service';
 import { AuthService } from '../../../services/auth.service';
+import { ParamService } from '../../params/params.service';
 import { Trajectoire, TrajectoirePosteReglage } from '../../../models/trajectoire.model';
 
 interface PosteEmission {
@@ -84,8 +85,26 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
     private router: Router,
     private trajectoireSrv: TrajectoireService,
     private userService: UserService,
-    private authService: AuthService
+    private authService: AuthService,
+    private paramService: ParamService
   ) {}
+
+  useMockData = false;
+  warnings: string[] = [];
+  private lastPayload: TrajectoireResponse | null = null;
+  isSuperAdmin = false;
+  entiteName = '';
+  selectedEntiteId = 0;
+  entites: { id: number; nom: string }[] = [];
+  private readonly defaultEntiteLabel = 'Toutes les entités (défaut)';
+
+  get canEdit(): boolean {
+    return this.isSuperAdmin;
+  }
+
+  private authHeaders(token: string) {
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
 
   // ===== Lifecycle =====
   ngOnInit(): void {
@@ -93,69 +112,28 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
   // Les données initiales proviennent du backend
 
     const token = this.authService.getToken();
+    this.isSuperAdmin = this.userService.isSuperAdmin();
+    this.entiteName = this.userService.entite();
     const entiteIdFromUser = Number(this.userService.entiteId());
-    if (!token || !entiteIdFromUser) {
+    if (!token) {
       this.router.navigate(['/login']);
       return;
     }
 
-    const entiteId = entiteIdFromUser;
-    if(entiteId) {
-      this.trajectoireSrv.get(entiteId).subscribe({
-        next: (dto: Trajectoire) => {
-          if (dto) {
-            // Remonter les valeurs serveur
-            this.startYear = dto.referenceYear ?? this.startYear;
-            this.endYear = dto.targetYear ?? this.endYear;
-            this.reduction = Math.round((dto.targetPercentage ?? this.reduction));
-            this.lockGlobal = dto.lockGlobal ?? this.lockGlobal;
-            this.persistedPosteReglages = dto.postesReglages ?? [];
-            console.log('Trajectoire chargée depuis le serveur :', dto);
-          } else {
-            // Pas de trajectoire encore: on garde les valeurs UI par défaut
-            this.persistedPosteReglages = [];
-          }
-          this.rebuildYears();
-          this.applyPersistedPosteReglages();
-          this.generateTableRows();
-          this.ensureChart();
-          this.updateChartData(true);
-          this.chart?.update();
-        },
-        error: _ => {
-          // En cas d'erreur auth/serveur, pas de fallback localStorage/mocks
-          this.rebuildYears();
-          this.generateTableRows();
-          this.ensureChart();
-          this.updateChartData(true);
-          this.chart?.update();
-        }
-      });
+    const entiteId = this.isSuperAdmin ? 0 : entiteIdFromUser;
+    this.selectedEntiteId = entiteId;
 
-      // Charger les postes par défaut depuis le backend
-      this.trajectoireSrv.getPostesDefaults(entiteId).subscribe({
-        next: (postes) => {
-          this.postes = postes.map(p => ({ ...p }));
-          this.defaultPostes = postes.map(p => ({ ...p }));
-          console.log('[Trajectoire] Postes chargés depuis API:', this.postes);
-          // Recalculer le tableau avec les postes désormais disponibles
-          this.applyPersistedPosteReglages();
-          this.generateTableRows();
-          // Mettre à jour le graphique maintenant que les postes sont chargés
-          this.ensureChart();
-          this.updateChartData(true);
-          this.chart?.update();
-        },
-        error: _ => {
-          // Pas de postes: rester sur vide, l'UI s'adapte
-        }
-      });
-    } else {
-      console.log('Trajectoire: entiteId non disponible.');
-      // Non connecté (routes publiques dev) -> pas de fallback mock
-      this.rebuildYears();
-      this.generateTableRows();
+    if (!this.isSuperAdmin && !entiteId) {
+      this.router.navigate(['/login']);
+      return;
     }
+
+    if (this.isSuperAdmin) {
+      this.entiteName = this.defaultEntiteLabel;
+      this.loadEntites(token);
+    }
+
+    this.loadData(entiteId);
 
   }
 
@@ -167,6 +145,91 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
   }
 
   ngOnDestroy(): void { if (this.chart?.destroy) this.chart.destroy(); }
+
+  onToggleMock(useMock: boolean): void {
+    this.useMockData = useMock;
+    const dto = this.useMockData
+      ? (this.lastPayload?.mock ?? this.lastPayload?.real ?? null)
+      : (this.lastPayload?.real ?? this.lastPayload?.mock ?? null);
+    this.applyTrajectory(dto);
+  }
+
+  propagateGlobal(): void {
+    if (!this.isSuperAdmin) return;
+    this.trajectoireSrv.propagateGlobal().subscribe({
+      next: () => {
+        alert('Trajectoire globale appliquée à toutes les entités');
+      },
+      error: () => {
+        alert('Erreur lors de l\'application globale');
+      }
+    });
+  }
+
+  onEntiteChange(entiteId: number | string): void {
+    if (!this.isSuperAdmin) return;
+    this.selectedEntiteId = Number(entiteId);
+    const found = this.entites.find(e => e.id === this.selectedEntiteId);
+    this.entiteName = found?.nom ?? (this.selectedEntiteId === 0 ? this.defaultEntiteLabel : this.entiteName);
+    this.loadData(this.selectedEntiteId);
+  }
+
+  private loadEntites(token: string): void {
+    const headers = this.authHeaders(token);
+    this.paramService.getAllEntiteNomId(headers).subscribe({
+      next: (list) => {
+        const filtered = (list || []).filter(e => (e.nom || '').toLowerCase() !== 'global_default');
+        const base = [{ id: 0, nom: this.defaultEntiteLabel }];
+        this.entites = base.concat(filtered);
+
+        // Si sélection courante absente de la liste, revenir sur le global
+        const found = this.entites.find(e => e.id === this.selectedEntiteId);
+        if (!found) {
+          this.selectedEntiteId = 0;
+          this.entiteName = this.defaultEntiteLabel;
+        } else {
+          this.entiteName = found.nom;
+        }
+      },
+      error: _ => {
+        this.warnings = ['Impossible de charger la liste des entités'];
+      }
+    });
+  }
+
+  private loadData(entiteId: number): void {
+    if (entiteId === null || entiteId === undefined) return;
+
+    this.trajectoireSrv.get(entiteId).subscribe({
+      next: (resp: TrajectoireResponse) => {
+        this.lastPayload = resp;
+        this.warnings = resp.warnings ?? [];
+        const dto = this.useMockData ? (resp.mock ?? resp.real) : (resp.real ?? resp.mock);
+        this.selectedEntiteId = entiteId;
+        this.applyTrajectory(dto);
+      },
+      error: _ => {
+        this.lastPayload = null;
+        this.warnings = ['Erreur lors du chargement de la trajectoire'];
+        this.applyTrajectory(null);
+      }
+    });
+
+    this.trajectoireSrv.getPostesDefaults(entiteId).subscribe({
+      next: (postes) => {
+        this.postes = postes.map(p => ({ ...p }));
+        this.defaultPostes = postes.map(p => ({ ...p }));
+        this.applyPersistedPosteReglages();
+        this.generateTableRows();
+        this.ensureChart();
+        this.updateChartData(true);
+        this.chart?.update();
+      },
+      error: _ => {
+        // Pas de postes: rester sur vide, l'UI s'adapte
+      }
+    });
+  }
 
   // ===== Navigation =====
   goHome(): void { this.router.navigate(['/dashboard']); }
@@ -188,6 +251,24 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
 
   // ===== Utilitaires =====
   private clampPct(x: number): number { return Math.max(0, Math.min(100, x)); }
+
+  private applyTrajectory(dto: Trajectoire | null): void {
+    if (dto) {
+      this.startYear = dto.referenceYear ?? this.startYear;
+      this.endYear = dto.targetYear ?? this.endYear;
+      this.reduction = Math.round((dto.targetPercentage ?? this.reduction));
+      this.lockGlobal = dto.lockGlobal ?? this.lockGlobal;
+      this.persistedPosteReglages = dto.postesReglages ?? [];
+    } else {
+      this.persistedPosteReglages = [];
+    }
+    this.rebuildYears();
+    this.applyPersistedPosteReglages();
+    this.generateTableRows();
+    this.ensureChart();
+    this.updateChartData(true);
+    this.chart?.update();
+  }
 
   private applyPersistedPosteReglages(): void {
     if (!this.persistedPosteReglages || this.persistedPosteReglages.length === 0) return;
@@ -220,7 +301,9 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
   }
 
   // ===== Persistance =====
-  saveSettings(): void {
+  saveSettings(afterSave?: () => void): void {
+    if (!this.canEdit) return;
+
     const payload: StoredSettings = {
       reduction: this.reduction,
       lockGlobal: this.lockGlobal,
@@ -233,28 +316,30 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
     };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch {}
 
-    // Sauvegarde back si connecté à une entité
-    const entiteId = Number(this.userService.entiteId());
-    if (entiteId) {
-      const dto: Trajectoire = {
-        entiteId,
-        referenceYear: this.startYear,
-        targetYear: this.endYear,
-        targetPercentage: this.reduction,
-        lockGlobal: this.lockGlobal,
-        postesReglages: this.postes.map(p => ({
-          id: p.id,
-          reductionBasePct: this.clampPct(p.reductionBasePct)
-        }))
-      };
-      this.trajectoireSrv.upsert(entiteId, dto).subscribe({
-        next: (saved) => {
-          this.lockGlobal = saved.lockGlobal ?? this.lockGlobal;
-          this.persistedPosteReglages = saved.postesReglages ?? dto.postesReglages ?? [];
-        },
-        error: () => {}
-      });
-    }
+    // Sauvegarde back pour l'entité sélectionnée (0 = global par défaut)
+    const entiteId = this.selectedEntiteId;
+    if (entiteId === null || entiteId === undefined) return;
+
+    const dto: Trajectoire = {
+      entiteId,
+      referenceYear: this.startYear,
+      targetYear: this.endYear,
+      targetPercentage: this.reduction,
+      lockGlobal: this.lockGlobal,
+      postesReglages: this.postes.map(p => ({
+        id: p.id,
+        reductionBasePct: this.clampPct(p.reductionBasePct)
+      }))
+    };
+
+    this.trajectoireSrv.upsert(entiteId, dto).subscribe({
+      next: (saved) => {
+        this.lockGlobal = saved.lockGlobal ?? this.lockGlobal;
+        this.persistedPosteReglages = saved.postesReglages ?? dto.postesReglages ?? [];
+        if (afterSave) afterSave();
+      },
+      error: () => {}
+    });
   }
 
   // Public wrapper to ensure template can call a clearly public method in all build modes
@@ -388,6 +473,8 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
 
   // ===== Interactions =====
   onReductionInput(evt: Event): void {
+    if (!this.canEdit) return;
+
     const t = evt.target as HTMLInputElement | null;
     if (t) this.reduction = this.clampPct(Number(t.value));
     this.generateTableRows();
@@ -396,19 +483,23 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
   }
 
   onStartYearSelect(val: number | string): void {
+    if (!this.canEdit) return;
+
     this.startYear = Number(val);
     this.rebuildYears();
     this.generateTableRows();
     this.updateChartData(true);
-    this.saveSettings();
+    this.saveSettings(() => this.loadData(this.selectedEntiteId));
   }
 
   onEndYearSelect(val: number | string): void {
+    if (!this.canEdit) return;
+
     this.endYear = Number(val);
     this.rebuildYears();
     this.generateTableRows();
     this.updateChartData(true);
-    this.saveSettings();
+    this.saveSettings(() => this.loadData(this.selectedEntiteId));
   }
 
   toggleAdvancedMode(): void {
@@ -417,6 +508,8 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
 
   /** Quand un slider de poste bouge. Si lockGlobal, on rééquilibre les autres postes. */
   onPosteReductionChange(changedId?: string): void {
+    if (!this.canEdit) return;
+
     if (this.lockGlobal && changedId) {
       this.rebalanceOthersToKeepGlobal(changedId);
     } else if (changedId) {
@@ -430,6 +523,8 @@ export class TrajectoireCarbonePageComponent implements OnInit, AfterViewInit, O
 
   /** 🔄 Réinitialise tous les postes à leurs valeurs par défaut */
   resetPostes(): void {
+    if (!this.canEdit) return;
+
     this.postes = this.defaultPostes.map(p => ({ ...p }));
     this.generateTableRows();
     this.updateChartData(true);

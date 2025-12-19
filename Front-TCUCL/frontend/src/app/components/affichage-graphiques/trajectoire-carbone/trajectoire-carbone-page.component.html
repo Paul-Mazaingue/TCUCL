@@ -8,24 +8,48 @@
       <button class="btn btn-secondary" (click)="goHome()">← Retour</button>
     </div>
 
+    <div class="top-actions__group" style="gap:12px; align-items:center;">
+      <ng-container *ngIf="isSuperAdmin; else entiteTag">
+        <label for="entiteSelect" style="font-weight:600;">Entité :</label>
+        <select id="entiteSelect" [(ngModel)]="selectedEntiteId" (ngModelChange)="onEntiteChange($event)">
+          <option *ngFor="let e of entites" [ngValue]="e.id">{{ e.nom }}</option>
+        </select>
+        <button *ngIf="selectedEntiteId === 0" class="btn btn-secondary" style="white-space:nowrap;" (click)="propagateGlobal()" [disabled]="!isSuperAdmin">
+          Appliquer la trajectoire globale à toutes les entités
+        </button>
+      </ng-container>
+      <ng-template #entiteTag>
+        <span *ngIf="entiteName" class="tag" style="background:#eef3ff; color:#2c3e50;">Entité : {{ entiteName }}</span>
+      </ng-template>
+      <span *ngIf="!canEdit" class="tag" style="background:#f2dede; color:#a94442;">Consultation (non super admin)</span>
+      <label class="toggle" style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" [ngModel]="useMockData" (ngModelChange)="onToggleMock($event)" />
+        <span>Utiliser les données factices</span>
+      </label>
+    </div>
+
     <aside class="wish-card">
       <div class="wish-card__title">Baisse globale entre {{ startYear }} et {{ endYear }}</div>
       <div class="wish-card__value">{{ overallDropBetweenPct | number:'1.0-0' }}%</div>
     </aside>
   </section>
 
+  <div *ngIf="warnings.length" class="alert info" style="margin:12px 0;">
+    <div *ngFor="let w of warnings">{{ w }}</div>
+  </div>
+
   <!-- Filtres -->
   <section class="filters">
     <div class="filter-card">
       <label>Année de référence</label>
-      <select class="select" [(ngModel)]="startYear" (ngModelChange)="onStartYearSelect($event)">
+      <select class="select" [(ngModel)]="startYear" (ngModelChange)="onStartYearSelect($event)" [disabled]="!canEdit">
         <option *ngFor="let y of allowedYears" [ngValue]="y" [disabled]="y > endYear">{{ y }}</option>
       </select>
     </div>
 
     <div class="filter-card">
       <label>Année objectif</label>
-      <select class="select" [(ngModel)]="endYear" (ngModelChange)="onEndYearSelect($event)">
+      <select class="select" [(ngModel)]="endYear" (ngModelChange)="onEndYearSelect($event)" [disabled]="!canEdit">
         <option *ngFor="let y of allowedYears" [ngValue]="y" [disabled]="y < startYear">{{ y }}</option>
       </select>
     </div>
@@ -35,7 +59,7 @@
         <label>Baisse globale souhaitée</label>
         <span class="percent-chip">{{ reduction }}%</span>
       </div>
-      <input type="range" min="0" max="100" step="1" [(ngModel)]="reduction" (input)="onReductionInput($event)" />
+      <input type="range" min="0" max="100" step="1" [(ngModel)]="reduction" (input)="onReductionInput($event)" [disabled]="!canEdit" />
     </div>
   </section>
 
@@ -77,8 +101,8 @@
       <h2 class="panel__title">Personnalisation des trajectoires par poste</h2>
 
       <div class="advanced-stats">
-        <label class="lock-toggle">
-          <input type="checkbox" [(ngModel)]="lockGlobal" (change)="saveSettingsPublic()" />
+        <label class="lock-toggle" [class.disabled]="!canEdit">
+          <input type="checkbox" [(ngModel)]="lockGlobal" (change)="saveSettingsPublic()" [disabled]="!canEdit" />
           🔒 Verrouiller l’objectif global ({{ reduction }}%)
         </label>
 
@@ -91,7 +115,7 @@
           </strong>
         </div>
 
-        <button class="btn btn-secondary" (click)="resetPostes()">↺ Réinitialiser les postes</button>
+        <button class="btn btn-secondary" (click)="resetPostes()" [disabled]="!canEdit">↺ Réinitialiser les postes</button>
       </div>
     </div>
 
@@ -101,9 +125,9 @@
           <span class="poste-name">{{ p.nom }}</span>
           <span class="poste-badge">{{ p.reductionBasePct | number:'1.0-0' }}%</span>
         </div>
-        <input type="range" min="0" max="100"
-               [(ngModel)]="p.reductionBasePct"
-               (input)="onPosteReductionChange(p.id)" />
+         <input type="range" min="0" max="100"
+           [(ngModel)]="p.reductionBasePct"
+           (input)="onPosteReductionChange(p.id)" [disabled]="!canEdit" />
       </div>
     </div>
   </section>
