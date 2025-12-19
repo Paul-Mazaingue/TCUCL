@@ -1,7 +1,7 @@
 package tcucl.back_tcucl.service;
 
-import tcucl.back_tcucl.dto.OutilSuiviDto;
+import tcucl.back_tcucl.dto.OutilSuiviResponseDto;
 
 public interface OutilSuiviService {
-    OutilSuiviDto loadForEntite(Long entiteId);
+    OutilSuiviResponseDto loadForEntite(Long entiteId);
 }

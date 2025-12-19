@@ -2,9 +2,10 @@ import { Component, HostListener, ChangeDetectorRef, OnInit } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { OutilSuiviService, OutilSuiviData } from '../../../services/outil-suivi.service';
+import { OutilSuiviService, OutilSuiviData, OutilSuiviResponse } from '../../../services/outil-suivi.service';
 import { UserService } from '../../../services/user.service';
 import { AuthService } from '../../../services/auth.service';
+import { ParamService } from '../../params/params.service';
 
 @Component({
   selector: 'app-outil-suivi',
@@ -19,8 +20,18 @@ export class OutilSuiviPageComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private outilSuiviSrv: OutilSuiviService,
     private userService: UserService,
-    private authService: AuthService
+    private authService: AuthService,
+    private paramService: ParamService
   ) {}
+
+  useMockData = false;
+  warnings: string[] = [];
+  issuesByYear: Record<number, string[]> = {};
+  private lastPayload: OutilSuiviResponse | null = null;
+  isSuperAdmin = false;
+  entiteName = '';
+  selectedEntiteId = 0;
+  entites: { id: number; nom: string }[] = [];
 
   // =============================================================
   // Navigation
@@ -43,27 +54,39 @@ export class OutilSuiviPageComponent implements OnInit {
   realise: number[] = [];
   diff: string[] = []; // calculé une fois les données chargées
 
-  // TODO BACKEND: Remplacer la logique d'établissement par un chargement dynamique depuis le serveur
-  etablissements = ['JUNIA ISEN', 'JUNIA HEI', 'JUNIA ISA','UCL'];
-  selectedEtablissement = this.etablissements[0];
-   
-  // Méthode appelée quand l'établissement change
-  onEtablissementChange() {
-    // TODO BACKEND: Recharger toutes les données pour le nouvel établissement
-    // Exemples d'appels API à faire :
-    // - this.loadEmissionsUsager(this.selectedEtablissement);
-    //   .subscribe(data => { this.years = data.years; this.objectif = data.objectif; this.realise = data.realise; });
-    // - this.loadEmissionsGlobales(this.selectedEtablissement);
-    //   .subscribe(data => { this.globalTotals = data.totals; });
-    // - this.loadPostesData(this.selectedEtablissement);
-    //   .subscribe(data => { this.postesObjectifParAn = data.objectifParAn; this.postesRealiseParAn = data.realiseParAn; });
-    // - this.loadIndicateursData(this.selectedEtablissement);
-    //   .subscribe(data => { this.indicateursParAn = data.indicateursParAn; });
-    
-    // Après chaque chargement, appeler this.cdr.detectChanges() pour forcer la mise à jour
-    
-  // Pour l'instant, on recharge via le service (mock interne)
-  this.loadAllFromService();
+  private authHeaders(token: string) {
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  onEntiteChange(entiteId?: number) {
+    if (typeof entiteId === 'number') {
+      this.selectedEntiteId = entiteId;
+      const found = this.entites.find(e => e.id === entiteId);
+      this.entiteName = found?.nom ?? this.entiteName;
+    }
+    this.loadAllFromService();
+  }
+
+  private loadEntites(token: string) {
+    const headers = this.authHeaders(token);
+    this.paramService.getAllEntiteNomId(headers).subscribe({
+      next: (list) => {
+        this.entites = (list ?? []).filter(e => (e.nom || '').toLowerCase() !== 'global_default');
+        if (!this.selectedEntiteId && this.entites.length) {
+          this.selectedEntiteId = this.entites[0].id;
+          this.entiteName = this.entites[0].nom;
+        } else {
+          const found = this.entites.find(e => e.id === this.selectedEntiteId);
+          if (found) this.entiteName = found.nom;
+        }
+        if (this.selectedEntiteId) {
+          this.loadAllFromService();
+        }
+      },
+      error: _ => {
+        this.warnings = ['Impossible de charger la liste des entités'];
+      }
+    });
   }
 
   // =============================================================
@@ -648,73 +671,99 @@ export class OutilSuiviPageComponent implements OnInit {
   // TODO BACKEND: Remplacer par un chargement initial (resolver ou ngOnInit avec service HTTP)
   ngOnInit(): void {
     const token = this.authService.getToken();
-    const entiteId = Number(this.userService.entiteId());
-    if (!token || !entiteId) {
+    this.isSuperAdmin = this.userService.isSuperAdmin();
+    this.entiteName = this.userService.entite();
+    this.selectedEntiteId = Number(this.userService.entiteId());
+    if (!token) {
       this.router.navigate(['/login']);
       return;
     }
-    this.loadAllFromService();
+
+    if (this.isSuperAdmin) {
+      this.loadEntites(token);
+    } else {
+      if (!this.selectedEntiteId) {
+        this.router.navigate(['/login']);
+        return;
+      }
+      this.loadAllFromService();
+    }
   }
 
   // (Supprimé) Ancien loader de mocks — les données proviennent désormais uniquement du service/API
+  private applyData(dataset: OutilSuiviData | null) {
+    if (!dataset) {
+      this.years = [];
+      this.objectif = [];
+      this.realise = [];
+      this.diff = [];
+      this.postes = [];
+      this.postesObjectifParAn = {} as any;
+      this.postesRealiseParAn = {} as any;
+      this.indicateursParAn = {};
+      this.globalTotals = [];
+      this.selectedYearForPostes = null;
+      this.compareYears = [];
+      this.indicateursSelectedYears = [];
+      this.cdr.detectChanges();
+      return;
+    }
 
-  // Chargement centralisé depuis le service (mocks pour l'instant)
+    const data = dataset;
+    this.years = data.years ?? [];
+    this.objectif = data.objectif as any;
+    this.realise = data.realise as any;
+    this.diff = this.years.map((_, i) => this.getYearDiffText(i));
+
+    this.postes = data.postes ?? [];
+    this.postesObjectifParAn = (data.postesObjectifParAn ?? {}) as any;
+    this.postesRealiseParAn = (data.postesRealiseParAn ?? {}) as any;
+    if (this.years.length > 0) {
+      this.selectedYearForPostes = this.years[0];
+      this.compareYears = [this.years[0], this.years[this.years.length - 1]];
+      this.indicateursSelectedYears = [this.years[0], this.years[this.years.length - 1]];
+    } else {
+      this.selectedYearForPostes = null;
+      this.compareYears = [];
+      this.indicateursSelectedYears = [];
+    }
+
+    this.indicateursParAn = data.indicateursParAn ?? {};
+    this.globalTotals = (data.globalTotals ?? []) as any;
+    this.cdr.detectChanges();
+  }
+
+  onToggleMock(useMock: boolean) {
+    this.useMockData = useMock;
+    const source = this.useMockData
+      ? this.lastPayload?.mock ?? null
+      : (this.lastPayload?.real ?? this.lastPayload?.mock ?? null);
+    this.applyData(source);
+  }
+
+  // Chargement centralisé depuis le service (réel + mock)
   private loadAllFromService() {
-    // Récupère l'entiteId depuis le UserService (lié à l'utilisateur connecté)
-    const entiteId = Number(this.userService.entiteId());
+    const entiteId = Number(this.selectedEntiteId);
     if (!entiteId) {
       console.warn('Outil-suivi: entiteId non disponible, requête API annulée.');
       return;
     }
 
-    this.outilSuiviSrv.loadAll(entiteId, this.selectedEtablissement).subscribe({
-      next: (data: OutilSuiviData) => {
-        // Graphique 1
-        this.years = data.years;
-        this.objectif = data.objectif as any; // contient potentiellement NaN
-        this.realise = data.realise as any;
-        // Diff text recalculée
-        this.diff = this.years.map((_, i) => this.getYearDiffText(i));
-
-        // Graphique 2/4
-        this.postes = data.postes;
-        this.postesObjectifParAn = data.postesObjectifParAn;
-        this.postesRealiseParAn = data.postesRealiseParAn;
-        // S'assurer que l'année sélectionnée et les plages sont valides
-        if (this.years.length > 0) {
-          this.selectedYearForPostes = this.years[0];
-          this.compareYears = [this.years[0], this.years[this.years.length - 1]];
-          this.indicateursSelectedYears = [this.years[0], this.years[this.years.length - 1]];
-        } else {
-          this.selectedYearForPostes = null;
-          this.compareYears = [];
-          this.indicateursSelectedYears = [];
-        }
-
-        // Graphique 5
-        this.indicateursParAn = data.indicateursParAn;
-
-        // Global
-        this.globalTotals = data.globalTotals;
-
-        // Détection de changements
-        this.cdr.detectChanges();
+    this.outilSuiviSrv.loadAll(entiteId).subscribe({
+      next: (data: OutilSuiviResponse) => {
+        this.lastPayload = data;
+        this.warnings = data.warnings ?? [];
+        this.issuesByYear = data.issuesByYear ?? {};
+        const source = this.useMockData
+          ? (data.mock ?? data.real ?? null)
+          : (data.real ?? data.mock ?? null);
+        this.applyData(source);
       },
       error: _ => {
-        // En cas d'erreur, on vide les données pour éviter tout affichage obsolète
-        this.years = [];
-        this.objectif = [];
-        this.realise = [];
-        this.diff = [];
-        this.postes = [];
-        this.postesObjectifParAn = {};
-        this.postesRealiseParAn = {};
-        this.indicateursParAn = {};
-        this.globalTotals = [];
-        this.selectedYearForPostes = null;
-        this.compareYears = [];
-        this.indicateursSelectedYears = [];
-        this.cdr.detectChanges();
+        this.lastPayload = null;
+        this.warnings = ['Erreur lors du chargement des données.'];
+        this.issuesByYear = {};
+        this.applyData(null);
       }
     });
   }

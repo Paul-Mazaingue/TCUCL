@@ -11,10 +11,23 @@
   </header>
 
     <div class="filters">
-      <label for="etablissement">Établissement :</label>
-      <select id="etablissement" [(ngModel)]="selectedEtablissement" (ngModelChange)="onEtablissementChange()">
-        <option *ngFor="let e of etablissements" [value]="e">{{ e }}</option>
-      </select>
+      <ng-container *ngIf="isSuperAdmin; else entiteReadonly">
+        <label for="entiteId">Entité :</label>
+        <select id="entiteId" [(ngModel)]="selectedEntiteId" (ngModelChange)="onEntiteChange($event)">
+          <option *ngFor="let e of entites" [ngValue]="e.id">{{ e.nom }}</option>
+        </select>
+      </ng-container>
+      <ng-template #entiteReadonly>
+        <span>Entité : <strong>{{ entiteName }} ({{ selectedEntiteId }})</strong></span>
+      </ng-template>
+      <label class="toggle" style="margin-left:16px; display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" [ngModel]="useMockData" (ngModelChange)="onToggleMock($event)" />
+        <span>Utiliser les données factices</span>
+      </label>
+    </div>
+
+    <div *ngIf="warnings.length" class="alert info">
+      <div *ngFor="let w of warnings">{{ w }}</div>
     </div>
 
     <!-- ============================ -->
@@ -33,7 +46,7 @@
         </div>
       </div>
     <h3>Évolution des émissions (kgCO₂e/usager)</h3>
-  <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+  <div style="font-size:12px; color:#666; margin-bottom:8px;">Entité : <strong>{{ entiteName || ('#' + selectedEntiteId) }}</strong></div>
 
       <div class="chart-scroll">
         <!-- Légende -->
@@ -154,7 +167,7 @@
         </div>
       </div>
   <h3>Évolution des émissions globales (tCO₂)</h3>
-  <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+  <div style="font-size:12px; color:#666; margin-bottom:8px;">Entité : <strong>{{ entiteName || ('#' + selectedEntiteId) }}</strong></div>
       <div class="chart-scroll">
         <!-- Légende -->
         <div class="legend" style="margin: 4px 0 8px;">
@@ -251,7 +264,7 @@
         </div>
       </div>
       <h3>Suivi des émissions par poste (kgCO₂e/usager)</h3>
-      <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+      <div style="font-size:12px; color:#666; margin-bottom:8px;">Entité : <strong>{{ entiteName || ('#' + selectedEntiteId) }}</strong></div>
 
       <div class="filters" style="margin-bottom:8px;">
         <label for="anneePostes">Année :</label>
@@ -350,7 +363,7 @@
         </div>
       </div>
     <h3>Comparaison des émissions par poste (kgCO₂e/utilisateur)</h3>
-    <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+    <div style="font-size:12px; color:#666; margin-bottom:8px;">Entité : <strong>{{ entiteName || ('#' + selectedEntiteId) }}</strong></div>
 
     <div class="filters" style="margin-bottom:8px;">
         <label>Sélectionner les années à comparer :</label>
@@ -491,7 +504,7 @@
         </div>
       </div>
       <h3>Suivi des indicateurs</h3>
-      <div style="font-size:12px; color:#666; margin-bottom:8px;">Établissement : <strong>{{ selectedEtablissement }}</strong></div>
+      <div style="font-size:12px; color:#666; margin-bottom:8px;">Entité : <strong>{{ entiteName || ('#' + selectedEntiteId) }}</strong></div>
 
       <div class="filters" style="margin-bottom:8px;">
         <label>Sélectionner les années :</label>

@@ -6,5 +6,6 @@ import tcucl.back_tcucl.entity.Trajectoire;
 import java.util.Optional;
 
 public interface TrajectoireRepository extends JpaRepository<Trajectoire, Long> {
-    Optional<Trajectoire> findByEntite_Id(Long entiteId);
+    Optional<Trajectoire> findFirstByEntite_IdOrderByIdDesc(Long entiteId);
+    Optional<Trajectoire> findFirstByEntiteIsNullOrderByIdDesc();
 }

@@ -3,7 +3,14 @@ package tcucl.back_tcucl.service.impl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tcucl.back_tcucl.dto.OutilSuiviDto;
+import tcucl.back_tcucl.dto.OutilSuiviResponseDto;
+import tcucl.back_tcucl.dto.SyntheseEGESResultatDto;
+import tcucl.back_tcucl.entity.Annee;
+import tcucl.back_tcucl.entity.Trajectoire;
+import tcucl.back_tcucl.repository.AnneeRepository;
+import tcucl.back_tcucl.repository.TrajectoireRepository;
 import tcucl.back_tcucl.service.OutilSuiviService;
+import tcucl.back_tcucl.service.SyntheseEGESService;
 
 import java.util.*;
 import org.slf4j.Logger;
@@ -13,28 +20,189 @@ import org.slf4j.LoggerFactory;
 @Transactional(readOnly = true)
 public class OutilSuiviServiceImpl implements OutilSuiviService {
     private static final Logger log = LoggerFactory.getLogger(OutilSuiviServiceImpl.class);
+    private final AnneeRepository anneeRepository;
+    private final SyntheseEGESService syntheseEGESService;
+    private final TrajectoireRepository trajectoireRepository;
+
+    public OutilSuiviServiceImpl(AnneeRepository anneeRepository,
+                                 SyntheseEGESService syntheseEGESService,
+                                 TrajectoireRepository trajectoireRepository) {
+        this.anneeRepository = anneeRepository;
+        this.syntheseEGESService = syntheseEGESService;
+        this.trajectoireRepository = trajectoireRepository;
+    }
     @Override
-    public OutilSuiviDto loadForEntite(Long entiteId) {
+    public OutilSuiviResponseDto loadForEntite(Long entiteId) {
         log.info("[OutilSuivi] loadForEntite exécuté pour entiteId={}", entiteId);
+        List<String> warnings = new ArrayList<>();
+        Map<Integer, List<String>> issuesByYear = new LinkedHashMap<>();
 
-        // Mocks alignés sur le composant Angular (remplacer par des calculs/requêtes réelles plus tard)
+        List<Annee> annees = anneeRepository.findByEntiteId(entiteId);
+        if (annees.isEmpty()) {
+            warnings.add("Aucune donnée annuelle trouvée pour cette entité.");
+            return new OutilSuiviResponseDto(null, buildMockData(entiteId), warnings, issuesByYear);
+        }
+
+        SortedSet<Integer> availableYears = new TreeSet<>();
+        annees.forEach(a -> availableYears.add(a.getAnneeValeur()));
+
+        Trajectoire trajectoire = trajectoireRepository.findFirstByEntite_IdOrderByIdDesc(entiteId).orElse(null);
+        Integer refYear = trajectoire != null ? trajectoire.getReferenceYear() : (availableYears.isEmpty() ? null : availableYears.first());
+        Integer targetYear = trajectoire != null ? trajectoire.getTargetYear() : (availableYears.isEmpty() ? null : availableYears.last());
+        Float targetPct = trajectoire != null ? trajectoire.getTargetPercentage() : null;
+
+        SortedSet<Integer> yearsSet = new TreeSet<>();
+        if (refYear != null && targetYear != null && targetYear >= refYear) {
+            for (int y = refYear; y <= targetYear; y++) {
+                yearsSet.add(y);
+            }
+        } else {
+            yearsSet.addAll(availableYears);
+        }
+
+        List<Integer> years = new ArrayList<>(yearsSet);
+        Collections.sort(years);
+
+        Map<String, Float> baselineParPoste = new LinkedHashMap<>();
+        Float baselineTotal = null;
+        if (refYear != null && availableYears.contains(refYear)) {
+            try {
+                SyntheseEGESResultatDto base = syntheseEGESService.getSyntheseEGESResultat(entiteId, refYear);
+                baselineTotal = base != null ? base.getBilanCarboneTotalParUsager() : null;
+                baselineParPoste = extractPosteParUsager(base);
+            } catch (Exception ex) {
+                warnings.add("Impossible de calculer la référence " + refYear + " : " + ex.getMessage());
+            }
+        } else if (refYear != null) {
+            warnings.add("Année de référence " + refYear + " introuvable dans les données.");
+        }
+
+        List<String> postes = getPostesLabels();
+        List<Float> objectif = new ArrayList<>();
+        List<Float> realise = new ArrayList<>();
+        Map<Integer, List<Float>> postesObjectifParAn = new LinkedHashMap<>();
+        Map<Integer, List<Float>> postesRealiseParAn  = new LinkedHashMap<>();
+        Map<Integer, Map<String, Float>> indicateursParAn = new LinkedHashMap<>();
+        List<Float> globalTotals = new ArrayList<>();
+
+        for (Integer year : years) {
+            SyntheseEGESResultatDto synth = null;
+            if (availableYears.contains(year)) {
+                try {
+                    synth = syntheseEGESService.getSyntheseEGESResultat(entiteId, year);
+                } catch (Exception ex) {
+                    warnings.add("Erreur lors du calcul de l'année " + year + " : " + ex.getMessage());
+                    issuesByYear.computeIfAbsent(year, y -> new ArrayList<>()).add("Calcul impossible : " + ex.getMessage());
+                }
+            }
+
+            Float reaVal = synth != null ? synth.getBilanCarboneTotalParUsager() : null;
+            realise.add(reaVal);
+            postesRealiseParAn.put(year, extractPosteParUsagerList(synth));
+            indicateursParAn.put(year, new LinkedHashMap<>()); // TODO: indicateurs détaillés à relier aux onglets
+            globalTotals.add(synth != null ? synth.getBilanCarboneTotalGlobal() : null);
+
+            Float obj = computeObjectif(year, refYear, targetYear, targetPct, baselineTotal);
+            objectif.add(obj);
+            postesObjectifParAn.put(year, computePosteObjectifList(year, refYear, targetYear, trajectoire, baselineParPoste));
+
+            if (reaVal == null) {
+                issuesByYear.computeIfAbsent(year, y -> new ArrayList<>()).add("Aucune donnée validée pour cette année.");
+            }
+        }
+
+        OutilSuiviDto realDto = new OutilSuiviDto(entiteId, years, objectif, realise, postes, postesObjectifParAn, postesRealiseParAn, indicateursParAn, globalTotals);
+        OutilSuiviResponseDto response = new OutilSuiviResponseDto(realDto, buildMockData(entiteId), warnings, issuesByYear);
+        log.info("[OutilSuivi] loadForEntite terminé pour entiteId={} ({} années)", entiteId, years.size());
+        return response;
+    }
+
+    private List<String> getPostesLabels() {
+        return Arrays.asList(
+                "Énergie",
+                "Déplacements domicile-travail",
+                "Déplacements professionnels",
+                "Bâtiments et mobilier",
+                "Numérique",
+                "Achats et restauration",
+                "Déchets",
+                "Autres immobilisations",
+                "Émissions fugitives"
+        );
+    }
+
+    private Float computeObjectif(Integer year, Integer refYear, Integer targetYear, Float targetPct, Float baselineTotal) {
+        if (baselineTotal == null || refYear == null || targetYear == null || targetYear.equals(refYear)) return null;
+        float target = targetPct != null ? (baselineTotal * (1f - (targetPct / 100f))) : baselineTotal;
+        float progress = (float) Math.min(1d, Math.max(0d, (year - refYear) / (double) (targetYear - refYear)));
+        return baselineTotal - (baselineTotal - target) * progress;
+    }
+
+    private List<Float> computePosteObjectifList(Integer year, Integer refYear, Integer targetYear, Trajectoire trajectoire, Map<String, Float> baselineParPoste) {
+        List<String> postes = getPostesLabels();
+        Map<String, Integer> reductions = trajectoire != null ? trajectoire.getPosteReductions() : Collections.emptyMap();
+        List<Float> result = new ArrayList<>(postes.size());
+        for (String p : postes) {
+            Float base = baselineParPoste.get(p);
+            if (base == null || refYear == null || targetYear == null || targetYear.equals(refYear)) {
+                result.add(null);
+                continue;
+            }
+            int pct = reductions.getOrDefault(normalizePosteId(p), trajectoire != null && trajectoire.getTargetPercentage() != null ? Math.round(trajectoire.getTargetPercentage()) : 0);
+            float target = base * (1f - (pct / 100f));
+            float progress = (float) Math.min(1d, Math.max(0d, (year - refYear) / (double) (targetYear - refYear)));
+            result.add(base - (base - target) * progress);
+        }
+        return result;
+    }
+
+    private String normalizePosteId(String libelle) {
+        return libelle.toLowerCase(Locale.ROOT)
+                .replace("é", "e").replace("è", "e").replace("ê", "e")
+                .replace("à", "a").replace("â", "a")
+                .replace("ç", "c")
+                .replaceAll("[^a-z0-9]+", "-");
+    }
+
+    private Map<String, Float> extractPosteParUsager(SyntheseEGESResultatDto synth) {
+        Map<String, Float> map = new LinkedHashMap<>();
+        if (synth == null) return map;
+        map.put("Énergie", synth.getEnergieParUsager());
+        map.put("Déplacements domicile-travail", synth.getMobiliteDomicileTravailParUsager());
+        Float deplacementPro = safe(synth.getAutreMobiliteFrParUsager()) + safe(synth.getMobiliteInternationalParUsager());
+        map.put("Déplacements professionnels", deplacementPro);
+        map.put("Bâtiments et mobilier", synth.getBatimentParkingParUsager());
+        map.put("Numérique", synth.getNumeriqueParUsager());
+        map.put("Achats et restauration", synth.getAchatParUsager());
+        map.put("Déchets", synth.getDechetParUsager());
+        map.put("Autres immobilisations", synth.getAutreImmobilisationParUsager());
+        map.put("Émissions fugitives", synth.getEmissionFugitivesParUsager());
+        return map;
+    }
+
+    private List<Float> extractPosteParUsagerList(SyntheseEGESResultatDto synth) {
+        List<String> postes = getPostesLabels();
+        Map<String, Float> map = extractPosteParUsager(synth);
+        List<Float> list = new ArrayList<>(postes.size());
+        for (String p : postes) {
+            list.add(map.getOrDefault(p, null));
+        }
+        return list;
+    }
+
+    private float safe(Float v) { return v != null ? v : 0f; }
+
+    private OutilSuiviDto buildMockData(Long entiteId) {
+        // Mocks alignés sur l'ancien comportement, conservés pour le toggle front
         List<Integer> years = Arrays.asList(2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030);
-
-        // Utiliser null pour "trous" (JSON ne supporte pas NaN)
         List<Float> objectif = Arrays.asList(780f, 750f, 720f, 680f, 650f, 620f, 590f, 589f, 550f, 520f, 490f, 460f);
         List<Float> realise  = Arrays.asList(780f, 740f, 710f, 700f, 670f, 700f, 600f, 580f, 600f, 489f, 500f, 460f);
 
-        List<String> postes = Arrays.asList(
-                "Emissions fugitives","Energie","Déplacements France","Déplacements internationaux",
-                "Bâtiments, mobilier et parkings","Numérique","Autres immobilisations","Achats et restauration","Déchets"
-        );
-
+        List<String> postes = getPostesLabels();
         Map<Integer, List<Float>> postesObjectifParAn = new LinkedHashMap<>();
         Map<Integer, List<Float>> postesRealiseParAn  = new LinkedHashMap<>();
-
         Map<Integer, Map<String, Float>> indicateursParAn = new LinkedHashMap<>();
 
-        // Scénarios pour quelques années avec des données vraiment différentes
         Map<Integer, float[]> objScen = new HashMap<>();
         objScen.put(2019, new float[]{12, 165, 245, 290, 95, 45, 18, 15, 65});
         objScen.put(2020, new float[]{9, 125, 180, 220, 140, 55, 22, 12, 95});
@@ -61,73 +229,16 @@ public class OutilSuiviServiceImpl implements OutilSuiviService {
 
             postesObjectifParAn.put(y, toList(obj));
             postesRealiseParAn.put(y, toList(rea));
-        }
-
-        // Indicateurs base
-        Map<String, Number> base = new LinkedHashMap<>();
-        base.put("conso_energie", 3600);
-        base.put("chauffage", 1500);
-        base.put("electricite", 2100);
-        base.put("intensite_carbone_energie", 177.02);
-        base.put("distance_salarie", 2694930);
-        base.put("part_modale_voiture_salarie", 1);
-        base.put("part_modale_ve_salarie", 0);
-        base.put("part_modale_doux_salarie", 0);
-        base.put("distance_etudiants", 21288650);
-        base.put("part_modale_voiture_etudiants", 0);
-        base.put("part_modale_ve_etudiants", null);
-        base.put("part_modale_doux_etudiants", 1);
-        base.put("intensite_carbone_trajets", 91);
-        base.put("distance_internationale", 563211);
-        base.put("intensite_carbone_international", 145);
-        base.put("nb_mobilier", null);
-        base.put("nb_numerique", 4041);
-        base.put("quantite_dechets", 164);
-
-        for (int i = 0; i < years.size(); i++) {
-            Integer y = years.get(i);
-            double progress = (years.size() > 1) ? ((double) i / (years.size() - 1)) : 0d;
-            double reduction = 1d - (progress * 0.7d);
-            Map<String, Float> vals = new LinkedHashMap<>();
-            vals.put("conso_energie", roundF(base.get("conso_energie"), reduction));
-            vals.put("chauffage", roundF(base.get("chauffage"), reduction));
-            vals.put("electricite", roundF(base.get("electricite"), reduction));
-            vals.put("intensite_carbone_energie", floatOrNull(base.get("intensite_carbone_energie"), 1 - progress * 0.3));
-            vals.put("distance_salarie", roundF(base.get("distance_salarie"), reduction));
-            vals.put("part_modale_voiture_salarie", floatOrNull(base.get("part_modale_voiture_salarie"), 1 - progress * 0.3));
-            vals.put("part_modale_ve_salarie", floatOrNull(base.get("part_modale_ve_salarie"), progress * 0.4));
-            vals.put("part_modale_doux_salarie", floatOrNull(base.get("part_modale_doux_salarie"), 1 + progress * 0.3));
-            vals.put("distance_etudiants", roundF(base.get("distance_etudiants"), reduction));
-            vals.put("part_modale_voiture_etudiants", floatOrNull(base.get("part_modale_voiture_etudiants"), 1));
-            vals.put("part_modale_ve_etudiants", floatOrNull(base.get("part_modale_ve_etudiants"), progress * 0.2));
-            vals.put("part_modale_doux_etudiants", floatOrNull(base.get("part_modale_doux_etudiants"), 1 + progress * 0.2));
-            vals.put("intensite_carbone_trajets", floatOrNull(base.get("intensite_carbone_trajets"), 1 - progress * 0.4));
-            vals.put("distance_internationale", roundF(base.get("distance_internationale"), reduction));
-            vals.put("intensite_carbone_international", floatOrNull(base.get("intensite_carbone_international"), 1 - progress * 0.25));
-            vals.put("nb_mobilier", floatOrNull(base.get("nb_mobilier"), (i * 50))); // peut rester null
-            vals.put("nb_numerique", floatOrNull(base.get("nb_numerique"), 1 + progress * 0.5));
-            vals.put("quantite_dechets", roundF(base.get("quantite_dechets"), reduction));
-            indicateursParAn.put(y, vals);
+            indicateursParAn.put(y, Collections.emptyMap());
         }
 
         List<Float> globalTotals = Arrays.asList(12.2f, 11.8f, 13f, 10.5f, 10.0f, 14f, 8.9f, 8.3f, 7.8f, 7.3f, 6.8f, 6.2f);
-
-        OutilSuiviDto dto = new OutilSuiviDto(entiteId, years, objectif, realise, postes, postesObjectifParAn, postesRealiseParAn, indicateursParAn, globalTotals);
-        log.info("[OutilSuivi] loadForEntite terminé pour entiteId={} ({} années, {} postes)", entiteId, years.size(), postes.size());
-        return dto;
+        return new OutilSuiviDto(entiteId, years, objectif, realise, postes, postesObjectifParAn, postesRealiseParAn, indicateursParAn, globalTotals);
     }
 
     private List<Float> toList(float[] arr) {
         List<Float> list = new ArrayList<>(arr.length);
         for (float v : arr) list.add(v);
         return list;
-    }
-    private Float roundF(Number base, double factor) {
-        if (base == null) return null;
-        return (float) Math.round(base.doubleValue() * factor);
-    }
-    private Float floatOrNull(Number base, double factor) {
-        if (base == null) return null;
-        return (float) (base.doubleValue() * factor);
     }
 }

@@ -129,7 +129,8 @@ export const ApiEndpoints = {
   Trajectoire: {
     getByEntite: (entiteId: number) => `${BASE_URL}/trajectoire/${entiteId}`,
     upsert: (entiteId: number) => `${BASE_URL}/trajectoire/${entiteId}`,
-    getPostesDefaults: (entiteId: number) => `${BASE_URL}/trajectoire/${entiteId}/postes-defaults`
+    getPostesDefaults: (entiteId: number) => `${BASE_URL}/trajectoire/${entiteId}/postes-defaults`,
+    propagateGlobal: () => `${BASE_URL}/trajectoire/propagate-global`
   }
   ,
   OutilSuivi: {

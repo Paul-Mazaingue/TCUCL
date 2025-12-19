@@ -6,13 +6,20 @@ import { AuthService } from './auth.service';
 
 export interface OutilSuiviData {
   years: number[];
-  objectif: number[]; // contient éventuellement NaN en mode mock
-  realise: number[];  // contient éventuellement NaN en mode mock
+  objectif: (number | null)[];
+  realise: (number | null)[];
   postes: string[];
-  postesObjectifParAn: Record<number, number[]>;
-  postesRealiseParAn: Record<number, number[]>;
+  postesObjectifParAn: Record<number, (number | null)[]>;
+  postesRealiseParAn: Record<number, (number | null)[]>;
   indicateursParAn: Record<number, Record<string, number | null>>;
-  globalTotals: number[];
+  globalTotals: (number | null)[];
+}
+
+export interface OutilSuiviResponse {
+  real: OutilSuiviData | null;
+  mock: OutilSuiviData | null;
+  warnings?: string[];
+  issuesByYear?: Record<number, string[]>;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -24,7 +31,7 @@ export class OutilSuiviService {
     return new HttpHeaders({ 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) });
   }
 
-  loadAll(entiteId: number, etablissementLabel?: string): Observable<OutilSuiviData> {
-    return this.http.get<OutilSuiviData>(ApiEndpoints.OutilSuivi.getByEntite(entiteId), { headers: this.headers() });
+  loadAll(entiteId: number, etablissementLabel?: string): Observable<OutilSuiviResponse> {
+    return this.http.get<OutilSuiviResponse>(ApiEndpoints.OutilSuivi.getByEntite(entiteId), { headers: this.headers() });
   }
 }

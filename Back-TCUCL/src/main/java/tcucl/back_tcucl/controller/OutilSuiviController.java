@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import tcucl.back_tcucl.dto.OutilSuiviDto;
+import tcucl.back_tcucl.dto.OutilSuiviResponseDto;
 import tcucl.back_tcucl.service.OutilSuiviService;
 
 import static tcucl.back_tcucl.controller.ControllerConstante.*;
@@ -23,7 +23,7 @@ public class OutilSuiviController {
 
     @PreAuthorize("hasAuthority('ROLE_SUPERADMIN') or hasAuthority('ROLE_ENTITE_' + #p0)")
     @GetMapping
-    public ResponseEntity<OutilSuiviDto> get(@PathVariable("entiteId") Long entiteId) {
+    public ResponseEntity<OutilSuiviResponseDto> get(@PathVariable("entiteId") Long entiteId) {
         return ResponseEntity.ok(outilSuiviService.loadForEntite(entiteId));
     }
 }
