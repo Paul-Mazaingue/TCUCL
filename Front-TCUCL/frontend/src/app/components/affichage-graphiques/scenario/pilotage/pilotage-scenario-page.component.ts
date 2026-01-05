@@ -44,6 +44,12 @@ export class PilotageScenarioPageComponent {
     this.count = newCount;
   }
 
+  validateYear(value: number) {
+    if (value < 2019) {
+      this.newScenario.year = 2019;
+    }
+  }
+  
   resetForm(): void {
     this.newScenario = {
       name: 'Scenario de reference',
