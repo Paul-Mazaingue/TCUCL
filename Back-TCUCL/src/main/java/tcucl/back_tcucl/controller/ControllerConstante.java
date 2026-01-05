@@ -90,7 +90,7 @@ public class ControllerConstante {
 
 
     //   ---------    Parking   ----------
-    public static final String REST_PARKING_VOIRIE_ONGLET = "parkingVoirieOnglet";
+    public static final String REST_PARKING_VOIRIE_ONGLET = "/parkingVoirieOnglet";
     public static final String REST_PARKING_VOIRIE = "/parkingVoirie";
     public static final String REST_PARKING_VOIRIE_ID = "/{parkingVoirieId}";
 

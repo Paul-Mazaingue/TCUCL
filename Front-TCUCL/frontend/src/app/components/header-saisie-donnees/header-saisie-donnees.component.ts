@@ -7,7 +7,8 @@ import {
   OnInit,
   QueryList,
   ViewChild,
-  ViewChildren
+  ViewChildren,
+  ChangeDetectorRef
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { OngletService } from './onglet.service';
@@ -31,7 +32,7 @@ type YearRange = { label: string; value: number };
   styleUrls: ['./header-saisie-donnees.component.scss']
 })
 export class HeaderSaisieDonneesComponent implements OnInit, AfterViewInit {
-  constructor(private router: Router, private ongletService: OngletService, private auth: AuthService, private yearService: AnneeService) {
+  constructor(private router: Router, private ongletService: OngletService, private auth: AuthService, private yearService: AnneeService, private cdr: ChangeDetectorRef) {
     this.currentYear = new Date().getFullYear();
     this.selectedYear = this.currentYear;
     const user = this.auth.getUserInfo()();
@@ -87,6 +88,7 @@ export class HeaderSaisieDonneesComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.updateVisibleCount();
+    this.cdr.detectChanges();
   }
 
   @HostListener('window:resize')
