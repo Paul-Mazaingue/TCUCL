@@ -2,20 +2,22 @@
   <div class="dashboard dashboard-container">
     <h2>Saisie des données</h2>
 
-    <div class="dashboard-buttons">
-      <button class="main-button" (click)=goToGeneralOnglet()>
-        ✏️ Renseigner année courante
+    <div class="year-card">
+      <div class="year-card__title">Année de saisie</div>
+      <div class="year-card__hint">Choisissez l’année puis lancez la saisie.</div>
+      <label class="year-card__label" for="yearSelect">Année</label>
+      <select
+        id="yearSelect"
+        class="year-dropdown"
+        [(ngModel)]="selectedYear"
+        (ngModelChange)="onYearChange($event)">
+        <option *ngFor="let year of years" [value]="year.value">
+          {{ year.label }} {{ year.value === currentYear ? '(courante)' : '' }}
+        </option>
+      </select>
+      <button class="main-button" (click)="goToGeneralOnglet()">
+        Commencer la saisie
       </button>
-
-      <div class="main-button year-selector-button" (click)="goToGeneralOngletAvecAnnee()">
-        <div class="year-button-text">
-          ✏️ Modifier une autre année
-        </div>
-        <select class="year-dropdown" [(ngModel)]="selectedYear" (ngModelChange)="onYearChange($event)"
-          (click)="$event.stopPropagation()">
-          <option *ngFor="let year of years" [value]="year.value">{{ year.label }}</option>
-        </select>
-      </div>
     </div>
 
     <p class="subtitle">
