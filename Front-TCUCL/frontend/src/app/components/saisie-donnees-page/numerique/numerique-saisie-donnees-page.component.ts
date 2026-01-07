@@ -85,6 +85,9 @@ export class NumeriqueSaisieDonneesPageComponent implements OnInit {
       next: data => {
         const model = this.mapper.fromDto(data);
         this.donneesCloudDisponibles = model.cloudDataDisponible;
+        if (this.donneesCloudDisponibles === null && this.hasCloudData(model)) {
+          this.donneesCloudDisponibles = true;
+        }
         this.traficCloud = model.traficCloud;
         this.tipUtilisateur = model.tipUtilisateur;
         this.partTraficFranceEtranger = model.partTraficFranceEtranger;
@@ -123,6 +126,8 @@ export class NumeriqueSaisieDonneesPageComponent implements OnInit {
       return;
     }
 
+    const ignoreCloudData = this.donneesCloudDisponibles === false;
+
     const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
@@ -131,9 +136,10 @@ export class NumeriqueSaisieDonneesPageComponent implements OnInit {
     const model: NumeriqueModel = {
       estTermine: this.estTermine,
       cloudDataDisponible: this.donneesCloudDisponibles,
-      traficCloud: this.traficCloud,
-      tipUtilisateur: this.tipUtilisateur,
-      partTraficFranceEtranger: this.partTraficFranceEtranger,
+      // Si l'utilisateur répond non, on force les valeurs cloud à 0 pour éviter qu'elles soient prises en compte
+      traficCloud: ignoreCloudData ? 0 : this.traficCloud,
+      tipUtilisateur: ignoreCloudData ? 0 : this.tipUtilisateur,
+      partTraficFranceEtranger: ignoreCloudData ? 0 : this.partTraficFranceEtranger,
       equipements: this.equipements
     };
 
@@ -142,6 +148,11 @@ export class NumeriqueSaisieDonneesPageComponent implements OnInit {
       next: () => this.loadResultats(id),
       error: err => console.error('Erreur lors de la mise à jour des données numériques', err)
     });
+  }
+
+  private hasCloudData(model: NumeriqueModel): boolean {
+    return [model.traficCloud, model.tipUtilisateur, model.partTraficFranceEtranger]
+      .some(v => v !== null && v !== 0);
   }
   supprimerEquipement(index: number): void {
     this.equipements.splice(index, 1);
