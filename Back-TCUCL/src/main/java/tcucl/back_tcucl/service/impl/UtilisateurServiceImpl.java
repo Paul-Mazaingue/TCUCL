@@ -9,6 +9,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.util.regex.Pattern;
+
 import static tcucl.back_tcucl.Constante.CHARACTERE_AUTORISE;
 import static tcucl.back_tcucl.Constante.PREMIERE_CONNEXION_FALSE;
 import static tcucl.back_tcucl.Constante.PREMIERE_CONNEXION_TRUE;
@@ -21,6 +24,7 @@ import tcucl.back_tcucl.dto.securite.UtilisateurSecuriteDto;
 import tcucl.back_tcucl.entity.Utilisateur;
 import tcucl.back_tcucl.exceptionPersonnalisee.EmailDejaPrisException;
 import tcucl.back_tcucl.exceptionPersonnalisee.MauvaisAncienMdpException;
+import tcucl.back_tcucl.exceptionPersonnalisee.PasswordPolicyException;
 import tcucl.back_tcucl.manager.UtilisateurManager;
 import tcucl.back_tcucl.service.EmailService;
 import tcucl.back_tcucl.service.EntiteService;
@@ -30,6 +34,8 @@ import tcucl.back_tcucl.service.UtilisateurService;
 public class UtilisateurServiceImpl implements UtilisateurService {
 
     Logger logger = LoggerFactory.getLogger(UtilisateurServiceImpl.class);
+
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z\\d]).{10,}$");
 
     private final PasswordEncoder passwordEncoder;
     private final UtilisateurManager utilisateurManager;
@@ -145,8 +151,12 @@ public class UtilisateurServiceImpl implements UtilisateurService {
         if (!passwordEncoder.matches(changePasswordDto.getAncienMdp(), utilisateur.getMdp())) {
             throw new MauvaisAncienMdpException();
         }
+        if (!PASSWORD_PATTERN.matcher(changePasswordDto.getNouveauMdp()).matches()) {
+            throw new PasswordPolicyException();
+        }
         utilisateur.setMdp(passwordEncoder.encode(changePasswordDto.getNouveauMdp()));
         utilisateur.setEstPremiereConnexion(PREMIERE_CONNEXION_FALSE);
+        utilisateur.setPasswordChangedAt(Instant.now());
         utilisateurManager.save(utilisateur);
 
     }

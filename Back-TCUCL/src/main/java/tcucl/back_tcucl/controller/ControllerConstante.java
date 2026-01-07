@@ -26,6 +26,8 @@ public class ControllerConstante {
     public static final String REST_INSCRIPTION2 = "/inscription2";
     public static final String REST_CONNEXION = "/connexion";
     public static final String REST_CHANGE_MDP_PREMIERE_CONNEXION = "/change-mdp-premiere-connexion";
+    public static final String REST_FORGOT_PASSWORD = "/forgot-password";
+    public static final String REST_RESET_PASSWORD = "/reset-password";
     //messages
     public static final String REST_MESSAGE_MDP_BIEN_MIS_A_JOUR_PREMIERE_CONNEXION = "Le mot de passe a bien été mis à jour lors de sa première connexion.";
 
