@@ -4,9 +4,6 @@
       <h4>Gestion des scénarios</h4>
       <p>Creez et comparez differentes strategies de reduction</p>
     </div>
-    <button class="btn-tertiary" (click)="toggleCompareMode()">
-      {{ isComparing ? "Quitter comparaison" : "Comparer" }}
-    </button>
   </div>
   <div class="card-section">
     <!-- Scenario cards list -->
@@ -62,6 +59,49 @@
           </app-posts>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <h3>Emission Management</h3>
+      <p>Track and manage your emission reduction strategies</p>
+    </div>
+  
+    <!-- Other content here -->
+  
+    <!-- Recommendations Section -->
+    <div class="recommendations-section" *ngIf="selectedScenario">
+      <!-- Status Card -->
+      <div class="status-card" [ngClass]="getProgressStatus().color">
+        <h3>{{ getProgressStatus().icon }} {{ getProgressStatus().status }}</h3>
+        <p>Effectiveness: {{ calculateEffectiveness() }}%</p>
+      </div>
+  
+      <!-- Recommendations Card -->
+      <div class="recommendations-card">
+        <h3>Recommendations</h3>
+        <div *ngIf="recommendations.length > 0; else noData">
+          <ul>
+            <li *ngFor="let rec of recommendations">{{ rec }}</li>
+          </ul>
+        </div>
+        <ng-template #noData>
+          <p class="no-data">No recommendations available. Please provide emission data.</p>
+        </ng-template>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <button (click)="exportRecommendations()" class="btn btn-secondary">
+            📋 Export Recommendations
+          </button>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Original recommendations section (if you still need it) -->
+    <div class="recommendations">
+      <!-- Your original recommendation cards here -->
     </div>
   </div>
 </div>
