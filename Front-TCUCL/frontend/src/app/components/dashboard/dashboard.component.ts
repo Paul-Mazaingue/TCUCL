@@ -147,6 +147,22 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  get dashboardSubtitle(): string {
+    const establishment = this.establishmentName.trim() || 'votre établissement';
+    return `État d’avancement de la saisie des données de l'établissement ${establishment} sur l'année ${this.displayYearRange}`;
+  }
+
+  private get displayYearRange(): string {
+    if (this.selectedYearLabel) {
+      return this.selectedYearLabel;
+    }
+    if (this.selectedYear) {
+      return `${this.selectedYear - 1}-${this.selectedYear}`;
+    }
+    const fallback = this.currentYear || new Date().getFullYear();
+    return `${fallback - 1}-${fallback}`;
+  }
+
   loadOngletIds(): void {
     this.ongletService.getOngletIds(this.entiteId, this.selectedYear)?.subscribe({
       next: (result) => {
