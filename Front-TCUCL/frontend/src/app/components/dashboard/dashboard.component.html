@@ -46,7 +46,13 @@
     </div>
   </div>
   <div class="dashboard dashboard-side">
-    <app-bilan-par-secteur [sectors]="sectors" [total]="total"></app-bilan-par-secteur>
+    <app-bilan-par-secteur
+      [sectors]="sectors"
+      [total]="total"
+      [establishmentName]="establishmentName"
+      [yearRangeLabel]="selectedYearLabel"
+      [referenceYear]="selectedYear"
+    ></app-bilan-par-secteur>
   </div>
 </div>
 <div class="dashboard-page" *ngIf="isSuperAdmin()">

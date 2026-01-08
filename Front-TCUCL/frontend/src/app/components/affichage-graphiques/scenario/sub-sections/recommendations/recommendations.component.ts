@@ -8,22 +8,30 @@ import { Component } from '@angular/core';
   styleUrl: './recommendations.component.scss'
 })
 export class RecommendationsComponent {
- recommendations: any = [
+  recommendations: any = [
     {
-      title: 'Réduire "Énergie et eau" de 20%',
-      description: 'Gain potentiel : 240 tCO₂e (4.9% du total)'
+      title: 'Optimisation du parc véhicules',
+      description: 'Électrification du parc - Gain : 320 tCO₂e'
     },
     {
-      title: 'Réduire "Achats et restauration" de 20%',
-      description: 'Gain potentiel : 190 tCO₂e (3.9% du total)'
+      title: 'Rénovation immobilière',
+      description: 'Efficacité énergétique bâtiments - Gain : 280 tCO₂e'
     },
     {
-      title: 'Réduire "Mobilité domicile-travail" de 20%',
-      description: 'Gain potentiel : 170 tCO₂e (3.5% du total)'
+      title: 'Mobilité quotidienne durable',
+      description: 'Télétravail & transports alternatifs - Gain : 180 tCO₂e'
     },
     {
-      title: 'Écart avec la trajectoire cible',
-      description: 'Il reste 2194 tCO₂e à réduire pour atteindre l’objectif de -45%'
+      title: 'Modernisation équipements',
+      description: 'Haute efficacité énergétique - Gain : 150 tCO₂e'
+    },
+    {
+      title: 'Rationalisation voyages',
+      description: 'Réduction mobilité internationale - Gain : 220 tCO₂e'
+    },
+    {
+      title: 'Écart trajectoire cible',
+      description: 'Reste 2194 tCO₂e pour objectif -45%'
     }
   ];
   

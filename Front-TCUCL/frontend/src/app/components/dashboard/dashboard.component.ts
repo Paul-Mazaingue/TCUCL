@@ -34,6 +34,8 @@ export class DashboardComponent implements OnInit {
   years: YearRange[] = [];
   sectors: { label: string, value: number }[] = [];
   total = 0;
+  establishmentName = '';
+  selectedYearLabel = '';
 
   onglets = [
     { label: 'General', statusKey: ONGLET_KEYS.General, route: ONGLET_KEYS.General },
@@ -67,6 +69,7 @@ export class DashboardComponent implements OnInit {
     } else {
       console.error('Impossible de récupérer l’entiteId de l’utilisateur.');
     }
+    this.establishmentName = (user?.entiteNom ?? '').trim();
   }
   @Input() entiteId!: number;
   ongletIdMap: { [key: string]: number } = {};
@@ -82,6 +85,7 @@ export class DashboardComponent implements OnInit {
     });
 
     this.selectedYear = this.yearService.getSelectedYear();
+    this.updateSelectedYearLabel();
 
     this.statusService.statuses$.subscribe((s: Record<string, boolean>) => {
       this.statuses = s;
@@ -124,9 +128,23 @@ export class DashboardComponent implements OnInit {
   onYearChange(newYear: number): void {
     this.selectedYear = newYear;
     this.yearService.setSelectedYear(newYear);
+    this.updateSelectedYearLabel();
     this.loadOngletIds();
     this.loadOngletStatuses();
     this.fetchSectors();
+  }
+
+  private updateSelectedYearLabel(): void {
+    const match = this.years.find((year) => year.value === this.selectedYear);
+    if (match) {
+      this.selectedYearLabel = match.label;
+      return;
+    }
+    if (this.selectedYear) {
+      this.selectedYearLabel = `${this.selectedYear - 1}-${this.selectedYear}`;
+    } else {
+      this.selectedYearLabel = '';
+    }
   }
 
   loadOngletIds(): void {
