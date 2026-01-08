@@ -41,11 +41,30 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    @Override
+    public void sendPasswordResetEmail(String prenom, String nom, String to, String resetLink) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setSubject(MAIL_SUJET_RESET_PASSWORD);
+            message.setFrom(fromEmail);
+            message.setTo(to);
+            message.setText(ecrireMailReset(prenom, nom, resetLink));
+            emailSender.send(message);
+            logger.info("Email de réinitialisation envoyé à : " + to);
+        } catch (Exception e) {
+            logger.error("Erreur lors de l'envoi de l'email de réinitialisation à : " + to + "\n" + e.getMessage());
+        }
+    }
+
 
     private String ecrireMail(String prenom, String nom, String mdp){
 
         return MAIL_MESSAGE_INSCRIPTION_DEBUT + prenom + " " + nom + MAIL_MESSAGE_INSCRIPTION_MILIEU + mdp + MAIL_MESSAGE_INSCRIPTION_FIN;
 
+    }
+
+    private String ecrireMailReset(String prenom, String nom, String resetLink) {
+        return MAIL_MESSAGE_RESET_PASSWORD_PREFIX + prenom + " " + nom + MAIL_MESSAGE_RESET_PASSWORD_BODY + resetLink + MAIL_MESSAGE_RESET_PASSWORD_SUFFIX;
     }
 
 

@@ -123,7 +123,9 @@ export const ApiEndpoints = {
   },
 
   auth: {
-    connexion: () => `${BASE_URL}/auth/connexion`
+    connexion: () => `${BASE_URL}/auth/connexion`,
+    forgotPassword: () => `${BASE_URL}/auth/forgot-password`,
+    resetPassword: () => `${BASE_URL}/auth/reset-password`
   },
   
   Trajectoire: {
