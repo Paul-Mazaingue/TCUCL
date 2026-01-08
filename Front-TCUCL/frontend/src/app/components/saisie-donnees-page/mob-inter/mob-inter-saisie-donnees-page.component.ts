@@ -137,6 +137,14 @@ export class MobiliteInternationaleSaisieDonneesPageComponent implements OnInit 
     });
   }
 
+  rafraichirDonnees(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) return;
+
+    this.loadData(id);
+    this.loadResultats(id);
+  }
+
 
   telechargerExcel(): void {
     const id = this.route.snapshot.paramMap.get('id');
