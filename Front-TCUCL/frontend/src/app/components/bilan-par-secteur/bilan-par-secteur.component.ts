@@ -7,7 +7,10 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   template: `
     <div class="bilan-wrapper">
-      <h2 class="table-title">BILAN PAR SECTEUR</h2>
+      <h2 class="table-title">
+        Bilan des émissions de gaz à effet de serre, par poste, pour l'établissement
+        {{ displayEstablishmentName }} sur l'année {{ displayYearRange }}
+      </h2>
       <table class="indicator-table">
         <thead>
           <tr>
@@ -33,4 +36,20 @@ import { CommonModule } from '@angular/common';
 export class BilanParSecteurComponent {
   @Input() sectors: { label: string; value: number }[] = [];
   @Input() total: number = 0;
+  @Input() establishmentName: string = '';
+  @Input() yearRangeLabel: string = '';
+  @Input() referenceYear?: number;
+
+  get displayEstablishmentName(): string {
+    return (this.establishmentName ?? '').trim() || 'votre établissement';
+  }
+
+  get displayYearRange(): string {
+    const label = (this.yearRangeLabel ?? '').trim();
+    if (label) {
+      return label;
+    }
+    const year = this.referenceYear ?? new Date().getFullYear();
+    return `${year - 1}-${year}`;
+  }
 }

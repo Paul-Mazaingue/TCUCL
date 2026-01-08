@@ -51,6 +51,23 @@ export class OutilSuiviPageComponent implements OnInit {
   syntheseYears: { label: string, value: number }[] = [];
   selectedSyntheseYear: number = 0;
 
+  get syntheseYearRangeLabel(): string {
+    const match = this.syntheseYears.find((year) => year.value === this.selectedSyntheseYear);
+    if (match) {
+      return match.label;
+    }
+    if (this.selectedSyntheseYear) {
+      return `${this.selectedSyntheseYear - 1}-${this.selectedSyntheseYear}`;
+    }
+    const year = this.currentYear || new Date().getFullYear();
+    return `${year - 1}-${year}`;
+  }
+
+  get syntheseTitle(): string {
+    const name = (this.entiteName || '').trim() || 'votre établissement';
+    return `Bilan des émissions de gaz à effet de serre, par poste, pour l'établissement ${name} sur l'année ${this.syntheseYearRangeLabel}`;
+  }
+
   onSyntheseYearChange(year: number) {
       this.selectedSyntheseYear = year;
       this.fetchSynthese();

@@ -29,6 +29,8 @@ export class SyntheseEgesComponent implements OnInit {
   private currentYear: number = new Date().getFullYear();
   private entiteId?: number;
   consoEnergieFinale?: number;
+  establishmentName = '';
+  yearRangeLabel = '';
 
   constructor(
     private router: Router,
@@ -39,6 +41,8 @@ export class SyntheseEgesComponent implements OnInit {
     if (user?.entiteId || user?.entiteID) {
       this.entiteId = user.entiteId ?? user.entiteID;
     }
+    this.establishmentName = (user?.entiteNom ?? '').trim();
+    this.yearRangeLabel = this.computeYearRange(this.currentYear);
   }
 
   ngOnInit(): void {
@@ -173,5 +177,18 @@ export class SyntheseEgesComponent implements OnInit {
         },
         error: err => console.error('Erreur récupération synthèse', err)
       });
+  }
+
+  get bilanTitle(): string {
+    const name = this.establishmentName || 'votre établissement';
+    return `Bilan des émissions de gaz à effet de serre, par poste, pour l'établissement ${name} sur l'année ${this.displayYearRange}`;
+  }
+
+  private get displayYearRange(): string {
+    return this.yearRangeLabel || this.computeYearRange(this.currentYear);
+  }
+
+  private computeYearRange(year: number): string {
+    return `${year - 1}-${year}`;
   }
 }
