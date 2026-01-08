@@ -15,7 +15,7 @@ import { CommonModule } from '@angular/common';
         <thead>
           <tr>
             <th></th>
-            <th>Au global en Tonnes CO2e</th>
+            <th>Au global (tCO₂e)</th>
           </tr>
         </thead>
         <tbody>

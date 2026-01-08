@@ -532,21 +532,14 @@
         </select>
       </div>
 
-      <div class="filters" style="margin-bottom: 20px;">
-        <label for="syntheseYear">Année : </label>
-        <select id="syntheseYear" [(ngModel)]="selectedSyntheseYear" (ngModelChange)="onSyntheseYearChange($event)" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px;">
-          <option *ngFor="let year of syntheseYears" [value]="year.value">
-            {{ year.label }} {{ year.value === currentYear ? '(courante)' : '' }}
-          </option>
-        </select>
-      </div>
+
 
       <h2 class="table-title">{{ syntheseTitle }}</h2>
       <table class="indicator-table">
         <thead>
           <tr>
             <th></th>
-            <th>Au global en Tonnes CO2e</th>
+            <th>Au global (tCO₂e)</th>
           </tr>
         </thead>
         <tbody>
@@ -566,7 +559,7 @@
         <thead>
           <tr>
             <th></th>
-            <th>En Tonnes CO2e</th>
+            <th>En tCO₂e</th>
           </tr>
         </thead>
         <tbody>
