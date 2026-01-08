@@ -8,6 +8,7 @@
 
   @if (isLoggedIn()) {
     <div class="header-actions" *ngIf="!isSaisiePage">
+      <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">Dashboard</a>
       <a routerLink="/outil-de-suivi" routerLinkActive="active" class="nav-link">Outil de suivi</a>
       <a routerLink="/trajectoire-carbone" routerLinkActive="active" class="nav-link">Trajectoire carbone</a>
       <a routerLink="/pilotage-scenario" routerLinkActive="active" class="nav-link">Pilotage par scénario</a>
