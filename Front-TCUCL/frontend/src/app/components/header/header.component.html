@@ -7,10 +7,10 @@
   </div>
 
   @if (isLoggedIn()) {
-    <div class="header-actions">
-      <button class="button primary-button" (click)="goToOutilSuivi()">Outil de suivi</button>
-      <button class="button primary-button" (click)="goToTrajectoireCarbone()">Trajectoire carbone</button>
-      <button class="button primary-button" (click)="goToPilotageScenario()">Pilotage par scénario</button>
+    <div class="header-actions" *ngIf="!isSaisiePage">
+      <a routerLink="/outil-de-suivi" routerLinkActive="active" class="nav-link">Outil de suivi</a>
+      <a routerLink="/trajectoire-carbone" routerLinkActive="active" class="nav-link">Trajectoire carbone</a>
+      <a routerLink="/pilotage-scenario" routerLinkActive="active" class="nav-link">Pilotage par scénario</a>
     </div>
   }
 

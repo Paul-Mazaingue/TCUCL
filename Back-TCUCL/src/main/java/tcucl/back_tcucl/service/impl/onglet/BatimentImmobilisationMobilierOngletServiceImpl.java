@@ -197,7 +197,7 @@ public class BatimentImmobilisationMobilierOngletServiceImpl implements Batiment
                                 return batiment.getEmissionsGesReellesTCO2();
                             } else {
                                 if (batiment.getDateConstruction().getYear() > (batimentImmobilisationMobilierOnglet.getAnnee().getAnneeValeur() - 50) || batiment.getDateDerniereGrosseRenovation().getYear() > (batimentImmobilisationMobilierOnglet.getAnnee().getAnneeValeur() - 50)) {
-                                    emissionsCalculees[0] = facteurEmission.getFacteurEmission() * batiment.getSurfaceEnM2() / (50 * 1000);
+                                    emissionsCalculees[0] += facteurEmission.getFacteurEmission() * batiment.getSurfaceEnM2() / (50 * 1000);
                                     return facteurEmission.getFacteurEmission() * batiment.getSurfaceEnM2() / (50 * 1000);
                                 } else {
                                     return 0f;
