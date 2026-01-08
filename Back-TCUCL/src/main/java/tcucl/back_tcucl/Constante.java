@@ -19,6 +19,10 @@ public class Constante {
     public static final String ERREUR_EMAIL_DEJA_PRIS = "L'adresse e-mail est déjà utilisé pour un compte : ";
     public static final String ERREUR_UTILISATEUR_NON_TROUVE = "Utilisateur non trouvé en base.";
     public static final String ERREUR_MAUVAIS_ANCIEN_MDP = "Ancien mot de passe incorrect.";
+    public static final String ERREUR_PASSWORD_POLICY = "Le mot de passe doit contenir au moins 10 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.";
+    public static final String ERREUR_RESET_TOKEN_INVALIDE = "Lien de réinitialisation invalide.";
+    public static final String ERREUR_RESET_TOKEN_EXPIRE = "Lien de réinitialisation expiré.";
+    public static final String ERREUR_RESET_PASSWORD_RATE_LIMIT = "Trop de demandes de réinitialisation. Réessayez dans quelques minutes.";
     public static final String ERREUR_UTILISATEUR_NON_TROUVE_ID = "Utilisateur introuvable avec l'Id: ";
     public static final String ERREUR_UTILISATEUR_NON_TROUVE_MAIL = "Utilisateur introuvable avec le mail : ";
     public static final String ERREUR_ENTITE_NON_TROUVE_ID = "Entite introuvable avec l'Id: ";
@@ -43,6 +47,14 @@ public class Constante {
     public static final Boolean SUPERADMIN_TRUE = true;
     public static final Boolean ADMIN_FALSE = false;
     public static final Boolean ADMIN_TRUE = true;
+
+//Password reset / mail
+    public static final String MESSAGE_RESET_PASSWORD_REQUEST = "Si un compte correspond à cette adresse, un email de réinitialisation a été envoyé.";
+    public static final String MESSAGE_RESET_PASSWORD_SUCCESS = "Le mot de passe a été réinitialisé.";
+    public static final String MAIL_SUJET_RESET_PASSWORD = "Réinitialisation de votre mot de passe TCUCL";
+    public static final String MAIL_MESSAGE_RESET_PASSWORD_PREFIX = "Bonjour ";
+    public static final String MAIL_MESSAGE_RESET_PASSWORD_BODY = ",\n\nVous avez demandé à réinitialiser votre mot de passe sur TCUCL.\nCliquez sur le lien ci-dessous (valable 10 minutes) pour définir un nouveau mot de passe :\n";
+    public static final String MAIL_MESSAGE_RESET_PASSWORD_SUFFIX = "\n\nSi vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.\n\nCordialement,\nL'équipe TCUCL";
 
 
 //Message Mail

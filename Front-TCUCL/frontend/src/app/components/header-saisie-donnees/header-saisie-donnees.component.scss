@@ -43,17 +43,16 @@ body {
 .home-button:hover {
   background-color: #1e7e34;
 }
-
-/* Texte année */
-.year-label,
+.right-buttons-container{
+  display: flex;
+  align-items: right;
+}
 .year-change-label {
   font-size: 1.01em;
   font-weight: bold;
   white-space: nowrap;
   margin: 0 .5em;
 }
-
-/* Conteneur du texte et de la liste déroulante */
 .year-change-container {
   display: flex;
   align-items: center;
@@ -72,7 +71,7 @@ body {
 /* Boutons principaux */
 .button {
   text-align: center;
-  background-color: #007bff;
+  background-color: #007bffef;
   color: white !important;
   border: none;
   padding: 0.56em 1.12em;

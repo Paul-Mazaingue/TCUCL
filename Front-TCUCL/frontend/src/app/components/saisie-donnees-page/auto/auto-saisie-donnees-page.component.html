@@ -2,9 +2,25 @@
   <div class="left-panel">
     <div class="page-title">
       <h2>Poste automobile</h2>
-      <span class="help-icon" title="Merci de renseigner uniquement les véhciules appartenant à votre entité">
-        <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="black"></circle>
+      <span
+        class="help-icon"
+        title="Merci de renseigner uniquement les véhciules appartenant à votre entité"
+      >
+        <svg
+          width="1em"
+          height="1em"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="2"
+            fill="black"
+          ></circle>
           <rect x="11" y="10" width="2" height="6" fill="white"></rect>
           <circle cx="12" cy="8" r="1" fill="white"></circle>
         </svg>
@@ -15,23 +31,37 @@
 
       <div class="form-column">
         <label>Modèle / Immatriculation</label>
-        <input type="text" [(ngModel)]="nouveauVehicule.modeleOuImmatriculation" />
+        <input
+          type="text"
+          [(ngModel)]="nouveauVehicule.modeleOuImmatriculation"
+        />
 
         <label>Type de véhicule</label>
         <select [(ngModel)]="nouveauVehicule.typeVehicule">
-          <option *ngFor="let type of vehiculeTypesLibelles" [ngValue]="type.value">
+          <option
+            *ngFor="let type of vehiculeTypesLibelles"
+            [ngValue]="type.value"
+          >
             {{ type.label }}
           </option>
         </select>
 
         <label>Nombre de véhicules identiques</label>
-        <input type="number" [(ngModel)]="nouveauVehicule.nombreVehiculesIdentiques" />
+        <input
+          type="number"
+          [(ngModel)]="nouveauVehicule.nombreVehiculesIdentiques"
+        />
 
         <label>Nombre de Km moyen annuel / Voiture</label>
-        <input type="number" [(ngModel)]="nouveauVehicule.nombreKilometresParVoitureMoyen" />
+        <input
+          type="number"
+          [(ngModel)]="nouveauVehicule.nombreKilometresParVoitureMoyen"
+        />
       </div>
 
-      <button type="button" (click)="ajouterVehicule()">Ajouter ce véhicule</button>
+      <button type="button" (click)="ajouterVehicule()">
+        Ajouter ce véhicule
+      </button>
     </details>
 
     <div *ngIf="vehiculeOnglet.vehicules.length > 0">
@@ -52,13 +82,24 @@
             <td>{{ getLibelleTypeVehicule(v.typeVehicule) }}</td>
             <td>{{ v.nombreVehiculesIdentiques }}</td>
             <td>{{ v.nombreKilometresParVoitureMoyen }}</td>
-            <td><button type="button" (click)="supprimerVehicule(i)">🗑️</button></td>
+            <td>
+              <button type="button" (click)="supprimerVehicule(i)">🗑️</button>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
-  <div *ngIf="vehiculeResultat" class="results-section">
+
+  <div class="results-section">
+  <h2>Résultats des émissions GES</h2>
+  <div class="result-card">
+    <h3>Émission totale (Tonnes CO₂e)</h3>
+    <p>{{ vehiculeResultat?.totalEmissionGES | number : "1.2-2" }}</p>
+  </div>
+</div>
+
+  <!-- <div *ngIf="vehiculeResultat" class="results-section">
     <h3>Résultats des émissions GES</h3>
     <table class="data-table">
       <thead>
@@ -78,6 +119,9 @@
       </tr>
       </tbody>
     </table>
-  </div>
-  <app-save-footer [path]="ONGLET_KEYS.Auto" (estTermineChange)="onEstTermineChange($event)"></app-save-footer>
+  </div> -->
+  <app-save-footer
+    [path]="ONGLET_KEYS.Auto"
+    (estTermineChange)="onEstTermineChange($event)"
+  ></app-save-footer>
 </div>

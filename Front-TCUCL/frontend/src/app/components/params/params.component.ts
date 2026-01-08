@@ -62,6 +62,9 @@ export class ParamsComponent {
     nouveauMdp: ''
   };
 
+  showOldPassword = false;
+  showNewPassword = false;
+
   entityToCreate = {
     name: '',
     type: '',
@@ -142,6 +145,14 @@ export class ParamsComponent {
         alert('Erreur lors du changement de mot de passe.');
       }
     });
+  }
+
+  toggleOldPasswordVisibility(): void {
+    this.showOldPassword = !this.showOldPassword;
+  }
+
+  toggleNewPasswordVisibility(): void {
+    this.showNewPassword = !this.showNewPassword;
   }
 
 

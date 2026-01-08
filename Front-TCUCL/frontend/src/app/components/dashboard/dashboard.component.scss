@@ -1,4 +1,9 @@
 /* Mise en page globale */
+$primary: #0f437f;
+$primary-soft: #dbe7f8;
+$primary-border: #c3d5ef;
+$warm-accent: #fcbf70;
+
 .dashboard-page {
   display: flex;
   min-height: 100vh;
@@ -31,42 +36,68 @@
   background-color: #fce6d5;
 }
 
-/* Bloc des deux boutons */
-.dashboard-buttons {
+/* Bloc unifié année + CTA */
+.year-card {
   display: flex;
   flex-direction: column;
-  gap: 1.8em; /* ✅ augmenté : espace entre les boutons */
-  margin-bottom: 2em;
+  gap: 0.7em;
   width: 100%;
+  max-width: 360px;
+  padding: 1.2em 1.4em;
+  margin: 0 auto 2em auto;
+  background: white;
+  border: 2px solid black;
+  border-radius: 22px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+  align-items: center;
 }
 
+.year-card__title {
+  font-size: 1.15em;
+  font-weight: 700;
+  text-align: center;
+}
+
+.year-card__hint {
+  color: #444;
+  font-size: 0.95em;
+  text-align: center;
+}
+
+.year-card__controls {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+  align-items: stretch;
+}
+
+.year-card__label {
+  font-weight: 600;
+  text-align: left;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+}
 
 .main-button {
   background-color: white;
   border: 2px solid black;
   border-radius: 30px;
-  padding: 0.6em 1.5em;
+  padding: 0.7em 1.5em;
   font-size: 1em;
   font-weight: bold;
   cursor: pointer;
   width: 100%;
-  max-width: 300px;
+  max-width: 280px;
   margin: 0 auto;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
 }
 
 .main-button:hover {
   background-color: #333;
   color: white;
-}
-
-/* Sélecteur d’année */
-.year-selector {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1em;
-  margin-bottom: 1.5em;
+  transform: translateY(-1px);
 }
 
 /* Sous-titre */
@@ -129,49 +160,34 @@
   color: #555;
   cursor: pointer;
   margin-left: .5em;
-}a
-/* Bloc contenant le bouton + selecteur, avec même style que .main-button */
-.year-selector-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: white;
-  border: 2px solid black;
-  border-radius: 30px;
-  padding: 0.6em 1.5em;
-  font-size: 1em;
-  font-weight: bold;
-  cursor: pointer;
-  width: 100%;
-  max-width: 300px;
-  margin: 0 auto;
-  transition: background-color 0.2s ease;
-  gap: 0.6em; /* espace entre le texte et le select */
-}
-
-/* Texte du bouton */
-.year-button-text {
-  font-size: 1em;
-  font-weight: bold;
-  color: black;
-  cursor: pointer;
-}
-
-/* même style que ton .main-button:hover */
-.year-selector-button:hover {
-  background-color: #333;
-  color: white;
 }
 
 /* Le sélecteur d’année dans le bouton */
 .year-dropdown {
   font-size: 1em;
-  padding: 0.3em;
-  border-radius: 6px;
+  padding: 0.5em 0.7em;
+  border-radius: 8px;
   border: 1px solid #999;
-  width: 80%;
-  max-width: 200px;
+  background: white;
+  width: 100%;
+  max-width: 280px;
+  color: #142b4d;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.year-selector-button:hover .year-button-text {
-  color: white;
+
+.year-dropdown:focus {
+  outline: none;
+  border-color: #333;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 720px) {
+  .year-card {
+    padding: 1.1em 1.2em;
+  }
+
+  .main-button {
+    width: 100%;
+  }
 }

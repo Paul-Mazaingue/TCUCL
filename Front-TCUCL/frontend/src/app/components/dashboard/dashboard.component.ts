@@ -112,23 +112,6 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  goToGeneralOngletAvecAnnee(): void {
-    this.ongletService.getOngletIds(this.entiteId, this.selectedYear)?.subscribe({
-      next: (result) => {
-        this.ongletIdMap = result;
-        const ongletId = this.ongletIdMap['generalOnglet'];
-        if (ongletId) {
-          this.router.navigate([`/generalOnglet/${ongletId}`]);
-        } else {
-          console.error('ID onglet général introuvable pour l’année', this.selectedYear);
-        }
-      },
-      error: (err) => {
-        console.error('Erreur récupération onglet IDs:', err);
-      }
-    });
-  }
-
   goToGeneralOnglet(): void {
     const ongletId = this.ongletIdMap['generalOnglet'];
     if (ongletId) {
@@ -143,6 +126,7 @@ export class DashboardComponent implements OnInit {
     this.yearService.setSelectedYear(newYear);
     this.loadOngletIds();
     this.loadOngletStatuses();
+    this.fetchSectors();
   }
 
   loadOngletIds(): void {

@@ -34,30 +34,51 @@ header {
       gap: 0.75rem;
       margin: 0 1rem;
 
-      .button {
-        padding: 0.6rem 1.2rem;
-        font-size: 0.9rem;
+      .nav-link {
+        text-decoration: none;
+        color: #333;
         font-weight: 500;
-        border: none;
+        padding: 0.5rem 1rem;
         border-radius: 6px;
-        cursor: pointer;
         transition: all 0.2s ease;
-        white-space: nowrap;
+        background-color: transparent;
+        border: 1px solid transparent;
+        position: relative;
+        display: flex;
+        align-items: center;
 
-        &.primary-button {
+        &:not(:last-child) {
+          margin-right: 0.2rem;
+          
+          &::after {
+            content: '';
+            display: block;
+            position: absolute;
+            right: -0.45rem; 
+            top: 50%;
+            transform: translateY(-50%); /* Vertical centering */
+            height: 20px;
+            width: 1px;
+            background-color: #ccc;
+          }
+        }
+
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.05); /* Lighter hover for black text */
+        }
+
+        &.active {
           background-color: #007bff;
           color: white;
-
-          &:hover {
-            background-color: #0056b3;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
-          }
-
-          &:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 4px rgba(0, 123, 255, 0.2);
-          }
+          box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+          
+          /* Hide separator if the item itself is active, or maybe keep it? 
+             Usually active items suppress separators or separators are outside.
+             Let's keep it simple for now. */
+             
+           &::after {
+             display: none; /* Hide separator on the active item to clear visual clutter? */
+           }
         }
       }
     }

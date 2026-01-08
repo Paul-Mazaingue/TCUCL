@@ -1,6 +1,7 @@
 package tcucl.back_tcucl.entity;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 
 @Entity
 @Table(name = "utilisateur")
@@ -18,6 +19,9 @@ public class Utilisateur {
     private Boolean estAdmin;
     private Boolean estSuperAdmin;
 
+    @Column(name = "password_changed_at")
+    private Instant passwordChangedAt;
+
     @ManyToOne
     @JoinColumn(name = "entite_id")
     private Entite entite;
@@ -32,6 +36,7 @@ public class Utilisateur {
         this.estAdmin = estAdmin;
         this.estSuperAdmin = estSuperAdmin;
         this.entite = entite;
+        this.passwordChangedAt = Instant.now();
     }
 
     public Utilisateur() {
@@ -116,6 +121,14 @@ public class Utilisateur {
 
     public void setEntite(Entite entite) {
         this.entite = entite;
+    }
+
+    public Instant getPasswordChangedAt() {
+        return passwordChangedAt;
+    }
+
+    public void setPasswordChangedAt(Instant passwordChangedAt) {
+        this.passwordChangedAt = passwordChangedAt;
     }
 
     @Override

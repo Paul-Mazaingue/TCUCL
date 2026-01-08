@@ -24,6 +24,8 @@ import { SyntheseEgesComponent } from './components/affichage-graphiques/synthes
 import { OutilSuiviPageComponent } from './components/affichage-graphiques/outil-suivi/outil-suivi-page.component';
 import { TrajectoireCarbonePageComponent } from './components/affichage-graphiques/trajectoire-carbone/trajectoire-carbone-page.component';
 import { PilotageScenarioPageComponent } from './components/affichage-graphiques/scenario/pilotage/pilotage-scenario-page.component';
+import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './components/reset-password/reset-password.component';
 
 export const routes: Routes = [
   {
@@ -34,6 +36,14 @@ export const routes: Routes = [
   {
     path: 'login',
     component: LoginPageComponent,
+  },
+  {
+    path: 'forgot-password',
+    component: ForgotPasswordComponent,
+  },
+  {
+    path: 'reset-password',
+    component: ResetPasswordComponent,
   },
   {
     path: 'dashboard',

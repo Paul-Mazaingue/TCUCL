@@ -11,6 +11,20 @@
   </header>
 
     <div class="filters">
+      <!-- Onglets (Trajectoire / Synthèse) -->
+      <div style="display:flex; gap:12px; margin-right:auto;">
+        <button class="tab-btn" 
+                [ngClass]="{ 'active': activeTab === 'trajectoire' }"
+                (click)="activeTab = 'trajectoire'">
+          Suivi
+        </button>
+        <button class="tab-btn" 
+                [ngClass]="{ 'active': activeTab === 'synthese' }"
+                (click)="activeTab = 'synthese'">
+          Synthèse EGES
+        </button>
+      </div>
+
       <ng-container *ngIf="isSuperAdmin; else entiteReadonly">
         <label for="entiteId">Entité :</label>
         <select id="entiteId" [(ngModel)]="selectedEntiteId" (ngModelChange)="onEntiteChange($event)">
@@ -20,12 +34,15 @@
       <ng-template #entiteReadonly>
         <span>Entité : <strong>{{ entiteName }} ({{ selectedEntiteId }})</strong></span>
       </ng-template>
-      <label class="toggle" style="margin-left:16px; display:flex; align-items:center; gap:8px;">
+      <label class="toggle" style="margin-left:16px; display:flex; align-items:center; gap:8px;" *ngIf="activeTab === 'trajectoire'">
         <input type="checkbox" [ngModel]="useMockData" (ngModelChange)="onToggleMock($event)" />
         <span>Utiliser les données factices</span>
       </label>
     </div>
 
+    <!-- Container Onglet Trajectoire -->
+    <ng-container *ngIf="activeTab === 'trajectoire'">
+    
     <div *ngIf="warnings.length" class="alert info">
       <div *ngFor="let w of warnings">{{ w }}</div>
     </div>
@@ -612,4 +629,51 @@
       <div class="chart-tooltip__row">Total (tCO₂)&nbsp;: <strong>{{ getTooltipGlobalTotal() }}</strong></div>
       <div class="chart-tooltip__row">Écart vs réf&nbsp;: <strong>{{ getTooltipGlobalDiff() }}</strong></div>
   </div>
+  </ng-container> <!-- Fin Onglet Trajectoire -->
+
+  <!-- Container Onglet Synthèse EGES -->
+  <ng-container *ngIf="activeTab === 'synthese'">
+    <div class="synthese-content">
+      <h2 class="table-title">BILAN PAR SECTEUR</h2>
+      <table class="indicator-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Au global en Tonnes CO2e</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of sectors">
+            <td>{{ s.label }}</td>
+            <td>{{ s.value }}</td>
+          </tr>
+          <tr class="total">
+            <td>Bilan carbone total</td>
+            <td>{{ total }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 class="table-title" style="margin-top: 32px;">BILAN PAR SCOPE / POSTES</h2>
+      <table class="indicator-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>En Tonnes CO2e</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let sc of scopes">
+            <td>{{ sc.label }}</td>
+            <td>{{ sc.value }}</td>
+          </tr>
+          <tr class="total">
+            <td>Bilan carbone total</td>
+            <td>{{ scopesTotal }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
 </div>

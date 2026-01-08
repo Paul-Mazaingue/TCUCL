@@ -34,13 +34,15 @@ public class SecurityConfig {
 
     private final CustomUserDetailsServiceImpl customUserDetailsService;
     private final JwtUtils jwtUtils;
+    private final JwtFilter jwtFilter;
 
     @Value("${app.cors.allowed-origin:${FRONT_ORIGIN:${API_BASE_URL:http://localhost:4200}}}")
     private String corsAllowedOrigin;
 
-    public SecurityConfig(CustomUserDetailsServiceImpl customUserDetailsService, JwtUtils jwtUtils) {
+    public SecurityConfig(CustomUserDetailsServiceImpl customUserDetailsService, JwtUtils jwtUtils, JwtFilter jwtFilter) {
         this.customUserDetailsService = customUserDetailsService;
         this.jwtUtils = jwtUtils;
+        this.jwtFilter = jwtFilter;
         System.out.println(">>> SecurityConfig init");
     }
 
@@ -68,6 +70,8 @@ public class SecurityConfig {
                     .requestMatchers(
                             REST_API + REST_AUTH + REST_CONNEXION,
                             REST_API + REST_AUTH + REST_CHANGE_MDP_PREMIERE_CONNEXION,
+                            REST_API + REST_AUTH + REST_FORGOT_PASSWORD,
+                            REST_API + REST_AUTH + REST_RESET_PASSWORD,
                             REST_API + "/test/**",
                             REST_API + "/test",
                             "/swagger-ui/**",
@@ -77,7 +81,7 @@ public class SecurityConfig {
                     // Le reste sécurisé
                     .anyRequest().authenticated()
             )
-            .addFilterBefore(new JwtFilter(customUserDetailsService, jwtUtils),
+            .addFilterBefore(jwtFilter,
                              UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

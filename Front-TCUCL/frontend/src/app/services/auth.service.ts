@@ -63,6 +63,22 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
+  requestPasswordReset(email: string): Observable<boolean> {
+    return this.http
+      .post(ApiEndpoints.auth.forgotPassword(), { email }, { responseType: 'text' })
+      .pipe(
+        map(() => true)
+      );
+  }
+
+  confirmPasswordReset(token: string, newPassword: string): Observable<boolean> {
+    return this.http
+      .post(ApiEndpoints.auth.resetPassword(), { token, newPassword }, { responseType: 'text' })
+      .pipe(
+        map(() => true)
+      );
+  }
+
 
   getUserInfo(): any {
     return this.userInfo;

@@ -11,7 +11,9 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import tcucl.back_tcucl.config.JwtUtils;
+import tcucl.back_tcucl.repository.UtilisateurRepository;
 import tcucl.back_tcucl.service.impl.CustomUserDetailsServiceImpl;
+import tcucl.back_tcucl.entity.Utilisateur;
 
 import java.io.IOException;
 
@@ -20,10 +22,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final CustomUserDetailsServiceImpl customUserDetailsService;
     private final JwtUtils jwtUtils;
+    private final UtilisateurRepository utilisateurRepository;
 
-    public JwtFilter(CustomUserDetailsServiceImpl customUserDetailsService, JwtUtils jwtUtils) {
+    public JwtFilter(CustomUserDetailsServiceImpl customUserDetailsService, JwtUtils jwtUtils, UtilisateurRepository utilisateurRepository) {
         this.customUserDetailsService = customUserDetailsService;
         this.jwtUtils = jwtUtils;
+        this.utilisateurRepository = utilisateurRepository;
     }
 
     @Override
@@ -46,6 +50,8 @@ public class JwtFilter extends OncePerRequestFilter {
         // 2️⃣ Laisser passer les endpoints publics (sans JWT)
         if (path.equals("/api/auth/connexion")
                 || path.equals("/api/auth/change-mdp-premiere-connexion")
+            || path.equals("/api/auth/forgot-password")
+            || path.equals("/api/auth/reset-password")
                 || path.startsWith("/api/test")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")) {
@@ -67,6 +73,14 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+
+            Utilisateur utilisateur = utilisateurRepository.findByEmail(username).orElse(null);
+            var issuedAt = jwtUtils.extractIssuedAt(jwt);
+            if (utilisateur != null && utilisateur.getPasswordChangedAt() != null && issuedAt != null
+                    && issuedAt.toInstant().isBefore(utilisateur.getPasswordChangedAt())) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
             if (jwtUtils.validateToken(jwt, userDetails)) {
                 UsernamePasswordAuthenticationToken authenticationToken =

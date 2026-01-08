@@ -303,4 +303,124 @@
         font-size: 12px;
         padding: 2px 8px;
     }
+
+    /* Styles pour les onglets */
+    .tab-btn {
+        padding: 10px 20px;
+        border: none;
+        background: transparent;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        
+        &:hover {
+            color: #329dd5;
+            background: rgba(50, 157, 213, 0.05);
+            border-radius: 6px 6px 0 0;
+        }
+
+        &.active {
+            color: #329dd5;
+            border-bottom: 3px solid #329dd5;
+        }
+    }
+
+    /* Styles pour la synthèse - Container */
+    .synthese-content {
+        margin-top: 24px;
+        animation: fadeIn 0.4s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Styles pour le tableau de synthèse - Premium Look */
+    .table-title {
+        color: #2c3e50;
+        margin-bottom: 16px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-left: 4px solid #329dd5;
+        padding-left: 12px;
+        margin-top: 32px; /* Spacing for second table */
+        
+        &:first-of-type {
+            margin-top: 0;
+        }
+    }
+
+    .indicator-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 32px;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px solid #eef2f6;
+
+        thead {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            tr {
+                th {
+                    padding: 16px 20px;
+                    text-align: left;
+                    font-weight: 600;
+                    color: #495057;
+                    text-transform: uppercase;
+                    font-size: 0.85rem;
+                    border-bottom: 2px solid #dee2e6;
+                    
+                    &:last-child {
+                        text-align: right;
+                    }
+                }
+            }
+        }
+
+        tbody {
+            tr {
+                transition: background-color 0.2s;
+                
+                td {
+                    padding: 14px 20px;
+                    border-bottom: 1px solid #f1f3f5;
+                    color: #343a40;
+                    font-size: 0.95rem;
+
+                    &:last-child {
+                        text-align: right;
+                        font-weight: 500;
+                        color: #2c3e50;
+                    }
+                }
+
+                &:last-child td {
+                    border-bottom: none;
+                }
+
+                &:hover {
+                    background-color: #f8fbff;
+                }
+
+                &.total {
+                    background-color: #ebf5fb;
+                    td {
+                        font-weight: 700;
+                        color: #1f7bb6;
+                        font-size: 1rem;
+                        border-top: 2px solid #bcdbf3;
+                    }
+                }
+            }
+        }
+    }
     
