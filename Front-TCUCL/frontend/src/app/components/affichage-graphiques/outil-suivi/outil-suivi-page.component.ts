@@ -177,7 +177,11 @@ export class OutilSuiviPageComponent implements OnInit {
   // Utilitaires simples
   getMin(a: number, b: number): number { return a < b ? a : b; }
   max(a: number, b: number): number { return a > b ? a : b; }
-  isValidNumber(n: number | undefined | null): boolean { return typeof n === 'number' && isFinite(n); }
+  isValidNumber(n: any): boolean {
+    if (n === null || n === undefined || n === '') return false;
+    const val = Number(n);
+    return !isNaN(val) && isFinite(val);
+  }
 
   // =============================================================
   // Helpers - Graphique 1 (gestion des trous, labels, couleurs)
@@ -324,10 +328,13 @@ export class OutilSuiviPageComponent implements OnInit {
   getPostGroupY(index: number): number { return this.postesTopMargin + index * this.postesRowHeight + this.postesRowHeight / 2; }
   getPostObjBarY(index: number): number { return this.getPostGroupY(index) - (this.postesBarsGap / 2) - this.postesBarHeight; }
   getPostReaBarY(index: number): number { return this.getPostGroupY(index) + (this.postesBarsGap / 2); }
-  getPostDiffColor(obj: number, rea: number): string { if (!obj || !isFinite(obj) || !isFinite(rea)) return '#999'; return rea - obj > 0 ? '#e74c3c' : (rea - obj < 0 ? '#27ae60' : '#999'); }
-  getPostDiffPct(obj: number, rea: number): string {
-    if (!obj || !isFinite(obj) || !isFinite(rea)) return '-';
-    const pct = Math.round(((rea - obj) / obj) * 100);
+  getPostDiffColor(obj: number | null, rea: number | null): string {
+    if (!this.isValidNumber(obj) || !this.isValidNumber(rea)) return '#999';
+    return (rea as number) - (obj as number) > 0 ? '#e74c3c' : ((rea as number) - (obj as number) < 0 ? '#27ae60' : '#999');
+  }
+  getPostDiffPct(obj: number | null, rea: number | null): string {
+    if (!this.isValidNumber(obj) || !this.isValidNumber(rea) || obj === 0) return '-';
+    const pct = Math.round((((rea as number) - (obj as number)) / (obj as number)) * 100);
     if (pct > 0) return `+${pct}%`;
     if (pct < 0) return `${pct}%`;
     return '0%';
@@ -384,30 +391,29 @@ export class OutilSuiviPageComponent implements OnInit {
     // Fermer les menus de sélection
     if (this.compareMenuOpen) this.closeCompareMenu();
     if (this.comp4PostesMenuOpen) this.closeComp4PostesMenu();
-    if (this.indicateursYearsMenuOpen) this.closeIndicateursYearsMenu();
-    if (this.indicateursKeysMenuOpen) this.closeIndicateursKeysMenu();
     // Fermer les menus de téléchargement
     this.closeMenus();
   }
   toggleCompareYear(year: number) {
-    const idx = this.compareYears.indexOf(year);
+    const y = Number(year);
+    const idx = this.compareYears.indexOf(y);
+    let newYears = [...this.compareYears];
     if (idx >= 0) {
-      this.compareYears.splice(idx, 1);
+      newYears.splice(idx, 1);
     } else {
-      this.compareYears.push(year);
-      this.compareYears.sort((a, b) => a - b);
+      newYears.push(y);
+      newYears.sort((a, b) => a - b);
     }
+    this.compareYears = newYears;
+    this.cdr.detectChanges();
   }
-  isYearSelected(year: number): boolean { return this.compareYears.includes(year); }
+
+  isYearSelected(year: number): boolean { return this.compareYears.includes(Number(year)); }
+
   // Palette de couleurs pour différencier les années
   private colorPalette = ['#329dd5', '#f39c12', '#8e44ad', '#16a085', '#e74c3c', '#3498db', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22'];
   getYearColor(year: number): string {
-    const idx = this.compareYears.indexOf(year);
-    return idx >= 0 ? this.colorPalette[idx % this.colorPalette.length] : '#999';
-  }
-  // Couleur pour les années dans le menu des indicateurs
-  getIndicateurYearColor(year: number): string {
-    const idx = this.indicateursSelectedYears.indexOf(year);
+    const idx = this.compareYears.indexOf(Number(year));
     return idx >= 0 ? this.colorPalette[idx % this.colorPalette.length] : '#999';
   }
 
@@ -479,7 +485,8 @@ export class OutilSuiviPageComponent implements OnInit {
   // Pourcentage selon le mode sélectionné
   comp4DiffPct(year: number, posteIndex: number): string {
     const current = this.postesRealiseParAn[year]?.[posteIndex];
-    if (!isFinite(current as number)) return '-';
+    if (!this.isValidNumber(current)) return '-';
+    
     let ref: number | null = null;
     if (this.comp4PercentMode === 'vs_first') {
       if (this.compareYears.length < 2 || this.compareYears[0] === year) return '-';
@@ -488,7 +495,8 @@ export class OutilSuiviPageComponent implements OnInit {
       // vs_mean: moyenne des années sélectionnées (incluant l'année courante)
       ref = this.comp4Mean(posteIndex);
     }
-    if (!isFinite(ref as number) || !ref || ref === 0) return '-';
+    
+    if (!this.isValidNumber(ref) || ref === 0) return '-';
     const pct = Math.round((((current as number) - (ref as number)) / (ref as number)) * 100);
     if (pct > 0) return `+${pct}%`; if (pct < 0) return `${pct}%`; return '0%';
   }
@@ -497,182 +505,6 @@ export class OutilSuiviPageComponent implements OnInit {
     const val = this.comp4DiffPct(year, posteIndex);
     if (val === '-' || val === '0%') return '#999';
     return val.startsWith('+') ? '#e74c3c' : '#27ae60';
-  }
-
-  // =============================================================
-  // Graphique 5 (Suivi des indicateurs) - Données & Layout
-  // =============================================================
-  // TODO BACKEND: Remplacer les données d'indicateurs par des données API
-  // - Endpoint: GET /indicateurs?annee={year}&etablissement={id}
-  // - Réponse: { categories: Array<{nom: string, indicateurs: Array<{nom: string, valeur: number|null, unite: string}>}> }
-  
-  // Catégories d'indicateurs avec leurs sous-indicateurs
-  indicateursCategories: Array<{
-    nom: string;
-    indicateurs: Array<{ nom: string; unite: string; key: string }>;
-  }> = [
-    {
-      nom: 'ENERGIE ET BATIMENTS',
-      indicateurs: [
-        { nom: 'Consommation d\'énergie', unite: 'MWh', key: 'conso_energie' },
-        { nom: 'dont chauffage', unite: 'MWh', key: 'chauffage' },
-        { nom: 'dont électricité', unite: 'MWh', key: 'electricite' },
-        { nom: 'Intensité carbone de l\'énergie', unite: 'gCO2e/kWh', key: 'intensite_carbone_energie' }
-      ]
-    },
-    {
-      nom: 'DEPLACEMENTS DOMICILE TRAVAIL',
-      indicateurs: [
-        { nom: 'Distance totale réalisée salarié', unite: 'km', key: 'distance_salarie' },
-        { nom: 'Part modale voiture', unite: '', key: 'part_modale_voiture_salarie' },
-        { nom: 'Part modale voiture électrique', unite: '', key: 'part_modale_ve_salarie' },
-        { nom: 'Part modale modes doux', unite: '', key: 'part_modale_doux_salarie' },
-        { nom: 'Distance totale réalisée étudiants', unite: 'km', key: 'distance_etudiants' },
-        { nom: 'Part modale voiture', unite: '', key: 'part_modale_voiture_etudiants' },
-        { nom: 'Part modale voiture électrique', unite: '', key: 'part_modale_ve_etudiants' },
-        { nom: 'Part modale modes doux', unite: '', key: 'part_modale_doux_etudiants' },
-        { nom: 'Intensité carbone des trajets', unite: 'gCO2e/km', key: 'intensite_carbone_trajets' }
-      ]
-    },
-    {
-      nom: 'DEPLACEMENTS INTERNATIONAUX',
-      indicateurs: [
-        { nom: 'Distance totale', unite: 'km', key: 'distance_internationale' },
-        { nom: 'Intensité carbone des trajets', unite: 'gCO2e/km', key: 'intensite_carbone_international' }
-      ]
-    },
-    {
-      nom: 'IMMOBILISATIONS',
-      indicateurs: [
-        { nom: 'Nombre mobilier', unite: 'equipements', key: 'nb_mobilier' },
-        { nom: 'Nombre d\'équipements numériques', unite: 'equipements', key: 'nb_numerique' }
-      ]
-    },
-    {
-      nom: 'DECHETS',
-      indicateurs: [
-        { nom: 'Quantité de déchets', unite: 'tonnes', key: 'quantite_dechets' }
-      ]
-    }
-  ];
-  
-  // Valeurs des indicateurs par année (structure: Record<année, Record<key_indicateur, valeur>>)
-  indicateursParAn: Record<number, Record<string, number | null>> = {};
-  
-  // Années sélectionnées pour le graphique 5 (définies après chargement)
-  indicateursSelectedYears: number[] = [];
-  indicateursYearsMenuOpen = false;
-  toggleIndicateursYearsMenu() { this.indicateursYearsMenuOpen = !this.indicateursYearsMenuOpen; }
-  closeIndicateursYearsMenu() { this.indicateursYearsMenuOpen = false; }
-  isIndicateurYearSelected(year: number): boolean { return this.indicateursSelectedYears.includes(year); }
-  toggleIndicateurYear(year: number) {
-    const idx = this.indicateursSelectedYears.indexOf(year);
-    if (idx >= 0) {
-      this.indicateursSelectedYears.splice(idx, 1);
-    } else {
-      this.indicateursSelectedYears.push(year);
-      this.indicateursSelectedYears.sort((a, b) => a - b);
-    }
-  }
-  
-  // Indicateurs sélectionnés (par catégorie uniquement)
-  indicateursSelectedCategories: string[] = []; // vide => tous, sinon liste des catégories sélectionnées
-  indicateursKeysMenuOpen = false;
-  toggleIndicateursKeysMenu() { this.indicateursKeysMenuOpen = !this.indicateursKeysMenuOpen; }
-  closeIndicateursKeysMenu() { this.indicateursKeysMenuOpen = false; }
-  getAllIndicateurKeys(): string[] {
-    const keys: string[] = [];
-    this.indicateursCategories.forEach(cat => {
-      cat.indicateurs.forEach(ind => keys.push(ind.key));
-    });
-    return keys;
-  }
-  isCategorySelected(categorieNom: string): boolean {
-    return this.indicateursSelectedCategories.length === 0 || this.indicateursSelectedCategories.includes(categorieNom);
-  }
-  toggleCategory(categorieNom: string) {
-    const idx = this.indicateursSelectedCategories.indexOf(categorieNom);
-    if (idx >= 0) {
-      this.indicateursSelectedCategories.splice(idx, 1);
-    } else {
-      this.indicateursSelectedCategories.push(categorieNom);
-    }
-  }
-  isIndicateurKeySelected(key: string): boolean {
-    // Si toutes les catégories sont sélectionnées (liste vide) ou si la catégorie de cette key est sélectionnée
-    if (this.indicateursSelectedCategories.length === 0) return true;
-    const categorie = this.indicateursCategories.find(cat => cat.indicateurs.some(ind => ind.key === key));
-    return categorie ? this.isCategorySelected(categorie.nom) : false;
-  }
-  selectAllIndicateurs() { 
-    this.indicateursSelectedCategories = [];
-  }
-  getVisibleIndicateurs(): Array<{ categorie: string; indicateur: { nom: string; unite: string; key: string } }> {
-    const visible: Array<{ categorie: string; indicateur: { nom: string; unite: string; key: string } }> = [];
-    this.indicateursCategories.forEach(cat => {
-      cat.indicateurs.forEach(ind => {
-        if (this.isIndicateurKeySelected(ind.key)) {
-          visible.push({ categorie: cat.nom, indicateur: ind });
-        }
-      });
-    });
-    return visible;
-  }
-  getSelectedIndicateursCount(): number {
-    if (this.indicateursSelectedCategories.length === 0) return this.getAllIndicateurKeys().length;
-    let count = 0;
-    this.indicateursCategories.forEach(cat => {
-      if (this.isCategorySelected(cat.nom)) {
-        count += cat.indicateurs.length;
-      }
-    });
-    return count;
-  }
-  
-  // Calcul du pourcentage de variation pour un indicateur
-  getIndicateurDiffPct(year: number, key: string): string {
-    if (this.indicateursSelectedYears.length < 2 || this.indicateursSelectedYears[0] === year) return '-';
-    const refYear = this.indicateursSelectedYears[0];
-    const ref = this.indicateursParAn[refYear]?.[key];
-    const current = this.indicateursParAn[year]?.[key];
-    if (!isFinite(ref as number) || !isFinite(current as number) || ref === null || current === null || ref === 0) return '-';
-    const pct = Math.round((((current as number) - (ref as number)) / (ref as number)) * 100);
-    if (pct > 0) return `+${pct}%`; if (pct < 0) return `${pct}%`; return '0%';
-  }
-  
-  getIndicateurDiffColor(year: number, key: string): string {
-    const val = this.getIndicateurDiffPct(year, key);
-    if (val === '-' || val === '0%') return '#999';
-    return val.startsWith('+') ? '#e74c3c' : '#27ae60';
-  }
-  
-  // Graphique des indicateurs - Layout & helpers
-  getIndicateursChartHeight(): number {
-    const visible = this.getVisibleIndicateurs();
-    return Math.max(300, visible.length * 28 + 80);
-  }
-  getIndicateursChartMax(): number {
-    let max = 0;
-    this.getVisibleIndicateurs().forEach(item => {
-      this.indicateursSelectedYears.forEach(y => {
-        const val = this.indicateursParAn[y]?.[item.indicateur.key];
-        if (typeof val === 'number' && isFinite(val) && val > max) max = val;
-      });
-    });
-    return max || 1;
-  }
-  getIndicateurBarWidth(value: number): number {
-    const maxV = this.getIndicateursChartMax();
-    if (!maxV || value <= 0 || typeof value !== 'number') return 0;
-    const maxBarWidth = 180; // Largeur max d'une barre
-    return Math.min((value / maxV) * maxBarWidth, maxBarWidth);
-  }
-  getIndicateurBarX(yearIdx: number): number {
-    return 180 + yearIdx * 200;
-  }
-  getIndicateurValue(year: number, key: string): number {
-    const val = this.indicateursParAn[year]?.[key];
-    return (typeof val === 'number' && isFinite(val)) ? val : 0;
   }
 
   // =============================================================
@@ -884,17 +716,15 @@ export class OutilSuiviPageComponent implements OnInit {
       this.postes = [];
       this.postesObjectifParAn = {} as any;
       this.postesRealiseParAn = {} as any;
-      this.indicateursParAn = {};
       this.globalTotals = [];
       this.selectedYearForPostes = null;
       this.compareYears = [];
-      this.indicateursSelectedYears = [];
       this.cdr.detectChanges();
       return;
     }
 
     const data = dataset;
-    this.years = data.years ?? [];
+    this.years = (data.years ?? []).map(y => Number(y)); // Force conversion number
     this.objectif = data.objectif as any;
     this.realise = data.realise as any;
     this.diff = this.years.map((_, i) => this.getYearDiffText(i));
@@ -904,15 +734,13 @@ export class OutilSuiviPageComponent implements OnInit {
     this.postesRealiseParAn = (data.postesRealiseParAn ?? {}) as any;
     if (this.years.length > 0) {
       this.selectedYearForPostes = this.years[0];
+      // Default: select first and last year
       this.compareYears = [this.years[0], this.years[this.years.length - 1]];
-      this.indicateursSelectedYears = [this.years[0], this.years[this.years.length - 1]];
     } else {
       this.selectedYearForPostes = null;
       this.compareYears = [];
-      this.indicateursSelectedYears = [];
     }
 
-    this.indicateursParAn = data.indicateursParAn ?? {};
     this.globalTotals = (data.globalTotals ?? []) as any;
     this.cdr.detectChanges();
   }
@@ -965,11 +793,10 @@ export class OutilSuiviPageComponent implements OnInit {
     if (this.cardMenuOpen[key]) {
       if (this.compareMenuOpen) this.closeCompareMenu();
       if (this.comp4PostesMenuOpen) this.closeComp4PostesMenu();
-      if (this.indicateursYearsMenuOpen) this.closeIndicateursYearsMenu();
-      if (this.indicateursKeysMenuOpen) this.closeIndicateursKeysMenu();
     }
   }
   closeMenus() { this.cardMenuOpen = { g1: false, g2: false, g3: false, g4: false, g5: false }; }
+
 
   private downloadBlob(content: Blob, filename: string) {
     const url = URL.createObjectURL(content);
@@ -1085,24 +912,6 @@ export class OutilSuiviPageComponent implements OnInit {
         const vals = this.compareYears.map(y => (this.postesRealiseParAn[y]?.[i] ?? ''));
         const d = this.compareYears.length > 1 ? this.comp4DiffPct(this.compareYears[this.compareYears.length - 1], i) : '-';
         csv += `${p};${vals.join(';')};${d}\n`;
-      });
-    } else if (key === 'g5') {
-      // En-tête avec années sélectionnées
-      csv += `Categorie;Indicateur;Unite;${this.indicateursSelectedYears.map(y => y.toString()).join(';')};Diff%\n`;
-      const visible = this.getVisibleIndicateurs();
-      let lastCategorie = '';
-      visible.forEach(item => {
-        if (item.categorie !== lastCategorie) {
-          lastCategorie = item.categorie;
-        }
-        const vals = this.indicateursSelectedYears.map(y => {
-          const val = this.indicateursParAn[y]?.[item.indicateur.key];
-          return val !== null && val !== undefined ? val : '-';
-        });
-        const d = this.indicateursSelectedYears.length > 1 
-          ? this.getIndicateurDiffPct(this.indicateursSelectedYears[this.indicateursSelectedYears.length - 1], item.indicateur.key)
-          : '-';
-        csv += `${item.categorie};${item.indicateur.nom};${item.indicateur.unite};${vals.join(';')};${d}\n`;
       });
     }
     this.downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `export_${key}.csv`);
