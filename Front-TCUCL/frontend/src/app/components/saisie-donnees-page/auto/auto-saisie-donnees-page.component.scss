@@ -1,16 +1,59 @@
 .main-container {
-  background-color: #E6F0FF;
+  background-color: #e6f0ff;
   min-height: 100vh;
   padding: 20px;
   font-family: Arial, sans-serif;
 }
 
-.left-panel {
-  max-width: 800px;
-  margin: 0 auto;
+.panels-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 4em;
+  margin-top: 2em;
+  padding: 0 3em;
+  box-sizing: border-box;
 }
 
-h2, h3 {
+.left-panel {
+  width: 60%;
+  box-sizing: border-box;
+  /* max-width removed to let it fill the 60% */
+}
+
+.right-panel {
+  width: 40%;
+  background-color: white;
+  padding: 2em;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.right-panel h2 {
+  font-size: 1.4rem; /* Match Energie h2 inside right panel often acts like h3 visual */
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  text-align: center;
+  border-bottom: none; /* Remove previous border */
+}
+
+.right-panel .data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.right-panel td {
+  padding: 0.7em;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f3f3f3;
+}
+
+/* Keep existing styles */
+h2,
+h3 {
   color: #2c3e50;
 }
 
@@ -94,40 +137,4 @@ details summary {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-.results-section {
-  margin: 3rem auto;
-  padding: 1.5rem;
-  background: #f8fafc;
-  border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-  max-width: 500px;
-}
-
-.results-section h2 {
-  margin-bottom: 1.2rem;
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #1f2937;
-  border-bottom: 2px solid #e5e7eb;
-  padding-bottom: 0.5rem;
-}
-
-.result-card {
-  padding: 1.2rem;
-  border-radius: 10px;
-  text-align: center;
-}
-
-.result-card h3 {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #4b5563;
-  margin-bottom: 0.5rem;
-}
-
-.result-card p {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #16a34a; /* green = positive eco signal */
 }

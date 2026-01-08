@@ -1,5 +1,6 @@
 import {Component, inject, OnInit} from '@angular/core';
 import {FormsModule} from '@angular/forms';
+import { CommonModule } from '@angular/common';
 import {HttpClient, HttpClientModule} from '@angular/common/http';
 import {ActivatedRoute} from '@angular/router'; // Permet de récupérer l'ID de l'URL
 import {AuthService} from '../../../services/auth.service';
@@ -13,7 +14,7 @@ import { SaveFooterComponent } from '../../save-footer/save-footer.component';
   standalone: true,
   templateUrl: './energie-saisie-donnees-page.component.html',
   styleUrls: ['./energie-saisie-donnees-page.component.scss'],
-  imports: [FormsModule, HttpClientModule, SaveFooterComponent]
+  imports: [CommonModule, FormsModule, HttpClientModule, SaveFooterComponent]
 })
 export class EnergieSaisieDonneesPageComponent implements OnInit {
   private http = inject(HttpClient);
@@ -137,4 +138,21 @@ export class EnergieSaisieDonneesPageComponent implements OnInit {
     );
   }
 
+  // Helpers pour le formatage (séparateur milliers, pas de virgule)
+  formatNumber(value: any): string {
+    if (value === null || value === undefined || value === '') return '';
+    // Arrondi à l'entier
+    const num = Math.round(Number(value));
+    if (isNaN(num)) return '';
+    // Format français avec espaces
+    return num.toLocaleString('fr-FR').replace(/\u202f/g, ' '); 
+  }
+
+  parseNumber(value: string): number | null {
+    if (!value) return null;
+    // Supprime les espaces et remplace virgule par point (au cas où, même si on veut des entiers)
+    const cleaned = value.replace(/\s/g, '').replace(/,/g, '.');
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? null : Math.round(num);
+  }
 }

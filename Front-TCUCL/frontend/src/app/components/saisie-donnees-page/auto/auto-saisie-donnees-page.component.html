@@ -1,4 +1,5 @@
 <div class="main-container">
+  <div class="panels-wrapper">
   <div class="left-panel">
     <div class="page-title">
       <h2>Poste automobile</h2>
@@ -91,35 +92,30 @@
     </div>
   </div>
 
-  <div class="results-section">
-  <h2>Résultats des émissions GES</h2>
-  <div class="result-card">
-    <h3>Émission totale (Tonnes CO₂e)</h3>
-    <p>{{ vehiculeResultat?.totalEmissionGES | number : "1.2-2" }}</p>
-  </div>
-</div>
-
-  <!-- <div *ngIf="vehiculeResultat" class="results-section">
-    <h3>Résultats des émissions GES</h3>
+  <div class="right-panel">
+    <h2>Résultats des émissions GES</h2>
     <table class="data-table">
-      <thead>
-      <tr>
-        <th>Émission fabrication (Tonnes CO₂e)</th>
-        <th>Émission pétrole (Tonnes CO₂e)</th>
-        <th>Émission électrique (Tonnes CO₂e)</th>
-        <th>Émission totale (Tonnes CO₂e)</th>
-      </tr>
-      </thead>
       <tbody>
-      <tr>
-        <td>{{ vehiculeResultat.totalEmissionGESFabrication | number:'1.2-2' }}</td>
-        <td>{{ vehiculeResultat.totalEmissionGESPetrole | number:'1.2-2' }}</td>
-        <td>{{ vehiculeResultat.totalEmissionGESElectrique | number:'1.2-2' }}</td>
-        <td>{{ vehiculeResultat.totalEmissionGES | number:'1.2-2' }}</td>
-      </tr>
+        <tr>
+          <td>Émission fabrication</td>
+          <td>{{ (vehiculeResultat?.totalEmissionGESFabrication || 0) | number:'1.2-2' }} tCO₂e</td>
+        </tr>
+        <tr>
+          <td>Émission pétrole</td>
+          <td>{{ (vehiculeResultat?.totalEmissionGESPetrole || 0) | number:'1.2-2' }} tCO₂e</td>
+        </tr>
+        <tr>
+          <td>Émission électrique</td>
+          <td>{{ (vehiculeResultat?.totalEmissionGESElectrique || 0) | number:'1.2-2' }} tCO₂e</td>
+        </tr>
+        <tr>
+          <td><strong>Émission totale</strong></td>
+          <td><strong>{{ (vehiculeResultat?.totalEmissionGES || 0) | number:'1.2-2' }} tCO₂e</strong></td>
+        </tr>
       </tbody>
     </table>
-  </div> -->
+  </div>
+  </div>
   <app-save-footer
     [path]="ONGLET_KEYS.Auto"
     (estTermineChange)="onEstTermineChange($event)"

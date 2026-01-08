@@ -23,7 +23,13 @@
         <tbody>
         <tr>
           <td>Gaz</td>
-          <td><input type="number" class="value-input" [(ngModel)]="items.consoGaz" (blur)="updateConso()"/></td>
+          <td>
+            <input type="text" class="value-input" 
+                   [ngModel]="formatNumber(items.consoGaz)" 
+                   (ngModelChange)="items.consoGaz = parseNumber($event)" 
+                   (blur)="updateConso()" 
+                   placeholder="0" />
+          </td>
           <td>
             <select class="unit-select" [(ngModel)]="items.uniteGaz" (blur)="updateConso()">
               <option value="TONNE">Tonnes</option>
@@ -34,7 +40,13 @@
         </tr>
         <tr>
           <td>Fioul</td>
-          <td><input type="number" class="value-input" [(ngModel)]="items.consoFioul" (blur)="updateConso()"/></td>
+          <td>
+            <input type="text" class="value-input" 
+                   [ngModel]="formatNumber(items.consoFioul)" 
+                   (ngModelChange)="items.consoFioul = parseNumber($event)" 
+                   (blur)="updateConso()" 
+                   placeholder="0" />
+          </td>
           <td>
             <select class="unit-select" [(ngModel)]="items.uniteFioul" (blur)="updateConso()">
               <option value="TONNE">Tonnes</option>
@@ -45,7 +57,13 @@
         </tr>
         <tr>
           <td>Bois</td>
-          <td><input type="number" class="value-input" [(ngModel)]="items.consoBois" (blur)="updateConso()"/></td>
+          <td>
+            <input type="text" class="value-input" 
+                   [ngModel]="formatNumber(items.consoBois)" 
+                   (ngModelChange)="items.consoBois = parseNumber($event)" 
+                   (blur)="updateConso()" 
+                   placeholder="0" />
+          </td>
           <td>
             <select class="unit-select" [(ngModel)]="items.uniteBois" (blur)="updateConso()">
               <option value="TONNE">Tonnes</option>
@@ -55,25 +73,46 @@
         </tr>
         <tr>
           <td>Réseau de chaleur urbain</td>
-          <td><input type="number" class="value-input" [(ngModel)]="items.consoReseauVille" (blur)="updateConso()"/>
+          <td>
+            <input type="text" class="value-input" 
+                   [ngModel]="formatNumber(items.consoReseauVille)" 
+                   (ngModelChange)="items.consoReseauVille = parseNumber($event)" 
+                   (blur)="updateConso()" 
+                   placeholder="0" />
           </td>
           <td>MWh PCS</td>
         </tr>
         <tr>
           <td>Électricité pour le chauffage</td>
-          <td><input type="number" class="value-input" [(ngModel)]="items.consoElecChauffage" (blur)="updateConso()"/>
+          <td>
+            <input type="text" class="value-input" 
+                   [ngModel]="formatNumber(items.consoElecChauffage)" 
+                   (ngModelChange)="items.consoElecChauffage = parseNumber($event)" 
+                   (blur)="updateConso()" 
+                   placeholder="0" />
           </td>
           <td>MWh PCS</td>
         </tr>
         <tr>
           <td>Électricité spécifique</td>
-          <td><input type="number" class="value-input" [(ngModel)]="items.consoElecSpecifique" (blur)="updateConso()"/>
+          <td>
+            <input type="text" class="value-input" 
+                   [ngModel]="formatNumber(items.consoElecSpecifique)" 
+                   (ngModelChange)="items.consoElecSpecifique = parseNumber($event)" 
+                   (blur)="updateConso()" 
+                   placeholder="0" />
           </td>
           <td>MWh PCS</td>
         </tr>
         <tr>
           <td>Eau</td>
-          <td><input type="number" class="value-input" [(ngModel)]="items.consoEau" (blur)="updateConso()"/></td>
+          <td>
+            <input type="text" class="value-input" 
+                   [ngModel]="formatNumber(items.consoEau)" 
+                   (ngModelChange)="items.consoEau = parseNumber($event)" 
+                   (blur)="updateConso()" 
+                   placeholder="0" />
+          </td>
           <td>m³</td>
         </tr>
         </tbody>
@@ -86,35 +125,35 @@
         <tbody>
         <tr>
           <td>Consommation finale</td>
-          <td>{{ resultats?.consoEnergieFinale || 0 }} MWh</td>
+          <td>{{ (resultats?.consoEnergieFinale || 0) | number:'1.0-0' }} MWh</td>
         </tr>
         <tr>
           <td>Conso Chauffage</td>
-          <td>{{ resultats?.consoEnergieChauffage || 0 }} MWh</td>
+          <td>{{ (resultats?.consoEnergieChauffage || 0) | number:'1.0-0' }} MWh</td>
         </tr>
         <tr>
           <td>Conso Spécifique</td>
-          <td>{{ resultats?.consoEnergieSpecifique || 0 }} MWh</td>
+          <td>{{ (resultats?.consoEnergieSpecifique || 0) | number:'1.0-0' }} MWh</td>
         </tr>
         <tr>
           <td>Conso finale / m²</td>
-          <td>{{ resultats?.consoEnergieFinaleParM2 || 0 }} MWh/m²</td>
+          <td>{{ (resultats?.consoEnergieFinaleParM2 || 0) | number:'1.0-0' }} MWh/m²</td>
         </tr>
         <tr>
           <td>Conso primaire / m²</td>
-          <td>{{ resultats?.consoEnergiePrimaireParM2 || 0 }} MWh/m²</td>
+          <td>{{ (resultats?.consoEnergiePrimaireParM2 || 0) | number:'1.0-0' }} MWh/m²</td>
         </tr>
         <tr>
           <td>Intensité carbone / m²</td>
-          <td>{{ resultats?.intensiteCarboneParM2 || 0 }} kgCO₂/m²</td>
+          <td>{{ (resultats?.intensiteCarboneParM2 || 0) | number:'1.0-0' }} kgCO₂/m²</td>
         </tr>
         <tr>
           <td>Intensité carbone moyenne</td>
-          <td>{{ resultats?.intensiteCarboneMoyenne || 0 }} kgCO₂</td>
+          <td>{{ (resultats?.intensiteCarboneMoyenne || 0) | number:'1.0-0' }} kgCO₂</td>
         </tr>
         <tr>
           <td>Surface totale</td>
-          <td>{{ resultats?.surfaceTotaleBatiments || 0 }} m²</td>
+          <td>{{ (resultats?.surfaceTotaleBatiments || 0) | number:'1.0-0' }} m²</td>
         </tr>
         </tbody>
       </table>
