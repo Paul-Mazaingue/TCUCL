@@ -634,6 +634,15 @@
   <!-- Container Onglet Synthèse EGES -->
   <ng-container *ngIf="activeTab === 'synthese'">
     <div class="synthese-content">
+      <div class="filters" style="margin-bottom: 20px;">
+        <label for="syntheseYear">Année : </label>
+        <select id="syntheseYear" [(ngModel)]="selectedSyntheseYear" (ngModelChange)="onSyntheseYearChange($event)" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px;">
+          <option *ngFor="let year of syntheseYears" [value]="year.value">
+            {{ year.label }} {{ year.value === currentYear ? '(courante)' : '' }}
+          </option>
+        </select>
+      </div>
+
       <h2 class="table-title">BILAN PAR SECTEUR</h2>
       <table class="indicator-table">
         <thead>
