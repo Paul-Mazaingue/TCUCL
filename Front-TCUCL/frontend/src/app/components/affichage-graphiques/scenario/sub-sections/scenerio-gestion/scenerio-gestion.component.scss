@@ -1,7 +1,7 @@
 .gestion-section {
   background-color: white;
   padding: 15px 20px;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 
   .header-section {
     display: flex;
@@ -15,26 +15,26 @@
         font-weight: 400;
       }
     }
-      .btn-tertiary {
-        padding: 8px 15px;
-        cursor: pointer;
-        font-size: 14px;
-        border-radius: 8px;
-        border: none;
+    .btn-tertiary {
+      padding: 8px 15px;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 8px;
+      border: none;
+    }
+    .btn-tertiary {
+      background-color: #f3f4f6;
+      color: #1f2937;
+      border: 1px solid #d1d5db;
+      transition: all 0.3s ease;
+      padding: 16px;
+
+      &.active {
+        background-color: #d1fae5;
+        border-color: #10b981;
+        color: #065f46;
       }
-      .btn-tertiary {
-        background-color: #f3f4f6;
-        color: #1f2937;
-        border: 1px solid #d1d5db;
-        transition: all 0.3s ease;
-        padding: 16px;
-      
-        &.active {
-          background-color: #d1fae5;
-          border-color: #10b981;
-          color: #065f46;
-        }
-      }
+    }
   }
 
   .scenario-list {
@@ -69,10 +69,10 @@
           margin-bottom: 8px;
         }
         div {
-            h4{
-                font-size: 16px;
-                font-weight: 600;
-            }
+          h4 {
+            font-size: 16px;
+            font-weight: 600;
+          }
           p {
             font-size: 14px;
             font-weight: 400;
@@ -93,6 +93,199 @@
 
       button {
         width: 100%;
+      }
+    }
+  }
+
+  .container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 32px 20px;
+    margin: 30px 0;
+  
+    .header {
+      margin-bottom: 18px;
+  
+      h3 {
+        font-size: 18px;
+        margin-bottom: 5px;
+        font-weight: 400;
+      }
+  
+      p {
+        font-size: 15px;
+        margin: 0;
+      }
+    }
+  
+    // Recommendations section - integrated styling
+    .recommendations-section {
+      margin-top: 24px;
+      padding: 24px;
+      background: rgba(248, 249, 250, 0.7);
+      border-radius: 12px;
+      border: 1px solid #e4e7eb;
+      
+      // Status card styling
+      .status-card {
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 24px;
+        border: 1px solid transparent;
+        
+        h3 {
+          font-size: 17px;
+          font-weight: 500;
+          margin-bottom: 8px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        
+        p {
+          font-size: 15px;
+          margin: 6px 0;
+          font-weight: 400;
+        }
+        
+        &.success {
+          background: rgba(212, 237, 218, 0.85);
+          border-color: #c3e6cb;
+        }
+        
+        &.warning {
+          background: rgba(255, 243, 205, 0.85);
+          border-color: #ffeaa7;
+        }
+        
+        &.danger {
+          background: rgba(248, 215, 218, 0.85);
+          border-color: #f5c6cb;
+        }
+      }
+      
+      // Recommendations card styling
+      .recommendations-card {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 24px;
+        border-radius: 10px;
+        border: 1px solid #e4e7eb;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        
+        h3 {
+          font-size: 18px;
+          font-weight: 500;
+          margin-bottom: 16px;
+          color: #333;
+        }
+        
+        ul {
+          list-style: none;
+          padding-left: 0;
+          margin: 0;
+          
+          li {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 15px;
+            line-height: 1.5;
+            color: #444;
+            
+            &:last-child {
+              border-bottom: none;
+            }
+            
+            &:first-child {
+              font-weight: 500;
+              color: #333;
+            }
+          }
+        }
+        
+        // No data message
+        .no-data {
+          text-align: center;
+          color: #666;
+          font-size: 15px;
+          padding: 16px;
+        }
+      }
+      
+      // Action buttons styling
+      .action-buttons {
+        display: flex;
+        gap: 16px;
+        margin-top: 24px;
+        
+        .btn {
+          padding: 12px 24px;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 15px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          
+          &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          }
+          
+          &:active {
+            transform: translateY(0);
+          }
+          
+          &.btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            
+            &:hover {
+              background: linear-gradient(135deg, #0069d9, #004085);
+            }
+          }
+          
+          &.btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #545b62);
+            color: white;
+            
+            &:hover {
+              background: linear-gradient(135deg, #5a6268, #4e555b);
+            }
+          }
+        }
+      }
+    }
+    
+    // Original recommendations styling (keep for other uses if needed)
+    .recommendations {
+      display: flex;
+      gap: 20px;
+      
+      .recommendation {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 20px 30px;
+        background: rgba(226, 216, 203, 0.705);
+        border: 1px solid #e4e7eb;
+        border-radius: 14px;
+        
+        h3 {
+          font-size: 16px;
+          font-weight: 400;
+          margin-bottom: 8px;
+        }
+        
+        p {
+          font-size: 14px;
+          font-weight: 400;
+          margin: 0;
+          line-height: 1.6;
+        }
       }
     }
   }
