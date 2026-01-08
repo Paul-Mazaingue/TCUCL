@@ -15,6 +15,7 @@ export class LoginPageComponent {
   email = '';
   password = '';
   loginError = false;
+  showPassword = false;
 
   constructor(private authService: AuthService, private router: Router) {}
 
@@ -26,5 +27,13 @@ export class LoginPageComponent {
         this.loginError = true;
       }
     });
+  }
+
+  goToForgotPassword(): void {
+    this.router.navigate(['/forgot-password']);
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 }

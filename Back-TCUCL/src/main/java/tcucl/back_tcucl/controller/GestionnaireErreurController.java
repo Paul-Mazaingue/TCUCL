@@ -11,6 +11,10 @@ import tcucl.back_tcucl.exceptionPersonnalisee.EmailDejaPrisException;
 import tcucl.back_tcucl.exceptionPersonnalisee.EntiteDejaExistantAvecNomTypeException;
 import tcucl.back_tcucl.exceptionPersonnalisee.MauvaisAncienMdpException;
 import tcucl.back_tcucl.exceptionPersonnalisee.MauvaisIdentifiantsException;
+import tcucl.back_tcucl.exceptionPersonnalisee.PasswordPolicyException;
+import tcucl.back_tcucl.exceptionPersonnalisee.ResetPasswordRateLimitException;
+import tcucl.back_tcucl.exceptionPersonnalisee.ResetPasswordTokenExpiredException;
+import tcucl.back_tcucl.exceptionPersonnalisee.ResetPasswordTokenInvalidException;
 import tcucl.back_tcucl.exceptionPersonnalisee.NonTrouveGeneralCustomException;
 import tcucl.back_tcucl.exceptionPersonnalisee.ValidationCustomException;
 import tcucl.back_tcucl.exceptionPersonnalisee.VoyageDejaExistantException;
@@ -52,6 +56,16 @@ public class GestionnaireErreurController {
     @ExceptionHandler(MauvaisIdentifiantsException.class)
     public ResponseEntity<String> handleMauvaisIdentifiantException(MauvaisIdentifiantsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
+
+    @ExceptionHandler({ResetPasswordTokenInvalidException.class, ResetPasswordTokenExpiredException.class, PasswordPolicyException.class})
+    public ResponseEntity<String> handleResetPasswordBadRequest(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(ResetPasswordRateLimitException.class)
+    public ResponseEntity<String> handleResetPasswordRateLimit(ResetPasswordRateLimitException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(ex.getMessage());
     }
 
     @ExceptionHandler(AuthenticationException.class)

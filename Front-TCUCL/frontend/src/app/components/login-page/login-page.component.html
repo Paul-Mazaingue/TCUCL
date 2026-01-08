@@ -10,9 +10,14 @@
         <div class="form-group">
           <div class="pwd">
             <p>Password:</p>
-            <a href="#" class="forgot-password">Forgot password?</a>
+            <a href="#" class="forgot-password" (click)="goToForgotPassword(); $event.preventDefault()">Forgot password?</a>
           </div>
-          <input type="password" id="password" name="password" [(ngModel)]="password" required>
+          <div class="password-field">
+            <input [type]="showPassword ? 'text' : 'password'" id="password" name="password" [(ngModel)]="password" required>
+            <button type="button" class="toggle-btn" (click)="togglePasswordVisibility()" aria-label="Afficher ou masquer le mot de passe">
+              {{ showPassword ? '👁' : '👁‍🗨' }}
+            </button>
+          </div>
         </div>
         <button type="submit">Login</button>
         @if (loginError) {

@@ -10,6 +10,8 @@ import tcucl.back_tcucl.entity.Annee;
 import tcucl.back_tcucl.entity.Entite;
 import tcucl.back_tcucl.entity.Utilisateur;
 import tcucl.back_tcucl.entity.onglet.batiment.BatimentImmobilisationMobilierOnglet;
+import tcucl.back_tcucl.entity.onglet.emissionFugitive.EmissionFugitiveOnglet;
+import tcucl.back_tcucl.dto.onglet.emissionFugitive.MachineEmissionFugitiveDto;
 import tcucl.back_tcucl.exceptionPersonnalisee.AnneeUniversitaireDejaCreeException;
 import tcucl.back_tcucl.service.*;
 
@@ -115,6 +117,8 @@ public class ParametreServiceImpl implements ParametreService {
             if (anneePrec != null) {
                 BatimentImmobilisationMobilierOnglet anneePrecBatOnglet = anneePrec.getBatimentImmobilisationMobilierOnglet();
                 BatimentImmobilisationMobilierOnglet anneeActuBatOnglet = anneeActu.getBatimentImmobilisationMobilierOnglet();
+                EmissionFugitiveOnglet anneePrecEmissionFugitiveOnglet = anneePrec.getEmissionFugitiveOnglet();
+                EmissionFugitiveOnglet anneeActuEmissionFugitiveOnglet = anneeActu.getEmissionFugitiveOnglet();
 
                 // On ajoute les bâtiments existants de l'année précédente à l'année actuelle
                 anneePrecBatOnglet.getBatimentExistantOuNeufConstruits()
@@ -123,6 +127,14 @@ public class ParametreServiceImpl implements ParametreService {
                 // On ajoute les Entretiens courants de l'année précédente à l'année actuelle
                 anneePrecBatOnglet.getEntretienCourants()
                         .forEach(anneeActuBatOnglet::ajouterEntretienCourant);
+
+                // On réintroduit les machines de l'année précédente dans l'onglet Émissions fugitives
+                anneePrecEmissionFugitiveOnglet.getMachinesEmissionFugitive()
+                    .forEach(machinePrec -> {
+                        MachineEmissionFugitiveDto machineDto = new MachineEmissionFugitiveDto(machinePrec);
+                        machineDto.setId(null);
+                        anneeActuEmissionFugitiveOnglet.ajouterMachineViaDto(machineDto);
+                    });
             }
 
             entite.addAnnee(anneeActu); // gère la liaison bidirectionnelle
