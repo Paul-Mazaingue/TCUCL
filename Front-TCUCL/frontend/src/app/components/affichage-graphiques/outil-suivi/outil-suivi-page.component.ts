@@ -6,6 +6,7 @@ import { OutilSuiviService, OutilSuiviData, OutilSuiviResponse } from '../../../
 import { UserService } from '../../../services/user.service';
 import { AuthService } from '../../../services/auth.service';
 import { ParamService } from '../../params/params.service';
+import { AnneeService } from '../../../services/annee.service';
 import { SyntheseEgesService } from '../../../services/synthese-eges.service';
 
 interface Sector {
@@ -33,7 +34,8 @@ export class OutilSuiviPageComponent implements OnInit {
     private userService: UserService,
     private authService: AuthService,
     private paramService: ParamService,
-    private syntheseService: SyntheseEgesService
+    private syntheseService: SyntheseEgesService,
+    private anneeService: AnneeService
   ) {}
 
   activeTab: 'trajectoire' | 'synthese' = 'trajectoire';
@@ -45,6 +47,14 @@ export class OutilSuiviPageComponent implements OnInit {
   scopesTotal: number = 0;
   currentYear: number = new Date().getFullYear();
   consoEnergieFinale?: number;
+
+  syntheseYears: { label: string, value: number }[] = [];
+  selectedSyntheseYear: number = 0;
+
+  onSyntheseYearChange(year: number) {
+      this.selectedSyntheseYear = year;
+      this.fetchSynthese();
+  }
 
   useMockData = false;
   warnings: string[] = [];
@@ -698,6 +708,16 @@ export class OutilSuiviPageComponent implements OnInit {
     this.selectedEntiteId = Number(this.userService.entiteId());
     
     // Init data Synthèse
+    this.currentYear = this.anneeService.getCurrentAcademicYear();
+    this.selectedSyntheseYear = this.currentYear;
+    
+    // Génération des années (similaire au Dashboard: 2018 -> année courante)
+    this.syntheseYears = Array.from({ length: this.currentYear - 2018 }, (_, i) => {
+      const end = this.currentYear - i;
+      const start = end - 1;
+      return { label: `${start}-${end}`, value: end };
+    });
+
     this.loadSectors();
     this.loadScopes();
 
@@ -768,7 +788,7 @@ export class OutilSuiviPageComponent implements OnInit {
     if (!entiteToUse) return;
 
     this.syntheseService
-      .getSynthese(entiteToUse, this.currentYear)
+      .getSynthese(entiteToUse, this.selectedSyntheseYear)
       ?.subscribe({
         next: res => {
           const mapping: Record<string, number | null | undefined> = {
@@ -788,8 +808,11 @@ export class OutilSuiviPageComponent implements OnInit {
             const val = mapping[s.label];
             if (val != null) {
               s.value = Number(val);
+            } else {
+                s.value = 0;
             }
           });
+          this.total = this.sectors.reduce((sum, s) => sum + s.value, 0);
 
           const scopesMapping: Record<string, number | null | undefined> = {
             'Emissions directes des sources fixes de combustion': res.emissionDirecteCombustion,
