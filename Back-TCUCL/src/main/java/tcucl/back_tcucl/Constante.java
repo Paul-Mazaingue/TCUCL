@@ -54,7 +54,7 @@ public class Constante {
     public static final String MAIL_SUJET_RESET_PASSWORD = "Réinitialisation de votre mot de passe TCUCL";
     public static final String MAIL_MESSAGE_RESET_PASSWORD_PREFIX = "Bonjour ";
     public static final String MAIL_MESSAGE_RESET_PASSWORD_BODY = ",\n\nVous avez demandé à réinitialiser votre mot de passe sur TCUCL.\nCliquez sur le lien ci-dessous (valable 10 minutes) pour définir un nouveau mot de passe :\n";
-    public static final String MAIL_MESSAGE_RESET_PASSWORD_SUFFIX = "\n\nSi vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.\n\nCordialement,\nL'équipe TCUCL";
+    public static final String MAIL_MESSAGE_RESET_PASSWORD_SUFFIX = "\n\nSi vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.\n\nCordialement,\nL'équipe TCUCL\n\nCe mail est envoyé depuis une boîte non surveillée. En cas de problème, contactez gregoire.destombes@univ-catholille.fr.";
 
 
 //Message Mail
@@ -65,7 +65,8 @@ public class Constante {
             "Pour activer votre compte, connectez-vous avec votre e-mail et ce mot de passe : ";
     public static final String MAIL_MESSAGE_INSCRIPTION_FIN = "\n\n" +
                     "Cordialement,\n" +
-                    "L'équipe TCUCL";
+                    "L'équipe TCUCL\n\n" +
+                    "Ce mail est envoyé depuis une boîte non surveillée. En cas de problème, contactez gregoire.destombes@univ-catholille.fr.";
 
 
 

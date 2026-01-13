@@ -25,14 +25,19 @@ public class InitialisateurBdd implements CommandLineRunner {
     public InitialisateurBdd(ApplicationParamService applicationParamService,
                              ParametreService parametreService,
                              EntiteService entiteService,
-                             @Value("${spring.mail.username:}") String superAdminEmail) {
+                             @Value("${app.superadmin.email:}") String superAdminEmail,
+                             @Value("${spring.mail.username:}") String legacySenderEmail) {
         this.applicationParamService = applicationParamService;
         this.parametreService = parametreService;
 
         this.entiteService = entiteService;
-        this.superAdminEmail = (superAdminEmail != null && !superAdminEmail.isBlank())
-                ? superAdminEmail
-                : "trajectoirecarbone.ucl@gmail.com";
+        if (superAdminEmail != null && !superAdminEmail.isBlank()) {
+            this.superAdminEmail = superAdminEmail;
+        } else if (legacySenderEmail != null && !legacySenderEmail.isBlank()) {
+            this.superAdminEmail = legacySenderEmail;
+        } else {
+            this.superAdminEmail = "trajectoirecarbone.ucl@gmail.com";
+        }
     }
 
     @Override
