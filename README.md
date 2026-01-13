@@ -107,26 +107,51 @@ nano .env
 ```
 
 ```
+# Ports exposed on the host
 BACKEND_PORT=8080
 FRONTEND_PORT=8081
 
-FRONT_ORIGIN=https://trajectoirecarbone.univ-catholille.fr
+# Origin of the frontend as seen by the backend (CORS)
+FRONT_ORIGIN=http://localhost:8081
 
-API_BASE_URL=/api
+# API URL reachable by the browser once the stack is running
+API_BASE_URL=http://localhost:8080/api
 DEV_MODE=false
 
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/bdd
+# Password reset configuration
+APP_RESET_PASSWORD_TOKEN_VALIDITY_SECONDS=600
+APP_RESET_PASSWORD_RATE_LIMIT_PER_USER=5
+APP_RESET_PASSWORD_RATE_LIMIT_PER_IP=500
+APP_RESET_PASSWORD_RATE_LIMIT_WINDOW_MINUTES=60
+
+# Database connection (database stays outside of Docker)
+SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/bdd
 SPRING_DATASOURCE_USERNAME=example_name
 SPRING_DATASOURCE_PASSWORD=example_password
 
-APP_JWT_KEY=XXXXXXXXXXXXXXXXXXXXXX
+# JWT configuration
+APP_JWT_KEY=change-me
 APP_JWT_EXPIRATION_MS=43200000
 
+# Mail configuration
+# Provider par défaut = internal (relais @univ-catholille.fr). Fallback Gmail si activé.
+MAIL_PROVIDER=internal # internal ou gmail
+MAIL_FALLBACK_TO_GMAIL=true
+
+# Relais interne
+MAIL_INTERNAL_HOST=XX.XX.XX.XX
+MAIL_INTERNAL_PORT=XX
+MAIL_INTERNAL_LOCALPART=TCUCL-no-reply
+
+# Gmail 
 SPRING_MAIL_HOST=smtp.gmail.com
 SPRING_MAIL_PORT=587
-SPRING_MAIL_USERNAME=XXXXXXXXXXXXXXXXXXXXXX
-SPRING_MAIL_PASSWORD=XXXXXXXXXXXXXXXXXXXXXX
-SPRING_MAIL_VERIFY_HOST=https://trajectoirecarbone.univ-catholille.fr
+SPRING_MAIL_USERNAME=
+SPRING_MAIL_PASSWORD=
+SPRING_MAIL_VERIFY_HOST=http://localhost:8081
+
+# Superadmin (bootstrap)
+SUPERADMIN_EMAIL=
 ```
 
 ## 7. Démarrage
@@ -170,3 +195,95 @@ sudo docker compose logs -f backend
 sudo docker compose logs -f frontend
 ```
 
+## 10. Lancement sans Docker
+
+### Configuration du fichier .env
+Créer et éditer le fichier .env à la racine du projet :
+```bash
+nano .env
+```
+
+```
+# Ports exposed on the host
+BACKEND_PORT=8080
+FRONTEND_PORT=8081
+
+# Origin of the frontend as seen by the backend (CORS)
+FRONT_ORIGIN=http://localhost:4200
+
+# API URL reachable by the browser once the stack is running
+API_BASE_URL=http://localhost:8080/api
+DEV_MODE=true
+
+# Database connection (database stays outside of Docker)
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/bdd
+SPRING_DATASOURCE_USERNAME=username
+SPRING_DATASOURCE_PASSWORD=password
+
+APP_RESET_PASSWORD_TOKEN_VALIDITY_SECONDS=600
+APP_RESET_PASSWORD_RATE_LIMIT_PER_USER=5
+APP_RESET_PASSWORD_RATE_LIMIT_PER_IP=500
+APP_RESET_PASSWORD_RATE_LIMIT_WINDOW_MINUTES=60
+
+# JWT configuration
+APP_JWT_KEY=changeme
+APP_JWT_EXPIRATION_MS=43200000
+
+# Mail configuration
+# Provider par défaut = internal (relais @univ-catholille.fr). Fallback Gmail activé.
+MAIL_PROVIDER=gmail
+MAIL_FALLBACK_TO_GMAIL=false
+
+# Relais interne
+MAIL_INTERNAL_HOST=
+MAIL_INTERNAL_PORT=
+MAIL_INTERNAL_LOCALPART=
+
+# Gmail (inchangé)
+SPRING_MAIL_HOST=smtp.gmail.com
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME=######################## <-------------------- à remplir
+SPRING_MAIL_PASSWORD=######################## <-------------------- à remplir
+SPRING_MAIL_VERIFY_HOST=http://localhost:8081
+
+# Superadmin (bootstrap)
+SUPERADMIN_EMAIL=######################## <-------------------- à remplir
+```
+
+### Base de données
+
+- Installer pgAdmin
+- Créer une base PostgreSQL nommée bdd
+- Créer un utilisateur correspondant aux identifiants définis dans le .env
+- Lui attribuer les droits sur la base
+
+### Backend
+
+- Installer Maven
+- Se placer dans le dossier du backend :
+```bash
+cd .\Back-TCUCL\
+```
+- Lancer l’application Spring Boot :
+```bash
+mvn spring-boot:run
+```
+
+### Frontend
+
+- Installer Node.js
+
+- Se placer dans le dossier du frontend : 
+```bash
+cd .\Front-TCUCL\frontend\
+```
+
+- Installer les dépendances :
+```bash
+npm i
+```
+
+- Lancer l’application :
+```bash
+npm start
+```
