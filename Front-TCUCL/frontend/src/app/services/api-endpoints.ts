@@ -84,7 +84,6 @@ export const ApiEndpoints = {
     update: (id: string) => `${BASE_URL}/${ONGLET_KEYS.MobInternationale}/${id}`,
     resultats: (id: string) => `${BASE_URL}/${ONGLET_KEYS.MobInternationale}/${id}/resultat`,
     import:(id: string | null) => `${BASE_URL}/${ONGLET_KEYS.MobInternationale}/${id}/import-voyage`,
-    export: (id: string) => `/mob-internationale/${id}/export`,
 
   },
   BatimentsOnglet: {

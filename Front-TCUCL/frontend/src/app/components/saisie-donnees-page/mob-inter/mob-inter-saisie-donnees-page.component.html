@@ -15,14 +15,10 @@
       <p>Importer ou remplacer le fichier excel des mobilités internationales</p>
       <input #fileInput type="file" (change)="onFileSelected($event)" hidden />
 
-      <button type="button" (click)="triggerFileInput('APPEND')">Importer</button>
-      <button type="button" (click)="triggerFileInput('REPLACE')">Remplacer</button>
-      <button type="button" (click)="telechargerExcel()">
-        Télécharger en Excel
-      </button>
-      <button type="button" class="refresh-button" (click)="rafraichirDonnees()">
-        Rafraîchir les données
-      </button>
+      <!-- Deux boutons qui déclenchent le même input, mais avec rajouter = true / false -->
+      <button type="button" (click)="triggerFileInput(true)" class="btn-space">Importer</button>
+      <button type="button" (click)="triggerFileInput(false)" class="btn-space">Remplacer</button>
+      <button type="button" (click)="rafraichirDonnees()"> Rafraîchir les données</button>
       
       </div>
 
