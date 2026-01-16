@@ -1,177 +1,105 @@
-/* Main container */
+/* Structure globale */
 .main-container {
-  padding: 20px;
-  background-color: #f8f9fa;
+  background-color: #E6F0FF;
   min-height: 100vh;
-}
-
-/* Page title section */
-.page-title {
+  padding: 20px 40px 80px; // padding bottom = footer height + marge
+  box-sizing: border-box;
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 30px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #e9ecef;
+  flex-direction: column;
 }
 
-.page-title h2 {
-  margin: 0;
-  color: #2c3e50;
-  font-size: 28px;
-  font-weight: 600;
-}
-
-.help-icon {
-  color: #6c757d;
-  cursor: pointer;
-  transition: color 0.2s;
-}
-
-.help-icon:hover {
-  color: #3498db;
-}
-
-/* Panels wrapper */
 .panels-wrapper {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  margin-bottom: 40px;
+  display: flex;
+  gap: 3em;
+  flex: 1 1 auto; // prendre tout l’espace vertical restant
+  overflow: hidden;
 }
 
-@media (max-width: 1024px) {
-  .panels-wrapper {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Panels */
-.left-panel,
-.right-panel {
+.left-panel, .right-panel {
   background: white;
   border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e9ecef;
-}
-
-.left-panel h2,
-.right-panel h2 {
-  color: #2c3e50;
-  margin-top: 0;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #3498db;
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.right-panel > h2:not(:first-child) {
-  margin-top: 30px;
-  border-bottom-color: #2ecc71;
-}
-
-/* Data table */
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 20px 0;
-}
-
-.data-table thead {
-  background-color: #f8f9fa;
-}
-
-.data-table th {
-  padding: 12px 15px;
-  text-align: left;
-  font-weight: 600;
-  color: #495057;
-  border-bottom: 2px solid #dee2e6;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.data-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #e9ecef;
-  vertical-align: middle;
-}
-
-.data-table tbody tr {
-  transition: background-color 0.2s;
-}
-
-.data-table tbody tr:hover {
-  background-color: #f8f9fa;
-}
-
-/* Input styling */
-input[type="number"] {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: all 0.2s;
+  padding: 1.5em 2em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: auto;
   box-sizing: border-box;
 }
 
-input[type="number"]:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+/* Colonne gauche : formulaire */
+.left-panel {
+  flex: 1;
+  max-width: 50%;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow-y: auto;
 }
 
-input[type="radio"] {
-  margin-right: 8px;
-  margin-left: 15px;
-  accent-color: #3498db;
-}
-
-/* Readonly cells */
-.readonly-cell {
-  background-color: #f8f9fa;
-  color: #495057;
-  font-family: 'Courier New', monospace;
-  font-weight: 500;
-  min-width: 120px;
-}
-
-/* Form sections */
-p {
-  color: #495057;
-  margin: 15px 0;
-  line-height: 1.5;
-}
-
-label {
-  display: inline-flex;
-  align-items: center;
-  margin-right: 20px;
-  color: #495057;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-/* Radio groups */
-div > label:first-child {
-  margin-left: 0;
-}
-
-/* Results section */
-.results-section {
-  background: white;
-  border-radius: 12px;
-  padding: 25px;
-  margin: 40px 0;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e9ecef;
-}
-
-.results-section h2 {
+.right-panel h3 {
+  font-size: 1.4rem;
   color: #2c3e50;
-  margin-top: 10px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* Colonne droite : espace réservé aux graphiques */
+.right-panel td {
+  background-color: #f3f3f3;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+/* Table des données */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.data-table th,
+.data-table td {
+  border: 1px solid #ddd;
+  padding: 0.6rem;
+  text-align: left;
+}
+
+.data-table th {
+  background-color: #f0f0f0;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Inputs */
+input[type="number"],
+input[type="text"] {
+  width: 100%;
+  padding: 0.4rem;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+/* Labels et checkboxes */
+label {
+  display: block;
+  margin: 1rem 0 0.5rem;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.readonly-cell {
+  background-color: #e7e7e7;
+  text-align: center;
 }
